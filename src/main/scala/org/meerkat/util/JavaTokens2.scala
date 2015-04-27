@@ -22,7 +22,7 @@ object JavaTokens2 {
   
   val Digit: RegularExpression = "[0-9]"
   
-  val Identifier:RegularExpression = JavaLetter ~ (JavaLetter | Digit)*
+  val Identifier:RegularExpression = JavaLetter ~ (JavaLetter | Digit).*
 
   
   /**
@@ -31,18 +31,13 @@ object JavaTokens2 {
    * underscore:
    * 
    */
-//  val DecimalIntegerLiteral:Regex = """(0|[1-9]([0-9]([0-9_]*[0-9])?)?|[1-9][_]+[0-9]([0-9_]*[0-9])?)[lL]?""".r
-  
-//  val DecimalIntegerLiteral: RegularExpression = DecimalNumeral ~ IntegerTypeSuffix?
-
   val IntegerTypeSuffix: RegularExpression = "l" | "L"
   
   val Digits: RegularExpression = "[0-9]([0-9_]*[0-9])?" 
 
   val NonZeroDigit: RegularExpression = "[1-9]"
   
-  val DecimalNumeral: RegularExpression =  "0" | NonZeroDigit ~ Digits.? | NonZeroDigit ~ ("_".+()) ~ Digits
-  
+  val DecimalNumeral: RegularExpression =  "0" | NonZeroDigit ~ Digits.? | NonZeroDigit ~ "_".+() ~ Digits
 
   
   /**

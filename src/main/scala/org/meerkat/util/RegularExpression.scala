@@ -15,13 +15,13 @@ trait RegularExpression {
   
   def ~(r: RegularExpression): RegularExpression = RegularExpression(pattern + r.pattern)
   
-  def |(r: RegularExpression): RegularExpression = RegularExpression(pattern + "|" + r.pattern)
+  def |(r: RegularExpression): RegularExpression = RegularExpression("(" + pattern + "|" + r.pattern + ")")
   
-  def *(): RegularExpression = RegularExpression(pattern + "*")
+  def *(): RegularExpression = RegularExpression("(" + pattern + ")" + "*")
   
-  def +(): RegularExpression = RegularExpression(pattern + "+")
+  def +(): RegularExpression = RegularExpression("(" + pattern + ")" + "+")
   
-  def ?(): RegularExpression = RegularExpression(pattern + "?")
+  def ?(): RegularExpression = RegularExpression("(" + pattern + ")" + "?")
 }
 
 class JavaRegularExpression(s: String) extends RegularExpression {
