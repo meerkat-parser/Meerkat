@@ -12,7 +12,7 @@ import java.util.regex.Matcher
 import scala.collection.mutable._
 import scala.collection.JavaConversions._
 
-class Input(s: String) {
+class Input(val s: String) {
   
   def length = s.length()
 
@@ -24,32 +24,30 @@ class Input(s: String) {
   
   def calcLineColumns: Unit = {
     var lineCount = 0
-	var lineNumber = 1
-	var columnNumber = 1
+	  var lineNumber = 1
+	  var columnNumber = 1
 
-	// Empty input: only the end of line symbol
-	if(length == 1) {
-		lineColumns(0) = (lineNumber, columnNumber)
-	} else {
- 		for (i <- 0 until length) {
-			lineColumns(i) = (lineNumber, columnNumber)
-			if (s.charAt(i) == '\n') {
-				lineCount += 1
-				lineNumber += 1
-				columnNumber = 1
-			} else if (s.charAt(i) == '\r') {
-				columnNumber = 1
-			} else {
-				columnNumber += 1
-			}
-		}
-	}
+	  // Empty input: only the end of line symbol
+  	if(length == 1) {
+  		lineColumns(0) = (lineNumber, columnNumber)
+  	} else {
+   		for (i <- 0 until length) {
+  			lineColumns(i) = (lineNumber, columnNumber)
+  			if (s.charAt(i) == '\n') {
+  				lineCount += 1
+  				lineNumber += 1
+  				columnNumber = 1
+  			} else if (s.charAt(i) == '\r') {
+  				columnNumber = 1
+  			} else {
+  				columnNumber += 1
+  			}
+  		}
+  	}
     lineColumns(length) = (lineNumber, columnNumber)
   }
   
-  def charAt(i: Int): Char = {
-    s.charAt(i)
-  } 
+  def charAt(i: Int): Char = s.charAt(i)
   
   def substring(start: Int, end: Int): String = s.substring(start, end)
   
@@ -77,4 +75,10 @@ class Input(s: String) {
   
   def lineColumn(i: Int): (Int, Int) = lineColumns(i)
   
+}
+
+
+object Input {
+  
+  def apply(s:String) = new Input(s)
 }
