@@ -9,6 +9,7 @@ package util
 
 import scala.util.matching.Regex
 import java.util.regex.Pattern
+import org.meerkat.util.RegularExpression
 
 object JavaTokens {
 
