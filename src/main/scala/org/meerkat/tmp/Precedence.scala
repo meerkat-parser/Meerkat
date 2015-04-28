@@ -17,7 +17,7 @@ object Precedence {
   // Precedence level
   type Prec = Int
   
-  trait OperatorParser extends (Prec => Int => Result[Int]) {
+  trait OperatorParser extends (Prec => Parser) {
     
     private var level: Int = 0
     
@@ -44,6 +44,8 @@ object Precedence {
     def preFilter(pred: Prec => Boolean): OperatorParser = ???
     def preFilter(pred: (Prec, Int) => Boolean): OperatorParser = ???
     
+    def O(): Parser = ???
+    
   }
   
   def left     (p: OperatorParser): OperatorParser = ???
@@ -53,13 +55,10 @@ object Precedence {
   
   implicit def operator(p: Parser): OperatorParser 
     = new OperatorParser { def apply(pr: Prec) = p }
-  
-  
+    
   val C: Parser = "c" // terminalOperatorParser
   val D: OperatorParser = C 
-  lazy val A: OperatorParser = ( "a" ~ "b" ~ A 
-                                  > D ~ C 
-                                  > left(D | C) ) 
+  lazy val A: OperatorParser = ( "a" ~ "b" ~ A | D(0) ~ C > left(D | C) )
                                
   
 }
