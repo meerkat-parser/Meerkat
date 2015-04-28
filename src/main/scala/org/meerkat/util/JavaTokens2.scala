@@ -11,35 +11,27 @@ import scala.util.matching.Regex
 import java.util.regex.Pattern
 import org.meerkat.util.RegularExpression
 import org.meerkat.util.RegularExpression._
+import org.meerkat.util.Char
+import org.meerkat.util.Char._
 
 object JavaTokens2 {
 
-  /**
-   * An identifier is an unlimited-length sequence of Java letters and Java digits, 
-   * the first of which must be a Java letter.
-   */
-  val JavaLetter:RegularExpression = "[a-zA-Z_$]"
+  val JavaLetter:RegularExpression = 'a'--'z' | 'A'--'Z' | '_' | '$'
   
-  val Digit: RegularExpression = "[0-9]"
-  
+  val Digit: RegularExpression = '0'--'9'
+
   val Identifier:RegularExpression = JavaLetter ~ (JavaLetter | Digit).*
 
-  
-  /**
-   * A decimal number is either the number 0, or a non-zero
-   * number optionally followed by a number of numbers, interspersed by
-   * underscore:
-   * 
-   */
-  val IntegerTypeSuffix: RegularExpression = "l" | "L"
-  
-  val Digits: RegularExpression = "[0-9]([0-9_]*[0-9])?" 
+  val IntegerTypeSuffix: RegularExpression = "l|L"
 
-  val NonZeroDigit: RegularExpression = "[1-9]"
+  val Digits: RegularExpression = "[0-9]([0-9_]*[0-9])?"
+  
+  val NonZeroDigit: RegularExpression = '1'--'9'
   
   val DecimalNumeral: RegularExpression =  "0" | NonZeroDigit ~ Digits.? | NonZeroDigit ~ "_".+() ~ Digits
-
   
+  val DecimalIntegerLiteral = DecimalNumeral ~ IntegerTypeSuffix.?
+
   /**
    * A hexadecimal numeral consists of the leading ASCII characters
    * 0x or 0X followed by one or more ASCII hexadecimal digits interspersed with underscores,

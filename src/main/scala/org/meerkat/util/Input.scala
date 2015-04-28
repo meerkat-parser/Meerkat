@@ -81,4 +81,6 @@ class Input(val s: String) {
 object Input {
   
   def apply(s:String) = new Input(s)
+  
+  implicit def toInput(s: String) = Input(s)
 }
