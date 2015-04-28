@@ -32,85 +32,79 @@ object JavaTokens2 {
   
   val DecimalIntegerLiteral = DecimalNumeral ~ IntegerTypeSuffix.?
 
-  /**
-   * A hexadecimal numeral consists of the leading ASCII characters
-   * 0x or 0X followed by one or more ASCII hexadecimal digits interspersed with underscores,
-   * 
-   */
-  val HexIntegerLiteral:Regex = """0[xX][0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?[lL]?""".r
+  val HexDigits: RegularExpression = "[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"
   
+  val HexNumeral: RegularExpression = "0[xX]" ~ HexDigits
   
-  /**
-   * An octal numeral consists of an ASCII digit 0 followed by one or more of the 
-   * ASCII digits 0 through 7 interspersed with underscores
-   */
-  val OctalIntegerLiteral:Regex = """[0][_]*[0-7]([0-7_]*[0-7])?[lL]?""".r
+  val HexIntegerLiteral:RegularExpression = HexNumeral ~ IntegerTypeSuffix.?
   
+  val OctalDigits: RegularExpression = "[0-7]([0-7_]*[0-7])?"
   
-  /**
-   * A binary numeral consists of the leading ASCII characters 0b or 0B followed 
-   * by one or more of the ASCII digits 0 or 1 interspersed with underscores
-   */
-  val BinaryIntegerLiteral:Regex = """0[bB][0-1]([0-1_]*[0-1])?[lL]?""".r
+  val OctalNumeral: RegularExpression = "0[_]*" ~ OctalDigits
   
-  /**
-   * 
-   * For decimal floating-point literals, at least one digit (in either the whole number or the fraction part) 
-   * and either a decimal point, an exponent, or a float type suffix are required. All other parts are optional.
-   * 
-   * 
-   *  DecimalFloatingPointLiteral = Digits [.] Digits? ExponentPart? FloatTypeSuffix?
-   *							    | [.] Digits ExponentPart? FloatTypeSuffix?
-   *								| Digits ExponentPart
-   *								| Digits FloatTypeSuffix
-   *								| Digits ExponentPart FloatTypeSuffix
-   *        
-   *  Where 
-   *  
-   *  Digits = [0-9]([0-9_]*[0-9])?
-   *  ExponentPart = [eE][+\-]?[0-9]([0-9_]*[0-9])?
-   *  FloatTypeSuffix = [fFdD]
-   *  
-   *  The composed definition looks like the below abomination.
-   * 
-   */
-  val DecimalFloatingPointLiteral:Regex = 
-    """([0-9]([0-9_]*[0-9])?[.]([0-9]([0-9_]*[0-9])?)?([eE][+\-]?[0-9]([0-9_]*[0-9])?)?[fFdD]?|[.][0-9]([0-9_]*[0-9])?([eE][+\-]?[0-9]([0-9_]*[0-9])?)?[fFdD]?|[0-9]([0-9_]*[0-9])?([eE][+\-]?[0-9]([0-9_]*[0-9])?|[fFdD]|[eE][+\-]?[0-9]([0-9_]*[0-9])?[fFdD]))""".r
+  val OctalIntegerLiteral: RegularExpression = OctalNumeral ~ IntegerTypeSuffix.?
+  
+  val BinaryDigits: RegularExpression = "[0-1]([0-1_]*[0-1])?"
+  
+  val BinaryNumeral: RegularExpression =  "0[bB]" ~  BinaryDigits
+  
+  val BinaryIntegerLiteral: RegularExpression = BinaryNumeral ~ IntegerTypeSuffix.?
+  
+  val Sign: RegularExpression = "[+-]"
+  
+  val SignedInteger = Sign.? ~ Digits
+  
+  val ExponentIndicator: RegularExpression = "[eE]";
+  
+  val ExponentPart: RegularExpression = ExponentIndicator ~ SignedInteger
+  
+  val FloatTypeSuffix: RegularExpression = "[fFdD]"
+
+  val DecimalFloatingPointLiteral: RegularExpression = 
+    ( Digits ~ "." ~ Digits.? ~ ExponentPart.? ~ FloatTypeSuffix.?
+    | "." ~ Digits ~ ExponentPart.? ~ FloatTypeSuffix.?
+    | Digits ~ ExponentPart
+    | Digits ~ FloatTypeSuffix
+    | Digits ~ ExponentPart ~ FloatTypeSuffix
+    )
     
+  val HexSignificand: RegularExpression = 
+    ( HexNumeral
+    | HexNumeral ~ "."
+    | "0[xX]" ~ HexDigits.? ~ "." ~ HexDigits
+    )
     
-  val HexadecimalFloatingPointLiteral:Regex =
-    """[0][xX]([0-9a-fA-F_]([0-9a-fA-F_]*[0-9a-fA-F_])?)?[.]?[0-9a-fA-F_]([0-9a-fA-F_]*[0-9a-fA-F_])?[.]?[pP][+\-]?[0-9]([0-9_]*[0-9])?[fFdD]?""".r
-  
+  val BinaryExponentIndicator: RegularExpression = "[pP]"  
     
-  /**
-   * A CharLiteral definition is composed of four parts enclosed in two 's:
-   *    1. Any character rather than \n \r ' or \
-   *    2. Unicode literals
-   *    3. Octal litarals
-   *    4. Escape sequences consisting of \b \t \n \f \r \" \' \\
-   */
-  val CharacterLiteral:Regex = """'([^\n\r'\\]|\\u[0-9a-fA-F]{4}+|\\([0-7][0-7]?|[0-3][0-7][0-7])|\\[btnfr"'\\])'""".r
+  val BinaryExponent: RegularExpression = BinaryExponentIndicator ~ SignedInteger;  
+    
+  val HexadecimalFloatingPointLiteral: RegularExpression =  HexSignificand ~ BinaryExponent ~ FloatTypeSuffix.?  
+    
+  val EscapeSequence: RegularExpression = """\\[btnfr"'\\]"""
   
-  /**
-   * 
-   * A StringLiteral is similar to CharLiteral with two differences:
-   *    1. There is a * operator allowing for repetition of characters inside "s.
-   *    2. " should be escaped
-   * 
-   */
-  val StringLiteral:Regex = """["]([^\n\r"\\]|\\u[0-9a-fA-F]{4}+|\\([0-7][0-7]?|[0-3][0-7][0-7])|\\[btnfr"'\\])*["]""".r;
+  val UnicodeLiteral: RegularExpression = """\\u[0-9a-fA-F]{4}+"""
   
-  val BooleanLiteral:Regex = """(true|false)""".r
+  val OctalEscape: RegularExpression = """\\([0-7][0-7]?|[0-3][0-7][0-7])"""
   
-  val NullLiteral:Regex = "null".r
+  val SingleCharacter: RegularExpression = """[^\n\r'\\]""" | UnicodeLiteral | OctalEscape | EscapeSequence
   
-  val Comment:Regex = """(/\*(.|[\r\n])*?\*/|//[^\r\n]*)""".r
+  val CharacterLiteral: RegularExpression = "'" ~ SingleCharacter ~ "'"
   
-  val WhiteSpace:Regex = """\s""".r
+  val StringCharacter: RegularExpression = """[^\n\r"\\]""" | UnicodeLiteral | OctalEscape | EscapeSequence
   
-  val Layout:Regex = """((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r
+  val StringLiteral: RegularExpression = "\"" ~ StringCharacter.* ~ "\""
   
-  val Keyword:Regex = """abstract|continue|for|new|switch|assert|default|if|package|synchronized|boolean|do|goto|private|this|break|double|implements|protected|throw|byte|else|import|public|throws|case|enum|instanceof|return|transient|catch|extends|int|short|try|char|final|interface|static|void|class|finally|long|strictfp|volatile|const|float|native|super|while|true|false|null""".r
+  val BooleanLiteral:RegularExpression = "true" | "false"
+  
+  val NullLiteral:RegularExpression = "null"
+  
+  val Comment:RegularExpression = """(/\*(.|[\r\n])*?\*/|//[^\r\n]*)"""
+  
+  val WhiteSpace:RegularExpression = """\s"""
+  
+  val Layout:RegularExpression = (Comment | WhiteSpace)*
+  
+  val Keyword:RegularExpression = javaKeywords mkString "|"
   
   def javaKeywords:List[String] = 
     List("abstract", "continue", "for", "new", "switch"
