@@ -10,6 +10,7 @@ import util.JavaTokens2._
 class JavaTokensTest extends FunSuite {
 
   test("Identifier") {
+    println(Identifier)
     assert(Identifier.matcher.matches("identifier"))
     assert(Identifier.matcher.matches("_"))
     assert(Identifier.matcher.matches("_Xyx"))
