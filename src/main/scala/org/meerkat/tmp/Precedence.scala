@@ -14,19 +14,42 @@ object Precedence {
   implicit def terminalParser(s: String): Parser
     = new Parser { def apply(i: Int) = success(i) }
   
-  def left (p: Parser): Parser = ???
-  def right(p: Parser): Parser = ???
-  
   // Precedence level
   type Prec = Int
   
   trait OperatorParser extends (Prec => Int => Result[Int]) {
-    def ~ (p: OperatorParser): OperatorParser = ???
-    def | (p: OperatorParser): OperatorParser = ???
-    def > (p: OperatorParser): OperatorParser = ???
+    
+    private var level: Int = 0
+    
+    private def setLevel(level: => Int): Unit = this.level = level 
+    
+    def ~ (p: OperatorParser): OperatorParser = { 
+      ??? 
+    }
+    
+    def | (p: OperatorParser): OperatorParser = { 
+      ??? 
+    }
+    
+    def > (p: OperatorParser): OperatorParser = {
+      val q = this | p
+      
+      val r = this preFilter { pr => q.level + 1 >= pr } // different predicates
+      
+      this setLevel (q.level + 1)
+      p setLevel q.level
+      q
+    }
+    
+    def preFilter(pred: Prec => Boolean): OperatorParser = ???
+    def preFilter(pred: (Prec, Int) => Boolean): OperatorParser = ???
+    
   }
   
-  def left (p: OperatorParser): OperatorParser = ???
+  def left     (p: OperatorParser): OperatorParser = ???
+  def right    (p: OperatorParser): OperatorParser = ???
+  def assoc    (p: OperatorParser): OperatorParser = ???
+  def non_assoc(p: OperatorParser): OperatorParser = ???
   
   implicit def operator(p: Parser): OperatorParser 
     = new OperatorParser { def apply(pr: Prec) = p }
