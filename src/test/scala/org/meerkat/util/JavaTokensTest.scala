@@ -10,7 +10,6 @@ import util.JavaTokens2._
 class JavaTokensTest extends FunSuite {
 
   test("Identifier") {
-    println(Identifier)
     assert(Identifier.matcher.matches("identifier"))
     assert(Identifier.matcher.matches("_"))
     assert(Identifier.matcher.matches("_Xyx"))
@@ -21,15 +20,15 @@ class JavaTokensTest extends FunSuite {
   
   test("Decimial Integer Number") {
     assert(DecimalIntegerLiteral.matcher.matches("0"))
-//    assert(DecimalIntegerLiteral.matches("1"))
-//    assert(DecimalIntegerLiteral.matches("10"))
-//    assert(DecimalIntegerLiteral.matches("234000"))
-//    assert(DecimalIntegerLiteral.matches("234000L"))
-//    assert(DecimalIntegerLiteral.matches("0"))
-//    assert(DecimalIntegerLiteral.matches("23_4___00_0l"))
-//    assert(DecimalIntegerLiteral.matches("23_4___00_0L"))
-//    assert(!DecimalIntegerLiteral.matches("_123"))
-//    assert(!DecimalIntegerLiteral.matches("0123"))
+    assert(DecimalIntegerLiteral.matcher.matches("1"))
+    assert(DecimalIntegerLiteral.matcher.matches("10"))
+    assert(DecimalIntegerLiteral.matcher.matches("234000"))
+    assert(DecimalIntegerLiteral.matcher.matches("234000L"))
+    assert(DecimalIntegerLiteral.matcher.matches("0"))
+    assert(DecimalIntegerLiteral.matcher.matches("23_4___00_0l"))
+    assert(DecimalIntegerLiteral.matcher.matches("23_4___00_0L"))
+    assert(!DecimalIntegerLiteral.matcher.matches("_123"))
+    assert(!DecimalIntegerLiteral.matcher.matches("0123"))
   }
   
 }
