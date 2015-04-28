@@ -31,6 +31,8 @@ trait RegularExpression {
   def matcher: Matcher = new JavaRegexMatcher(toString)
   
   def escape(c: scala.Char): String = c match {
+    case '*' => "\\*"
+    case '+' => "\\+"
     case '$' => "\\$"
     case '^' => "\\^"
     case '&' => "\\&"
