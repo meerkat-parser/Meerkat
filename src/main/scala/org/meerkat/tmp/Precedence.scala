@@ -44,21 +44,46 @@ object Precedence {
     def preFilter(pred: Prec => Boolean): OperatorParser = ???
     def preFilter(pred: (Prec, Int) => Boolean): OperatorParser = ???
     
-    def O(): Parser = ???
-    
   }
+  
+  case class ~[T, F](_1: T, _2: F)
+  
+  def tryToUse(): Unit = { new ~(new ~(1, 2), 3) match { case x ~ y ~ z => x + y + z } }
+  
+  type MyMap = Int Map Int
+  
+  trait DDParser[T] extends (Int => Result[T]) {
+    def ~ [F]     (p: DDParser[F]): DDParser[T ~ F] = ???
+    def ~ (p: DDParserUnit): DDParser[T] = ???
+    def | [F >: T](p: DDParser[F]): DDParser[F] = ???
+    
+    def ^^ [F](f: T => F): DDParser[F] = ???
+  }
+  
+  trait DDParserUnit extends DDParser[Unit]
+  
+  val p1: DDParser[Int] = ???
+  val p2: DDParser[Int] = ???
+  val p3: DDParser[Int] = ???
+  val p:  DDParser[Int ~ Int ~ Int] = (p1 ~ p2 ~ p3)
+  val q = p ^^ { case x ~ _ ~ z => x + z }
   
   def left     (p: OperatorParser): OperatorParser = ???
   def right    (p: OperatorParser): OperatorParser = ???
   def assoc    (p: OperatorParser): OperatorParser = ???
   def non_assoc(p: OperatorParser): OperatorParser = ???
   
+  def m (p: OperatorParser): OperatorParser = ???
+  
   implicit def operator(p: Parser): OperatorParser 
     = new OperatorParser { def apply(pr: Prec) = p }
+  
+  type NonterminalParser = Nothing
+  type TerminalParser = Nothing
     
   val C: Parser = "c" // terminalOperatorParser
   val D: OperatorParser = C 
-  lazy val A: OperatorParser = ( "a" ~ "b" ~ A | D(0) ~ C > left(D | C) )
+  lazy val A: OperatorParser = m { "a" ~ "b" ~ A | D(0) ~ C > left(D | C) }
                                
   
 }
