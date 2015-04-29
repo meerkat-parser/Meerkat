@@ -54,7 +54,7 @@ class DefaultSPPFLookup extends SPPFLookup {
     val rightExtent = rightChild.rightExtent
     val node = findOrElseCreateNonterminalNode(head, leftExtent, rightExtent)
     
-    val packedNode = PackedNode(slot, rightChild.leftExtent, node)
+    val packedNode = PackedNode(slot, node)
     
     val ambiguousBefore = node.isAmbiguous
     if (node.addPackedNode(packedNode, leftChild, rightChild)) countPackedNodes += 1
@@ -76,7 +76,7 @@ class DefaultSPPFLookup extends SPPFLookup {
     val node =  findOrElseCreateIntermediateNode(slot, leftExtent, rightExtent)
     
     
-    val packedNode = PackedNode(slot, rightChild.leftExtent, node)
+    val packedNode = PackedNode(slot, node)
     
     val ambiguousBefore = node.isAmbiguous
     if (node.addPackedNode(packedNode, leftChild, rightChild)) countPackedNodes += 1
@@ -107,21 +107,3 @@ class DefaultSPPFLookup extends SPPFLookup {
   }
   
 }
-
-class OriginalSPPFLookup extends DefaultSPPFLookup {
-  
-  override def getStartNode(name: Any, leftExtent: Int, rightExtent: Int): Option[NonPackedNode] =
-    nonterminalNodes.get(OriginalNonterminalNode(name, leftExtent, rightExtent))
-    
-  override def findOrElseCreateNonterminalNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
-    val key = OriginalNonterminalNode(slot, leftExtent, rightExtent)
-    return nonterminalNodes.getOrElseUpdate(key, {countNonterminalNodes += 1; key.init})
-  }
-  
-  override def findOrElseCreateIntermediateNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
-    val key = OriginalIntermediateNode(slot, leftExtent, rightExtent)
-    return intermediateNodes.getOrElseUpdate(key, {countIntermediateNodes +=1; key.init});
-  }
-  
-}
-

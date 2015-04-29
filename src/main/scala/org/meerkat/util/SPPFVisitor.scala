@@ -41,7 +41,7 @@ object SPPFVisitor {
 		  case n@TerminalNode(char, leftExtent, rightExtent) =>
 		    for(child <- n.children) removePackedNodes(child, duplicateSet)
 		    
-		  case n@PackedNode(slot, pivot, parent) =>
+		  case n@PackedNode(slot, parent) =>
 		    // for(child <- n.children) removePackedNodes(child, duplicateSet)
 	  }
 	}
@@ -76,7 +76,7 @@ object SPPFVisitor {
 	          	case _ =>
 	        }
 	        
-       	case n@PackedNode(slot, leftExtent, rightExtent) =>
+       	case n@PackedNode(slot, parent) =>
 	        n.children(0) match {
 	        	case firstIntermediate@IntermediateNode(slot, leftExtent, rightExtent) =>
 			      val childrenOfFirst = firstIntermediate.children

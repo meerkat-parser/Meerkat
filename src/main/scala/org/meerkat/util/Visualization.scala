@@ -17,9 +17,6 @@ import sppf.NonterminalNode
 import sppf.PackedNode
 import sppf.SPPFNode
 import sppf.TerminalNode
-import util.SPPFVisitor._
-import sppf.OriginalNonterminalNode
-import sppf.OriginalIntermediateNode
 
 object Visualization {
 	
@@ -64,26 +61,16 @@ object Visualization {
 		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="($slot, $leftExtent, $rightExtent)", fontsize=10];\n"""
 		    for(t <- n.children) toDot(t, sb, duplicateSet)
 		    for(t <- n.children) addEdges(n, t, sb)
-		    
-    	  case n@OriginalNonterminalNode(slot, leftExtent, rightExtent) => 
-		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="($slot, $leftExtent, $rightExtent)", fontsize=10];\n"""
-		    for(t <- n.children) toDot(t, sb, duplicateSet)
-		    for(t <- n.children) addEdges(n, t, sb)
-		    
+		    		    
 		  case n@IntermediateNode(slot, leftExtent, rightExtent) => 
 		    sb ++= s""""${escape(n.toString)}"[shape=box, height=0.2, width=0.4, color=black, fontcolor=black, label="(${escape(slot.toString)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
 		    for(t <- n.children) toDot(t, sb, duplicateSet)
 		    for(t <- n.children) addEdges(n, t, sb)
-		    
-		  case n@OriginalIntermediateNode(slot, leftExtent, rightExtent) => 
-		    sb ++= s""""${escape(n.toString)}"[shape=box, height=0.2, width=0.4, color=black, fontcolor=black, label="(${escape(slot.toString)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
-		    for(t <- n.children) toDot(t, sb, duplicateSet)
-		    for(t <- n.children) addEdges(n, t, sb)
-		    
+		    		    
 		  case n@TerminalNode(char, leftExtent, rightExtent) =>
 		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(char)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
 		    
-		  case n@PackedNode(slot, pivot, parent) =>
+		  case n@PackedNode(slot, parent) =>
 //		    sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(slot)}, $pivot)", fontsize=10];\n"""
 		    sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="", fontsize=10];\n"""
 		    for(t <- n.children) {

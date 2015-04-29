@@ -43,7 +43,7 @@ object Ambiguity {
 		       
 			 case n@TerminalNode(char, leftExtent, rightExtent) =>
 			    
-			 case n@PackedNode(slot, pivot, parent) =>
+			 case n@PackedNode(slot, parent) =>
 			   if(n.leftChild != null) countAmbiguities(n.leftChild, ambiguousNodes, duplicateSet)
 			   countAmbiguities(n.rightChild, ambiguousNodes, duplicateSet)
 	      }
