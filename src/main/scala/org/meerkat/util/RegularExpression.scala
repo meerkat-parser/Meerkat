@@ -17,14 +17,14 @@ trait RegularExpression {
   override def toString: String = this match {
       case Char(c)           => escape(c)
       case Range(start, end) => "[" + start + "-" + end + "]"
-      case StringPattern(s)  => "(" + s + ")"
-      case Or(l, r)          => "(" + l + "|" + r + ")"
+      case StringPattern(s)  => "(?:" + s + ")"
+      case Or(l, r)          => "(?:" + l + "|" + r + ")"
       case Seq(l, r)         => l.toString + r.toString
-      case Opt(Seq(l, r))   => "(" + l.toString + r.toString + ")?"
+      case Opt(Seq(l, r))   => "(?:" + l.toString + r.toString + ")?"
       case Opt(r)            => r.toString + "?"
-      case Star(Seq(l, r))   => "(" + l.toString + r.toString + ")*"
+      case Star(Seq(l, r))   => "(?:" + l.toString + r.toString + ")*"
       case Star(r)           => r.toString + "*"
-      case Plus(Seq(l, r))   => "(" + l.toString + r.toString + ")+"
+      case Plus(Seq(l, r))   => "(?:" + l.toString + r.toString + ")+"
       case Plus(r)           => r.toString() + "+"
    }
    
