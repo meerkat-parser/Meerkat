@@ -18,7 +18,7 @@ trait SPPFNode {
 
 trait NonPackedNode extends SPPFNode {
   
-    var children: Buffer[SPPFNode] = null
+  var children: Buffer[SPPFNode] = null
   
 	val name: Any
 	val leftExtent, rightExtent: Int
@@ -58,16 +58,8 @@ trait OriginalNonPackedNode extends NonPackedNode {
     }   
 }
 
-case class OriginalNonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends OriginalNonPackedNode {
-   def init: OriginalNonterminalNode = {children = new ArrayList[SPPFNode](); packedNodeSet = new HashSet[PackedNode](); this}
-}
-
 case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
   def init: NonterminalNode = {children = new ArrayList[SPPFNode](); this}
-}
-
-case class OriginalIntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends OriginalNonPackedNode {
-   def init: OriginalIntermediateNode = {children = new ArrayList[SPPFNode](); packedNodeSet = new HashSet[PackedNode](); this}
 }
 
 case class IntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
@@ -83,10 +75,14 @@ case class TerminalNode(s: Any, leftExtent: Int, rightExtent: Int) extends NonPa
 	override val name = s
 }
 
-case class PackedNode(name: Any, pivot:Int, parent: NonPackedNode) extends SPPFNode {
+case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
 
     var leftChild: NonPackedNode = null
     var rightChild: NonPackedNode = null
+    
+    def pivot = leftChild.rightExtent
+    
+    var values: List[SPPFNode] = null
     
     def children: Buffer[SPPFNode] = {
       val l: Buffer[SPPFNode] = new ArrayList[SPPFNode]()
