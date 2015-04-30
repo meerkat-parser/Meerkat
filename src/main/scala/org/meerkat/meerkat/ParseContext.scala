@@ -5,9 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
-import sppf.SPPFLookup
-import util.Input
+import org.meerkat.sppf.SPPFLookup
+import org.meerkat.util.Input
 
 class ParseContext(val sppf: SPPFLookup, val input: Input)

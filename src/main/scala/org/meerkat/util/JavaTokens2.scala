@@ -5,13 +5,11 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package util
+package org.meerkat.util
 
 import scala.util.matching.Regex
 import java.util.regex.Pattern
-import org.meerkat.util.RegularExpression
 import org.meerkat.util.RegularExpression._
-import org.meerkat.util.Char
 import org.meerkat.util.Char._
 
 object JavaTokens2 {

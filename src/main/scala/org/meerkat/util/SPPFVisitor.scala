@@ -5,9 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package util
+package org.meerkat.util
 
-import sppf._
+import org.meerkat.sppf._
 import scala.collection.mutable._
 
 object SPPFVisitor {

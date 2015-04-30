@@ -5,10 +5,12 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
+package org.meerkat
+
 import sppf._
 import scala.util.matching.Regex
 import scala.util.control.Breaks._
-import meerkat.Result._
+import org.meerkat.meerkat.Result._
 import util.Input
 
 package object meerkat {
@@ -32,7 +34,7 @@ package object meerkat {
                                    else failure, word)
 
   implicit def terminal(c: Char): TerminalParser = {
-    terminal((input, sppf, i) => if(i < input.length && input.charAt(i) == c)
+    terminal((input, sppf, i) => if(i < input.length && input.charAt(i).c == c)
                                    success(sppf.getTerminalNode(c, i))
                                  else failure, c.toString)
   }
@@ -54,7 +56,7 @@ package object meerkat {
                                        var found: Boolean = false
                                        breakable {
                                          for(range <- ranges)
-                                           if(c >= range._1 && c <= range._2) {
+                                           if(c.c >= range._1 && c.c <= range._2) {
                                              found = true
                                              break
                                            }

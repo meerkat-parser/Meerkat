@@ -5,9 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
-import sppf.SPPFNode
+import org.meerkat.sppf.SPPFNode
 
 trait ParseResult
   

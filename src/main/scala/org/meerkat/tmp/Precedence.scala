@@ -2,8 +2,8 @@ package org.meerkat.tmp
 
 object Precedence {
   
-  import meerkat.Result
-  import meerkat.Result._
+  import org.meerkat.meerkat.Result
+  import org.meerkat.meerkat.Result._
 
   // Recognizer
   trait Parser extends (Int => Result[Int]) {

@@ -5,10 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package util
+package org.meerkat.util
 
 import scala.util.matching.Regex
-import java.util.regex.Matcher
 import scala.collection.mutable._
 import scala.collection.JavaConversions._
 
@@ -18,7 +17,7 @@ class Input(val s: String) {
 
   val lineColumns: Array[(Int, Int)] = Array.ofDim[(Int, Int)](length + 1)
   
-  val regexMap: Map[Regex, Matcher] = new java.util.HashMap[Regex, Matcher]()
+  val regexMap: Map[Regex, java.util.regex.Matcher] = new java.util.HashMap[Regex, java.util.regex.Matcher]()
   
   calcLineColumns
   
@@ -57,14 +56,14 @@ class Input(val s: String) {
   
   def matchRegex(r: Regex, start: Int, end: Int): Boolean = {
     if(start < 0) return false
-    val matcher = regexMap.getOrElse(r, {val matcher: Matcher = r.pattern.matcher(s); matcher})
+    val matcher = regexMap.getOrElse(r, {val matcher: java.util.regex.Matcher = r.pattern.matcher(s); matcher})
     matcher.region(start, end)
     return matcher.matches()
   }
   
   def matchRegex(r: Regex, start: Int): Int = {
     if(start < 0) return -1
-    val matcher = regexMap.getOrElse(r, {val matcher: Matcher = r.pattern.matcher(s); matcher})
+    val matcher = regexMap.getOrElse(r, {val matcher: java.util.regex.Matcher = r.pattern.matcher(s); matcher})
     matcher.region(start, length)
     if (matcher.lookingAt()) matcher.end else -1
   }

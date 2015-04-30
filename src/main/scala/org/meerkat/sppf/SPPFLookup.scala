@@ -5,7 +5,7 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package sppf
+package org.meerkat.sppf
 
 import scala.collection.mutable._
 import java.util.HashMap

@@ -5,6 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
+
+package org.meerkat
+
 import java.lang.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 

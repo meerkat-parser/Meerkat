@@ -5,14 +5,14 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package java7
+package org.meerkat.java7
 
-import meerkat._
-import util.JavaTokens._
+import org.meerkat.meerkat._
+import org.meerkat.util.JavaTokens._
 
 object Java7_Regex extends MeerkatParsers {
   
-    val Identifier: MeerkatParser = "Identifier" ::= util.JavaTokens.Identifier.!<<("""[a-zA-Z_$]""".r).\(Keyword)   
+    val Identifier: MeerkatParser = "Identifier" ::= org.meerkat.util.JavaTokens.Identifier.!<<("""[a-zA-Z_$]""".r).\(Keyword)   
     
     val Type: MeerkatParser = 
     "Type" ::= PrimitiveType | ReferenceType
@@ -530,7 +530,7 @@ object Java7_Regex extends MeerkatParsers {
     val ExplicitGenericInvocationSuffix: MeerkatParser  = 
     "ExplicitGenericInvocationSuffix" ::= "super" ~ SuperSuffix | Identifier ~ Arguments
       
-  import util.Configuration._
+  import org.meerkat.util.Configuration._
   
   def main(args: Array[String]) {
       val input = scala.io.Source.fromFile("test-files/test.java").mkString

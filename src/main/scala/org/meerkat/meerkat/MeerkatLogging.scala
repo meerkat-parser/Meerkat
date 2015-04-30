@@ -5,11 +5,11 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
-import sppf.NonPackedNode
-import util.LoggerWrapper
-import util.JavaUtilLoggerWrapper
+import org.meerkat.sppf.NonPackedNode
+import org.meerkat.util.LoggerWrapper
+import org.meerkat.util.JavaUtilLoggerWrapper
 
 object MeerkatLogging {
   

@@ -1,7 +1,5 @@
 package org.meerkat.util
 
-import util.Input
-
 trait RegularExpression {
 
   def ~(r: RegularExpression): RegularExpression = Seq(this, r)

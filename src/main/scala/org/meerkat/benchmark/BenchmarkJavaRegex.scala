@@ -5,10 +5,10 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package benchmark
+package org.meerkat.benchmark
 
-import meerkat._
-import java7.Java7_Regex._
+import org.meerkat.meerkat._
+import org.meerkat.java7.Java7_Regex._
 import java.lang.management._
 import java.io.File
 import org.apache.commons.io.FileUtils
@@ -24,7 +24,7 @@ object BenchmarkJavaRegex {
   
     val files: ListBuffer[File] = getFileNames(inputDir)
 
-    import util.Configuration._
+    import org.meerkat.util.Configuration._
       
 	def main(args: Array[String]) {
       

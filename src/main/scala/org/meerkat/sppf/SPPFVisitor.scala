@@ -1,16 +1,5 @@
 package org.meerkat.sppf
 
-import sppf.NonterminalNode
-import sppf.PackedNode
-import sppf.TerminalNode
-import sppf.IntermediateNode
-import sppf.SPPFNode
-import sppf.NonterminalNode
-import sppf.TerminalNode
-import sppf.IntermediateNode
-import sppf.PackedNode
-import sppf.NonterminalNode
-
 trait SPPFVisitor[T] {
   
   def visit(n: NonterminalNode): T

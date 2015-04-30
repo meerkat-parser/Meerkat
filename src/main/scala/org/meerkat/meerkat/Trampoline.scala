@@ -5,7 +5,7 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
 import java.util.Deque
 import java.util.ArrayDeque

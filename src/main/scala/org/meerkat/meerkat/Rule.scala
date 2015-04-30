@@ -5,12 +5,12 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
-import sppf.NonPackedNode
+import org.meerkat.sppf.NonPackedNode
 import Result.memo
-import util.Input
-import sppf.SPPFLookup
+import org.meerkat.util.Input
+import org.meerkat.sppf.SPPFLookup
 
 class Head(head: String) {
   def ::= (parser: => MeerkatParser): Rule = new Rule(head, parser.rule(head))

@@ -5,18 +5,18 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package util
+package org.meerkat.util
 
 import scala.collection.mutable._
 import java.io.File
 import java.io.BufferedWriter
 import java.io.FileWriter
 import scala.sys.process._
-import sppf.IntermediateNode
-import sppf.NonterminalNode
-import sppf.PackedNode
-import sppf.SPPFNode
-import sppf.TerminalNode
+import org.meerkat.sppf.IntermediateNode
+import org.meerkat.sppf.NonterminalNode
+import org.meerkat.sppf.PackedNode
+import org.meerkat.sppf.SPPFNode
+import org.meerkat.sppf.TerminalNode
 
 object Visualization {
 	

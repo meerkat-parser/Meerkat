@@ -5,14 +5,14 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package util
+package org.meerkat.util
 
-import sppf.SPPFNode
+import org.meerkat.sppf.SPPFNode
 import scala.collection.mutable._
-import sppf.NonterminalNode
-import sppf.IntermediateNode
-import sppf.TerminalNode
-import sppf.PackedNode
+import org.meerkat.sppf.NonterminalNode
+import org.meerkat.sppf.IntermediateNode
+import org.meerkat.sppf.TerminalNode
+import org.meerkat.sppf.PackedNode
 
 object Ambiguity {
 

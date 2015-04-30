@@ -5,15 +5,15 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package meerkat
+package org.meerkat.meerkat
 
 import scala.collection.mutable._
-import sppf._
-import util._
+import org.meerkat.sppf._
+import org.meerkat.util._
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import scala.util.matching.Regex
-import util.JavaTokens._
+import org.meerkat.util.JavaTokens._
 import scala.collection.JavaConversions._
 import Result._
 import Rule._
@@ -225,12 +225,12 @@ trait MeerkatParser extends Parser {
         val q = p.postFilter((input, t) => !args.contains(input.substring(t.leftExtent, t.rightExtent))); q.nameAs(p.name.value); q.resetWith(p.reset()); q }
     
   def \(arg: String): MeerkatParser 
-    = diff.getOrElseUpdate(Seq(arg), 
+    = diff.getOrElseUpdate(scala.collection.Seq(arg), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => arg != input.substring(t.leftExtent, t.rightExtent)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
                                             
   def \(arg: Char): MeerkatParser 
-    = diff.getOrElseUpdate(Seq(arg.toString), 
+    = diff.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => !(t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
           
@@ -255,12 +255,12 @@ trait MeerkatParser extends Parser {
           val q = p.postFilter((input, t) => !args.exists(arg => input.startsWith(arg, t.rightExtent))); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
   def !>>(arg: String): MeerkatParser
-    = not_follow.getOrElseUpdate(Seq(arg), 
+    = not_follow.getOrElseUpdate(scala.collection.Seq(arg), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => !input.startsWith(arg, t.rightExtent)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
   def !>>(arg: Char): MeerkatParser
-    = not_follow.getOrElseUpdate(Seq(arg.toString), 
+    = not_follow.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => input.charAt(t.rightExtent) != arg); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
                 
@@ -288,12 +288,12 @@ trait MeerkatParser extends Parser {
           val q = p.preFilter((input, i) => { val sub = input.substring(0, i); args.filter(arg => sub.endsWith(arg)).isEmpty }); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
   def !<<(arg: String): MeerkatParser
-    = not_procede.getOrElseUpdate(Seq(arg), 
+    = not_procede.getOrElseUpdate(scala.collection.Seq(arg), 
         { val p = this.groupSeqOrAlt
           val q = p.preFilter((input, i) => !input.substring(0, i).endsWith(arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
   def !<<(arg: Char): MeerkatParser
-    = not_procede.getOrElseUpdate(Seq(arg.toString), 
+    = not_procede.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.preFilter((input, i) => !(i > 0 && input.charAt(i - 1) == arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
@@ -324,7 +324,7 @@ class StartChar(c1: Char) {
     = terminal((input, sppf, i) => if(i >= input.length) failure
                                    else {
                                      val c = input.charAt(i)
-                                     if(c >= c1 && c <= c2) success(sppf.getTerminalNode(c, i)) 
+                                     if(c.c >= c1.c && c.c <= c2.c) success(sppf.getTerminalNode(c, i)) 
                                      else failure 
                                    }, "[" + c1 + "-" + c2 + "]")
     
@@ -332,7 +332,7 @@ class StartChar(c1: Char) {
     = terminal((input, sppf, i) => if(i >= input.length) failure
                                    else {
                                      val c = input.charAt(i)
-                                     if(c < c1 || c > c2) success(sppf.getTerminalNode(c, i)) 
+                                     if(c.c < c1.c || c.c > c2.c) success(sppf.getTerminalNode(c, i)) 
                                      else failure
                                    }, "[" + c1 + "-" + c2 + "]")      
 }
@@ -448,7 +448,7 @@ import Configuration._
 
 trait MeerkatParsers {
     
-  val Layout: MeerkatParser = "L" ::= util.JavaTokens.Layout
+  val Layout: MeerkatParser = "L" ::= org.meerkat.util.JavaTokens.Layout
   
   implicit val L = new Layout {
     def parser: MeerkatParser = Layout

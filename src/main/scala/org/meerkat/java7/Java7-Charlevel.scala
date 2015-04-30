@@ -5,9 +5,9 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package java7
+package org.meerkat.java7
 
-import meerkat._
+import org.meerkat.meerkat._
 import scala.util.matching.Regex
 import java.util.HashSet
 import scala.collection.JavaConversions._
@@ -757,7 +757,7 @@ object Java7_Charlevel extends MeerkatParsers {
     "L" ::= ((Comment | WhiteSpace).gr.**).!>>("\t", "\n", "\r", "\f", " ", "/*", "//")
     
     
-  import util.Configuration._
+  import org.meerkat.util.Configuration._
   
   def main(args: Array[String]) {
      val input = scala.io.Source.fromFile("test-files/test.java").mkString              
