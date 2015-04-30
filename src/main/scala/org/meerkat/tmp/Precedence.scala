@@ -52,9 +52,12 @@ object Precedence {
   
   type MyMap = Int Map Int
   
+  import Negation._
+  
   trait DDParser[T] extends (Int => Result[T]) {
-    def ~ [F]     (p: DDParser[F]): DDParser[T ~ F] = ???
-    def ~ (p: DDParserUnit): DDParser[T] = ???
+    def ~ [F : |!|[Unit]#f](p: DDParser[F]): DDParser[T ~ F] = ???
+    def ~ [F <: Unit](p: DDParser[F]): DDParser[T] = ???
+    
     def | [F >: T](p: DDParser[F]): DDParser[F] = ???
     
     def ^^ [F](f: T => F): DDParser[F] = ???
@@ -67,6 +70,10 @@ object Precedence {
   val p3: DDParser[Int] = ???
   val p:  DDParser[Int ~ Int ~ Int] = (p1 ~ p2 ~ p3)
   val q = p ^^ { case x ~ _ ~ z => x + z }
+  
+  val p4: DDParser[Unit] = ???
+  val r = (p1 ~ p4)
+  
   
   def left     (p: OperatorParser): OperatorParser = ???
   def right    (p: OperatorParser): OperatorParser = ???
