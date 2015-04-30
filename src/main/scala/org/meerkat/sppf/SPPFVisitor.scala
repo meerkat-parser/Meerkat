@@ -32,7 +32,7 @@ class UnambiguousSPPFVisitor extends SPPFVisitor[List[SPPFNode]] {
     if (n.isAmbiguous) 
       throw new RuntimeException("Ambiguous")
     else 
-      List(n)
+      ??? //      (n.children(0) as PackedNode).values
   
   def visit(n: PackedNode): List[SPPFNode] = {
     ???

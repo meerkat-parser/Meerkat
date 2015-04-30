@@ -93,17 +93,17 @@ class DefaultSPPFLookup extends SPPFLookup {
   
   def findOrElseCreateTerminalNode(s: Any, leftExtent: Int, rightExtent: Int): TerminalNode = {
     val key = TerminalNode(s, leftExtent, rightExtent)
-    return terminalNodes.getOrElseUpdate(key, {countTerminalNodes += 1; key.init})
+    return terminalNodes.getOrElseUpdate(key, {countTerminalNodes += 1; key})
   }
   
   def findOrElseCreateNonterminalNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
     val key = NonterminalNode(slot, leftExtent, rightExtent)
-    return nonterminalNodes.getOrElseUpdate(key, {countNonterminalNodes += 1; key.init})
+    return nonterminalNodes.getOrElseUpdate(key, {countNonterminalNodes += 1; key})
   }
   
   def findOrElseCreateIntermediateNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
     val key = IntermediateNode(slot, leftExtent, rightExtent)
-    return intermediateNodes.getOrElseUpdate(key, {countIntermediateNodes +=1; key.init});
+    return intermediateNodes.getOrElseUpdate(key, {countIntermediateNodes +=1; key});
   }
   
 }
