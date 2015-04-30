@@ -3,8 +3,7 @@ package org.meerkat.util
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
-import util.Input
-import util.JavaTokens2._
+import JavaTokens2._
 
 @RunWith(classOf[JUnitRunner])
 class JavaTokensTest extends FunSuite {
