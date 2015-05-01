@@ -4,7 +4,10 @@ import org.meerkat.sppf.NonPackedNode
 
 trait Parsers {
   
-  type Result[+T]
+  trait Result[+T] {
+    def map[F](f: T => F): Result[F]
+    def flatMap[F](f: T => Result[F]): Result[F]
+  }
   
   val l = List()
   
@@ -16,45 +19,45 @@ trait Parsers {
   trait Parser extends AbstractParser[NonPackedNode]
   trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)]
   
-  def seq[A, B, That](f1: Int => Result[A], f2: Int => Result[B])
-        (implicit composer: Composable[A, B, That]): That
-    = ???
+  def seq[A, B, C, That <: AbstractParser[C]](f1: Int => Result[A], f2: Int => Result[B])
+                                             (implicit builder: Composable[A, B, C, That]): Sequence[C]
+    = builder sequence { (i: Int) => f1(i).flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
     
   case class ~[A, B]()
   
-  trait Composable[A, B, R] {
-    type T
-    def build(f: Int => Result[T]): R
+  trait Composable[A, B, C, R] {
+    def index(a: A): Int
+    def values(a: A, b: B): C
+    
+    def parser(f: Int => Result[C]): R
+    def sequence(f: Int => Result[C]): Sequence[C] = new Sequence[C] { def apply(i: Int) = f(i) }
+    def alternation(f: Int => Result[C]): Alternation[C] = new Alternation[C] { def apply(i: Int) = f(i) }
   }
   
   object Composable {
-    implicit object rec extends Composable[Int, Int, Recognizer] {
-      type T = Int
-      def build(f: Int => Result[Int]): Recognizer = ???
+    implicit object Rec extends Composable[Int, Int, Int, Recognizer] {
+      def index(a: Int) = a
+      def values(a: Int, b: Int) = b
+      def parser(f: Int => Result[Int]) = new Recognizer { def apply(i: Int) = f(i)}
     }
   
-    implicit object par extends Composable[NonPackedNode, NonPackedNode, Parser] {
-      type T = NonPackedNode
-      def build(f: Int => Result[NonPackedNode]): Parser = ???
+    implicit object Par extends Composable[NonPackedNode, NonPackedNode, NonPackedNode, Parser] {
+      def index(a: NonPackedNode) = a.rightExtent
+      def values(a: NonPackedNode, b: NonPackedNode): NonPackedNode = ??? // intermediate nodes
+      def parser(f: Int => Result[NonPackedNode]): Parser = ???
     }
   
-    implicit def ddpar[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B), DDParser[_]] {
-      type T = (NonPackedNode, ~[A,B])
-      def build(f: Int => Result[(NonPackedNode, ~[A,B])]): DDParser[(NonPackedNode, ~[A, B])] = ???
-    }  
+    implicit def ddpar[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B), (NonPackedNode, ~[A, B]), DDParser[_]] {
+      def index(a: (NonPackedNode, A)) = a._1.rightExtent
+      def values(a: (NonPackedNode, A), b: (NonPackedNode, B)): (NonPackedNode, ~[A,B]) = ???
+      def parser(f: Int => Result[(NonPackedNode, ~[A,B])]): DDParser[(NonPackedNode, ~[A, B])] = ???
+    }
   }
   
   
         
-  trait Sequence[+T] extends AbstractParser[T]
-  
-  implicit def sequence[A](f: Int => Result[A]): Sequence[A]
-    = new Sequence[A] { def apply(i: Int) = f(i) }
-  
+  trait Sequence[+T] extends AbstractParser[T]    
   trait Alternation[+T] extends AbstractParser[T]
-  
-  implicit def alternation[A](f: Int => Result[A]): Alternation[A] 
-    = new Alternation[A] { def apply(i: Int) = f(i) }
   
   trait Nonterminal extends Parser
   trait Terminal extends Parser
