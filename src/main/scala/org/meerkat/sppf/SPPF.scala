@@ -41,14 +41,12 @@ trait NonPackedNode extends SPPFNode {
 		
 	def attachChildren(packedNode: PackedNode, leftChild: Option[NonPackedNode], rightChild: NonPackedNode) = {
 	  if (leftChild.isDefined) packedNode.leftChild = leftChild.get
-      packedNode.rightChild = rightChild
+    packedNode.rightChild = rightChild
 	}
 	
 	def isAmbiguous: Boolean = children != null
 	
 	override def toString  = name + "," + leftExtent + "," + rightExtent
-	
-	override def hashCode: Int = PrimeMultiplicatonHash.hashCode(name.hashCode, leftExtent, rightExtent)
 }
 
 case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode

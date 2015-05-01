@@ -476,8 +476,10 @@ trait MeerkatParsers {
     val startUserTime: Long = getUserTime
     val startNanoTime: Long = System.nanoTime()
     
-    val sppf = new DefaultSPPFLookup()    
-    run(new Input(input), sppf, parser, parseOpt)
+    val in = new Input(input)
+    val sppf = new DefaultSPPFLookup(in)
+    
+    run(in, sppf, parser, parseOpt)
     
     val startSymbol = sppf.getStartNode(parser.name.value, 0, input.length())
     
@@ -523,8 +525,10 @@ trait MeerkatParsers {
 	val startSystemTime = getCpuTime
 	val startNanoTime = System.nanoTime
 	
-	val sppf = new DefaultSPPFLookup()
-	run(new Input(input), sppf, parser, parseOpt)    
+  val in = new Input(input)
+	val sppf = new DefaultSPPFLookup(in)
+	run(in, sppf, parser, parseOpt)
+  
 	val startSymbol = sppf.getStartNode(parser.name.value, 0, input.length())
 	    
 	val endUserTime: Long = getUserTime
