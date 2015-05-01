@@ -10,6 +10,9 @@ package org.meerkat.sppf
 import scala.collection.mutable._
 import java.util.HashMap
 import scala.collection.JavaConversions._
+import org.meerkat.util.IntKey3
+import org.meerkat.util.Input
+import org.meerkat.util.IntKey3
 
 trait SPPFLookup {
   def getStartNode(name: Any, leftExtent: Int, rightExtent: Int): Option[NonPackedNode]
@@ -27,11 +30,14 @@ trait SPPFLookup {
   def countAmbiguousNodes: Int
 }
 
-class DefaultSPPFLookup extends SPPFLookup {
+class DefaultSPPFLookup(input: Input) extends SPPFLookup {
   
-  val terminalNodes: Map[TerminalNode, TerminalNode] = new HashMap[TerminalNode, TerminalNode]()
-  val nonterminalNodes: Map[NonPackedNode, NonPackedNode] = new HashMap[NonPackedNode, NonPackedNode]()
-  val intermediateNodes: Map[NonPackedNode, NonPackedNode] = new HashMap[NonPackedNode, NonPackedNode]()
+  val n = input.length
+  val hash = (k1: Int, k2: Int, k3: Int) => k1 * n * n + k2 * n + k3
+  
+  val terminalNodes:     Map[IntKey3, TerminalNode]  = new HashMap[IntKey3, TerminalNode]()
+  val nonterminalNodes:  Map[IntKey3, NonPackedNode] = new HashMap[IntKey3, NonPackedNode]()
+  val intermediateNodes: Map[IntKey3, NonPackedNode] = new HashMap[IntKey3, NonPackedNode]()
   
   var countNonterminalNodes: Int = 0
   var countIntermediateNodes: Int = 0
@@ -40,7 +46,7 @@ class DefaultSPPFLookup extends SPPFLookup {
   var countAmbiguousNodes: Int = 0
   
   override def getStartNode(name: Any, leftExtent: Int, rightExtent: Int): Option[NonPackedNode] =
-    nonterminalNodes.get(NonterminalNode(name, leftExtent, rightExtent))
+    nonterminalNodes.get(IntKey3(name.hashCode(), leftExtent, rightExtent, hash))
 
   override def getTerminalNode(s: Any, inputIndex: Int): TerminalNode = findOrElseCreateTerminalNode(s, inputIndex, inputIndex + 1)
   
@@ -75,7 +81,6 @@ class DefaultSPPFLookup extends SPPFLookup {
     val rightExtent = rightChild.rightExtent
     val node =  findOrElseCreateIntermediateNode(slot, leftExtent, rightExtent)
     
-    
     val packedNode = PackedNode(slot, node)
     
     val ambiguousBefore = node.isAmbiguous
@@ -92,18 +97,18 @@ class DefaultSPPFLookup extends SPPFLookup {
   }
   
   def findOrElseCreateTerminalNode(s: Any, leftExtent: Int, rightExtent: Int): TerminalNode = {
-    val key = TerminalNode(s, leftExtent, rightExtent)
-    return terminalNodes.getOrElseUpdate(key, {countTerminalNodes += 1; key.init})
+    val key = IntKey3(s.hashCode(), leftExtent, rightExtent, hash)
+    return terminalNodes.getOrElseUpdate(key, {countTerminalNodes += 1; TerminalNode(s, leftExtent, rightExtent)})
   }
   
   def findOrElseCreateNonterminalNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
-    val key = NonterminalNode(slot, leftExtent, rightExtent)
-    return nonterminalNodes.getOrElseUpdate(key, {countNonterminalNodes += 1; key.init})
+    val key = IntKey3(slot.hashCode(), leftExtent, rightExtent, hash) 
+    return nonterminalNodes.getOrElseUpdate(key, {countNonterminalNodes += 1; NonterminalNode(slot, leftExtent, rightExtent)})
   }
   
   def findOrElseCreateIntermediateNode(slot: Any, leftExtent: Int, rightExtent: Int): NonPackedNode = {
-    val key = IntermediateNode(slot, leftExtent, rightExtent)
-    return intermediateNodes.getOrElseUpdate(key, {countIntermediateNodes +=1; key.init});
+    val key = IntKey3(slot.hashCode(), leftExtent, rightExtent, hash)
+    return intermediateNodes.getOrElseUpdate(key, {countIntermediateNodes +=1; IntermediateNode(slot, leftExtent, rightExtent)});
   }
   
 }
