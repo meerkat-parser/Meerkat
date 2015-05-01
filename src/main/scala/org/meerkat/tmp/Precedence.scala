@@ -56,7 +56,7 @@ object Precedence {
   
   trait DDParser[T] extends (Int => Result[T]) {
     def ~ [F : |!|[Unit]#f](p: DDParser[F]): DDParser[T ~ F] = ???
-    def ~ [F <: Unit](p: DDParser[F]): DDParser[T] = ???
+    def ~ (p: DDParser[Unit]): DDParser[T] = ???
     
     def | [F >: T](p: DDParser[F]): DDParser[F] = ???
     
