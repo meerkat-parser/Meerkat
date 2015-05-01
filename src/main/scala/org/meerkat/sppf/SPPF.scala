@@ -15,6 +15,7 @@ import java.util.ArrayList
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Buffer[T]
+  def flatChildren: List[SPPFNode]
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -49,15 +50,26 @@ trait NonPackedNode extends SPPFNode {
 	override def toString  = name + "," + leftExtent + "," + rightExtent
 }
 
-case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode
+case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
+  override def flatChildren = List(this)
+}
 
-case class IntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode
+case class IntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
+  override def flatChildren: List[SPPFNode] = {
+    if (first == null) 
+      List()
+    else 
+      first.flatChildren ++ children flatMap { c => flatChildren }
+  } 
+}
 
 case class TerminalNode(s: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
 	
 	def this(c:Char, inputIndex: Int) = this(c + "", inputIndex, inputIndex + 1)
 	
 	override val name = s
+  
+  override def flatChildren = List()
 }
 
 case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
@@ -79,4 +91,6 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
     }
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
+  
+  override def flatChildren = List()
 }
