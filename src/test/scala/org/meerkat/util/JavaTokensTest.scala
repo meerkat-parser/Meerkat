@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import JavaTokens2._
 
+
 @RunWith(classOf[JUnitRunner])
 class JavaTokensTest extends FunSuite {
 
