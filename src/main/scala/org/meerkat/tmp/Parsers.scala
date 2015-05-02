@@ -28,19 +28,22 @@ trait Parsers {
     = builder alternation { i => f1(i) orElse f2(i) }
   
   /**
-   * Instances of a parser type
+   * Specialized parser types
    */
-  trait Recognizer extends AbstractParser[Int] { import Composable._
-    def ~ (r: Recognizer): Recognizer.Sequence = seq(this, r)(Recognizer)
-    def | (r: Recognizer): Recognizer.Alternation = alt(this, r)(Recognizer)
+  trait Recognizer extends AbstractParser[Int] { import Composable.Recognizer; import Recognizer._
+    def ~ (r: Recognizer): Sequence = seq(this, r)(Recognizer)
+    def | (r: Recognizer): Alternation = alt(this, r)(Recognizer)
   }
-  trait DDRecognizer[+T] extends AbstractParser[(Int, T)]
+  trait DDRecognizer[+T] extends AbstractParser[(Int, T)] { import Composable.DDRecognizer; import DDRecognizer._
+    def ~ [F](r: DDRecognizer[F]): Sequence[~[T,F]] = seq(this, r)(ddrecognizer)
+    def | [F >: T](r: DDRecognizer[F]): Alternation[F] = alt(this, r)(ddrecognizer)
+  }
   
-  trait Parser extends AbstractParser[NonPackedNode] { import Composable._
-    def ~ (p: Parser): Parser.Sequence = seq(this, p)(Parser)
-    def | (p: Parser): Parser.Alternation = alt(this, p)(Parser)
+  trait Parser extends AbstractParser[NonPackedNode] { import Composable.Parser; import Parser._
+    def ~ (p: Parser): Sequence = seq(this, p)(Parser)
+    def | (p: Parser): Alternation = alt(this, p)(Parser)
   }
-  trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] { import Composable._
+  trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] { import Composable.DDParser; import DDParser._
     def ~ [F](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
     def | [F >: T](p: DDParser[F]): Alternation[F] = alt(this, p)(ddparser)
   }
@@ -59,6 +62,7 @@ trait Parsers {
   }
   
   object Composable {
+    
     implicit object Recognizer extends Composable[Int, Int, Int] {
       type Par = Recognizer
       type Seq = Sequence
@@ -76,7 +80,27 @@ trait Parsers {
       def sequence(f: Int => Result[Int]) = new Sequence { def apply(i: Int) = f(i) }
       def alternation(f: Int => Result[Int]) = new Alternation { def apply(i: Int) = f(i) } 
     }
-  
+    
+    object DDRecognizer {
+      trait Sequence[+T] extends AbstractParser[(Int, T)]
+      trait Alternation[+T] extends AbstractParser[(Int, T)]
+      trait Nonterminal[+T] extends AbstractParser[(Int, T)]
+      trait Terminal[+T] extends AbstractParser[(Int, T)]
+    
+      implicit def ddrecognizer[A, B] = new Composable[(Int, A), (Int, B), (Int, ~[A, B])] {
+        type Par = DDRecognizer[~[A,B]]
+        type Seq = Sequence[~[A,B]]
+        type Alt = Alternation[B]
+        
+        def index(a: (Int, A)) = a._1
+        def values(a: (Int, A), b: (Int, B)): (Int, ~[A,B]) = ??? // intermediate nodes plus values
+        
+        def parser(f: Int => Result[(Int, ~[A,B])]) = new DDRecognizer[~[A,B]] { def apply(i: Int) = f(i) }
+        def sequence(f: Int => Result[(Int, ~[A, B])]) = new Sequence[~[A, B]] { def apply(i: Int) = f(i) }
+        def alternation(f: Int => Result[(Int, B)]) = new Alternation[B] { def apply(i: Int) = f(i) } 
+      }
+    }
+    
     implicit object Parser extends Composable[NonPackedNode, NonPackedNode, NonPackedNode] {
       type Par = Parser
       type Seq = Sequence
@@ -95,22 +119,25 @@ trait Parsers {
       def alternation(f: Int => Result[NonPackedNode]) = new Alternation { def apply(i: Int) = f(i) }
     }
     
-    trait Sequence[+T] extends AbstractParser[(NonPackedNode, T)]
-    trait Alternation[+T] extends AbstractParser[(NonPackedNode, T)]
-    trait Nonterminal[+T] extends AbstractParser[(NonPackedNode, T)]
-    trait Terminal[+T] extends AbstractParser[(NonPackedNode, T)]
-  
-    implicit def ddparser[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B), (NonPackedNode, ~[A, B])] {
-      type Par = DDParser[~[A,B]]
-      type Seq = Sequence[~[A,B]]
-      type Alt = Alternation[B]
-      
-      def index(a: (NonPackedNode, A)) = a._1.rightExtent
-      def values(a: (NonPackedNode, A), b: (NonPackedNode, B)): (NonPackedNode, ~[A,B]) = ??? // intermediate nodes plus values
-      
-      def parser(f: Int => Result[(NonPackedNode, ~[A,B])]) = new DDParser[~[A,B]] { def apply(i: Int) = f(i) }
-      def sequence(f: Int => Result[(NonPackedNode, ~[A, B])]) = new Sequence[~[A, B]] { def apply(i: Int) = f(i) }
-      def alternation(f: Int => Result[(NonPackedNode, B)]) = new Alternation[B] { def apply(i: Int) = f(i) } 
+    object DDParser {
+      trait Sequence[+T] extends AbstractParser[(NonPackedNode, T)]
+      trait Alternation[+T] extends AbstractParser[(NonPackedNode, T)]
+      trait Nonterminal[+T] extends AbstractParser[(NonPackedNode, T)]
+      trait Terminal[+T] extends AbstractParser[(NonPackedNode, T)]
+    
+      implicit def ddparser[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B), (NonPackedNode, ~[A, B])] {
+        type Par = DDParser[~[A,B]]
+        type Seq = Sequence[~[A,B]]
+        type Alt = Alternation[B]
+        
+        def index(a: (NonPackedNode, A)) = a._1.rightExtent
+        def values(a: (NonPackedNode, A), b: (NonPackedNode, B)): (NonPackedNode, ~[A,B]) = ??? // intermediate nodes plus values
+        
+        def parser(f: Int => Result[(NonPackedNode, ~[A,B])]) = new DDParser[~[A,B]] { def apply(i: Int) = f(i) }
+        def sequence(f: Int => Result[(NonPackedNode, ~[A, B])]) = new Sequence[~[A, B]] { def apply(i: Int) = f(i) }
+        def alternation(f: Int => Result[(NonPackedNode, B)]) = new Alternation[B] { def apply(i: Int) = f(i) } 
+      }
+    
     }
   }
   
