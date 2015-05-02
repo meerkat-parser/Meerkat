@@ -2,41 +2,48 @@ package org.meerkat.tmp
 
 import org.meerkat.sppf.NonPackedNode
 
+case class ~[+A, +B](_1: A, _2: B)
+
 trait Parsers {
   
+  // TODO: Parameterize over Result[_]
   trait Result[+T] {
     def map[F](f: T => F): Result[F]
     def flatMap[F](f: T => Result[F]): Result[F]
+    def orElse[F >: T](r: Result[F]): Result[F]
   }
   
-  val l = List()
+  /**
+   *  Abstract parser type with the general semantics of sequence 
+   *  and alternation combinators
+   */
+  trait AbstractParser[+A] extends (Int => Result[A])
   
-  trait AbstractParser[+A] extends (Int => Result[A]) 
+  protected def seq[A, B, C](f1: Int => Result[A], f2: Int => Result[B])
+                  (implicit builder: Composable[A, B, C]): builder.Seq
+    = builder sequence { i => f1(i).flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
   
-  trait Recognizer extends AbstractParser[Int] {
-    import Composable._
-    
-    def ~(r: Recognizer): Recognizer.Sequence = seq(this, r)(Recognizer)
+  protected def alt[A, B >: A, C](f1: Int => Result[A], f2: Int => Result[B])
+                  (implicit builder: Composable[A, B, C]): builder.Alt
+    = builder alternation { i => f1(i) orElse f2(i) }
+  
+  /**
+   * Instances of a parser type
+   */
+  trait Recognizer extends AbstractParser[Int] { import Composable._
+    def ~ (r: Recognizer): Recognizer.Sequence = seq(this, r)(Recognizer)
+    def | (r: Recognizer): Recognizer.Alternation = alt(this, r)(Recognizer)
   }
   trait DDRecognizer[+T] extends AbstractParser[(Int, T)]
   
-  trait Parser extends AbstractParser[NonPackedNode] {
-    import Composable._
-    
-    def ~(p: Parser): Parser.Sequence = seq(this, p)(Parser)
+  trait Parser extends AbstractParser[NonPackedNode] { import Composable._
+    def ~ (p: Parser): Parser.Sequence = seq(this, p)(Parser)
+    def | (p: Parser): Parser.Alternation = alt(this, p)(Parser)
   }
-  trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] {
-    import Composable._
-    
-    def ~[F](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
-    
+  trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] { import Composable._
+    def ~ [F](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
+    def | [F >: T](p: DDParser[F]): Alternation[F] = alt(this, p)(ddparser)
   }
-  
-  def seq[A, B, C](f1: Int => Result[A], f2: Int => Result[B])
-                  (implicit builder: Composable[A, B, C]): builder.Seq
-    = builder sequence { (i: Int) => f1(i).flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
-    
-  case class ~[+A, +B]()
   
   trait Composable[A, B, C] {
     type Par <: AbstractParser[C]
@@ -107,9 +114,5 @@ trait Parsers {
     }
   }
   
-  
-}
-
-object Parsers {
   
 }
