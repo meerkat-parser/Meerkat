@@ -23,14 +23,12 @@ object Visualization {
     def toDot(node: SPPFNode): String = {
 		val sb = new StringBuilder
 
-		sb ++= """ 
-		  		   | digraph sppf {
-				   |     layout=dot
-				   |     nodesep=.6
-				   |     ranksep=.4		
-				   |     ordering=out
-		           |
-		       """.stripMargin
+		sb ++= """| digraph sppf {
+				      |     layout=dot
+				      |     nodesep=.6
+				      |     ranksep=.4		
+				      |     ordering=out
+		          |""".stripMargin
 		
 //		removePackedNodes(node, new HashSet)
 //		removeIntermediateNodes(node, new HashSet)

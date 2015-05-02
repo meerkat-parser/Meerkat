@@ -32,7 +32,7 @@ object BenchmarkJavaRegex {
       
         for (_ <- 0 until warmupCount) {
           val input = scala.io.Source.fromFile("test-files/warmup.java").mkString
-          parse(input, s, ALL_PARSES)
+          parse(s, input)
         }
         
        GcFinalization.awaitFullGc()
@@ -45,10 +45,10 @@ object BenchmarkJavaRegex {
 			println("#" + f)
 			
 			for(i <- 0 until runCount) {
-			  val result = parse(input, s, ALL_PARSES)
+			  val result = parse(s, input)
 			  
 			  result match {
-			    case ParseSuccess(nanoTime, userTime, cpuTime, sppf, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes) => {
+			    case ParseSuccess(sppf, ParseStatistics(nanoTime, userTime, cpuTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)) => {
 			    	printf("%-20d %-20d %-20d %-20d %-20d %-15d %-15d\n", input.length, userTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)
 			    }
 			    case ParseError(index, slot) => println("parse error")

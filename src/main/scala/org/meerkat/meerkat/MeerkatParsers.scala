@@ -18,6 +18,11 @@ import scala.collection.JavaConversions._
 import Result._
 import Rule._
 
+import MeerkatDDParser._
+
+import Configuration._
+import com.sun.media.sound.SoftReverb.AllPass
+
 trait Layout { def parser: MeerkatParser }
 
 trait MeerkatParser extends Parser {
@@ -351,8 +356,6 @@ object MeerkatParser {
   
 }
 
-import MeerkatDDParser._
-
 trait MeerkatDDParser[T] extends DDParser[T] {
   
   var name: Lazy[String] = this.hashCode().toString
@@ -444,8 +447,6 @@ object MeerkatDDParser {
     = new MeerkatDDParser[T] { def apply(input: Input, sppf: SPPFLookup, i: Int) = f(input, sppf, i) }
 }
 
-import Configuration._
-
 trait MeerkatParsers {
     
   val Layout: MeerkatParser = "L" ::= org.meerkat.util.JavaTokens.Layout
@@ -502,24 +503,23 @@ trait MeerkatParsers {
     
     startSymbol match {
 	  case None    => ParseError(0, " ")
-	  case Some(_) => ParseSuccess((endNanoTime - startNanoTime) / 1000000, 
-			  					   (endUserTime - startUserTime) / 1000000,
-			  					   (1000000) / 1000000,
-			  					   startSymbol.get,
-			  					   sppf.countNonterminalNodes,
-			  					   sppf.countIntermediateNodes,
-			  					   sppf.countTerminalNodes,
-			  					   sppf.countPackedNodes,
-			  					   sppf.countAmbiguousNodes) 
+	  case Some(_) => ParseSuccess(startSymbol.get, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
+                                            			  					    (endUserTime - startUserTime) / 1000000,
+                                            			  					    (1000000) / 1000000,
+                                            			  					    sppf.countNonterminalNodes,
+                                            			  					    sppf.countIntermediateNodes,
+                                            			  					    sppf.countTerminalNodes,
+                                            			  					    sppf.countPackedNodes,
+                                            			  					    sppf.countAmbiguousNodes))
     }
   }
-  
- def parse(input: String, parser: MeerkatParser, parseOpt: Configuration): ParseResult = {
+    
+ def parse(parser: MeerkatParser, input: String, parseOpt: Configuration = ALL_PARSES): ParseResult = {
 	
 	MeerkatLogging.reset
 	MeerkatLogging.logger.setLevel(SEVERE)
-    Layout.reset()
-    parser.reset()
+  Layout.reset()
+  parser.reset()
     
 	val startUserTime = getUserTime
 	val startSystemTime = getCpuTime
@@ -537,16 +537,15 @@ trait MeerkatParsers {
 	
 	startSymbol match {
 	  case None    => ParseError(0, " ")
-	  case Some(_) => ParseSuccess((endNanoTime - startNanoTime) / 1000000, 
-			  					   (endUserTime - startUserTime) / 1000000,
-			  					   (endSystemTime - startSystemTime) / 1000000,
-			  					   startSymbol.get,
-			  					   sppf.countNonterminalNodes,
-			  					   sppf.countIntermediateNodes,
-			  					   sppf.countTerminalNodes,
-			  					   sppf.countPackedNodes,
-			  					   sppf.countAmbiguousNodes) 
+	  case Some(_) => ParseSuccess(startSymbol.get, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
+                                            			  					    (endUserTime - startUserTime) / 1000000,
+                                            			  					    (endSystemTime - startSystemTime) / 1000000,
+                                            			  					    sppf.countNonterminalNodes,
+                                            			  					    sppf.countIntermediateNodes,
+                                            			  					    sppf.countTerminalNodes,
+                                            			  					    sppf.countPackedNodes,
+                                            			  					    sppf.countAmbiguousNodes)) 
     }
   }
-      
+
 }
