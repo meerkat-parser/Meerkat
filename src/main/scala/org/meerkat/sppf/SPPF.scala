@@ -30,7 +30,7 @@ trait NonPackedNode extends SPPFNode {
   
   def children: Seq[T] = {
     if (first == null) ListBuffer()
-    else if (rest == null)  ListBuffer(first)
+    else if (rest == null) ListBuffer(first)
     else ListBuffer(first) ++ rest
   }
 	

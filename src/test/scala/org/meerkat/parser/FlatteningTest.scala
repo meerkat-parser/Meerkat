@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.meerkat.meerkat._
 import org.meerkat.util.Visualization
+import org.meerkat.sppf.FlattenSPPF
 
 @RunWith(classOf[JUnitRunner])
 class FlatteningTest extends FunSuite {
@@ -35,7 +36,7 @@ object FlatteningTest {
     
     val r = new MeerkatParsers {} . parse(S, "abcde")
     r match {
-      case ParseSuccess(r, s) => Visualization.toDot(r) 
+      case ParseSuccess(r, s) => FlattenSPPF.flatten(r) //Visualization.toDot(r) 
       case _               => println("Parse error")
     }
     
