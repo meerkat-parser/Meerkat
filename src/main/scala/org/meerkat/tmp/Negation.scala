@@ -8,6 +8,6 @@ object Negation {
   implicit def nsubAmbig1[A, B >: A] : A <:!< B = null
   implicit def nsubAmbig2[A, B >: A] : A <:!< B = null
 
-  type |!|[T] = { type f[U] = U <:!< T }
-
+  type ![T] = { type f[U] = U <:!< T }
+  
 }

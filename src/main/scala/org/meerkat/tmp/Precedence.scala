@@ -55,7 +55,7 @@ object Precedence {
   import Negation._
   
   trait DDParser[T] extends (Int => Result[T]) {
-    def ~ [F : |!|[Unit]#f](p: DDParser[F]): DDParser[T ~ F] = ???
+    def ~ [F : ![Unit]#f](p: DDParser[F]): DDParser[T ~ F] = ???
     def ~ (p: DDParser[Unit]): DDParser[T] = ???
     
     def | [F >: T](p: DDParser[F]): DDParser[F] = ???

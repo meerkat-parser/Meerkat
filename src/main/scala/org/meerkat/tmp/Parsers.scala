@@ -1,6 +1,7 @@
 package org.meerkat.tmp
 
 import org.meerkat.sppf.NonPackedNode
+import org.meerkat.tmp.Negation._
 
 case class ~[+A, +B](_1: A, _2: B)
 
@@ -20,11 +21,11 @@ trait Parsers {
   trait AbstractParser[+A] extends (Int => Result[A])
   
   protected def seq[A, B, C](f1: Int => Result[A], f2: Int => Result[B])
-                  (implicit builder: Composable[A, B, C]): builder.Seq
-    = builder sequence { i => f1(i).flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
+                            (implicit builder: Composable[A, B, C]): builder.Seq
+    = builder sequence { i => f1(i) flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
   
   protected def alt[A, B >: A, C](f1: Int => Result[A], f2: Int => Result[B])
-                  (implicit builder: Composable[A, B, C]): builder.Alt
+                                 (implicit builder: Composable[A, B, C]): builder.Alt
     = builder alternation { i => f1(i) orElse f2(i) }
   
   /**
@@ -44,7 +45,8 @@ trait Parsers {
     def | (p: Parser): Alternation = alt(this, p)(Parser)
   }
   trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] { import Composable.DDParser; import DDParser._
-    def ~ [F](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
+    def ~ [F : ![Unit]#f](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
+    def ~ (p: DDParser[Unit]): Sequence[Unit] = ???
     def | [F >: T](p: DDParser[F]): Alternation[F] = alt(this, p)(ddparser)
   }
   
@@ -125,7 +127,7 @@ trait Parsers {
       trait Nonterminal[+T] extends AbstractParser[(NonPackedNode, T)]
       trait Terminal[+T] extends AbstractParser[(NonPackedNode, T)]
     
-      implicit def ddparser[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B), (NonPackedNode, ~[A, B])] {
+      implicit def ddparser[A: ![Unit]#f, B: ![Unit]#f] = new Composable[(NonPackedNode, A), (NonPackedNode, B), (NonPackedNode, ~[A, B])] {
         type Par = DDParser[~[A,B]]
         type Seq = Sequence[~[A,B]]
         type Alt = Alternation[B]
@@ -137,6 +139,19 @@ trait Parsers {
         def sequence(f: Int => Result[(NonPackedNode, ~[A, B])]) = new Sequence[~[A, B]] { def apply(i: Int) = f(i) }
         def alternation(f: Int => Result[(NonPackedNode, B)]) = new Alternation[B] { def apply(i: Int) = f(i) } 
       }
+      
+      implicit def ddparser_special1[B] = new Composable[(NonPackedNode, Unit), (NonPackedNode, B), (NonPackedNode, B)] {
+        type Par = DDParser[B]
+        type Seq = Sequence[B]
+        type Alt = Alternation[B]
+        
+        def index(a: (NonPackedNode, Unit)) = a._1.rightExtent
+        def values(a: (NonPackedNode, Unit), b: (NonPackedNode, B)): (NonPackedNode, B) = ??? // intermediate nodes plus values
+        
+        def parser(f: Int => Result[(NonPackedNode, B)]) = new DDParser[B] { def apply(i: Int) = f(i) }
+        def sequence(f: Int => Result[(NonPackedNode, B)]) = new Sequence[B] { def apply(i: Int) = f(i) }
+        def alternation(f: Int => Result[(NonPackedNode, B)]) = new Alternation[B] { def apply(i: Int) = f(i) } 
+      } 
     
     }
   }
