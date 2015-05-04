@@ -21,7 +21,7 @@ trait NonPackedNode extends SPPFNode {
  
   type T = PackedNode
   
-  var first:T = null
+  var first: T = null
   
   var rest: Buffer[T] = null
   
@@ -89,5 +89,4 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
 }
-
 
