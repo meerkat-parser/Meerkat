@@ -69,7 +69,7 @@ object Visualization {
 		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(char)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
 		    
 		  case n@PackedNode(slot, parent) =>
-//		    sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(slot)}, $pivot)", fontsize=10];\n"""
+//		  sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(slot)}, $parent.pivot)", fontsize=10];\n"""
 		    sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="", fontsize=10];\n"""
 		    for(t <- n.children) {
 		      toDot(t, sb, duplicateSet)
@@ -77,15 +77,11 @@ object Visualization {
 		    }
 		}
 	}
-	
-	def main(args: Array[String]) {
-    	println(escape("\"([^\"\\p{Cntrl}\\]|\\[\\'\"bfnrt]|\\u[a-fA-F0-9]{4})*"))
-    }
-	
+
 	def escape(s: Any): String = s.toString.replaceAll("\"", "\\\\\"").replaceAll("\t", "t").replaceAll("\n", "n").replaceAll("\r", "r")
 	
 	def addEdges(src: SPPFNode, dst: SPPFNode, sb: StringBuilder): Unit = {
-		sb ++= s"""edge [color=black, style=solid, penwidth=0.5, arrowsize=0.7]; "${escape(src.toString)}" -> { "${escape(dst.toString)}" }"""
+		sb ++= s"""edge [color=black, style=solid, penwidth=0.5, arrowsize=0.7]; "${escape(src.toString)}" -> { "${escape(dst.toString)}" }\n"""
 	}
   
 }

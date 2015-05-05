@@ -26,19 +26,30 @@ class FlatteningTest extends FunSuite {
 
 object FlatteningTest {
   
-  def main(args: Array[String]): Unit = {
-    val A: MeerkatParser = "A" ::= "a"
-    val B: MeerkatParser = "B" ::= "b"
-    val C: MeerkatParser = "C" ::= "c"
-    val D: MeerkatParser = "D" ::= "d"
-    val E: MeerkatParser = "E" ::= "e"
-    val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
-    
-    val r = new MeerkatParsers {} . parse(S, "abcde")
-    r match {
-      case ParseSuccess(r, s) => SPPFVisitor.preOrder(r)(n => println(n)) //Visualization.toDot(r) 
-      case _               => println("Parse error")
-    }
-    
-  }  
+//  def main(args: Array[String]): Unit = {
+//    val A: MeerkatParser = "A" ::= "a"
+//    val B: MeerkatParser = "B" ::= "b"
+//    val C: MeerkatParser = "C" ::= "c"
+//    val D: MeerkatParser = "D" ::= "d"
+//    val E: MeerkatParser = "E" ::= "e"
+//    val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
+//    
+//    val r = new MeerkatParsers {} . parse(S, "abcde")
+//    r match {
+//      case ParseSuccess(r, s) => SPPFVisitor.preOrder(r)(n => println(n)) //Visualization.toDot(r) 
+//      case _               => println("Parse error")
+//    }
+//    
+//  }
+  
+    val S: MeerkatParser = "S" ::= S ~~ S ~~ S | S ~~ S | "b"
+  
+    def main(args: Array[String]): Unit = {
+      
+      val r = new MeerkatParsers {} . parse(S, "bbb")
+      r match {
+        case ParseSuccess(r, s) => Visualization.toDot(r) 
+        case _               => println("Parse error")
+      }    
+    }  
 }

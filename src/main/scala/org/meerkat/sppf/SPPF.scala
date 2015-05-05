@@ -15,6 +15,7 @@ import java.util.ArrayList
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
+//  def c: Iterable[SPPFNode]
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -71,22 +72,22 @@ case class TerminalNode(s: Any, leftExtent: Int, rightExtent: Int) extends NonPa
 
 case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
 
-    type T = NonPackedNode
+  type T = NonPackedNode
   
-    var leftChild: T = null
-    var rightChild: T = null
+  var leftChild: T = _
+  var rightChild: T = _
     
-    def pivot = rightChild.leftExtent
+  def pivot = rightChild.leftExtent
     
-    var values: List[SPPFNode] = null
+  var values: List[SPPFNode] = null
     
-    def children: Buffer[T] = {
-      val l: Buffer[T] = new ArrayList[T]()
-      if (leftChild != null) l += leftChild
-      if (rightChild != null) l += rightChild
-      return l
-    }
+  def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
+
+  override def equals(o: Any) = o match {
+    case p: PackedNode => name == p.name && parent == p.parent && pivot == p.pivot
+    case _             => false
+  }
 }
 
