@@ -18,7 +18,10 @@ trait Parsers {
    *  Abstract parser type with the general semantics of sequence 
    *  and alternation combinators
    */
-  trait AbstractParser[+A] extends (Int => Result[A])
+  trait AbstractParser[+A] extends (Int => Result[A]) {
+    def isSequence = false
+    def isAlternation = false
+  }
   
   trait Composable[A, B] {
     type R
@@ -36,11 +39,11 @@ trait Parsers {
   }
   
   protected def seq[A, B](f1: Int => Result[A], f2: Int => Result[B])
-                            (implicit builder: Composable[A, B]): builder.Seq
+                         (implicit builder: Composable[A, B]): builder.Seq
     = builder sequence { i => f1(i) flatMap { x1 => f2(builder index x1).map { x2 => builder values (x1, x2) } } }
   
   protected def alt[A, B >: A](f1: Int => Result[A], f2: Int => Result[B])
-                                 (implicit builder: Composable[A, B]): builder.Alt
+                              (implicit builder: Composable[A, B]): builder.Alt
     = builder alternation { i => f1(i) orElse f2(i) }
   
   /**
@@ -59,17 +62,30 @@ trait Parsers {
     def ~ (p: Parser): Sequence = seq(this, p)
     def | (p: Parser): Alternation = alt(this, p)
   }
+  
   trait DDParser[+T] extends AbstractParser[(NonPackedNode, T)] { import Composable.DDParser; import DDParser._
     def ~ [F](p: DDParser[F]): Sequence[~[T,F]] = seq(this, p)(ddparser)
     def | [F >: T](p: DDParser[F]): Alternation[F] = alt(this, p)(ddparser)
   }
   
+  type Prec = Int
+  
+  trait OperatorParser extends (Prec => Parser) {
+    def ~ (p: OperatorParser): OperatorParser = ???
+    def |>| (p: OperatorParser): OperatorParser = ???
+  }
+  
   implicit class ParserOps(q: Parser) { import Composable.DDParser; import DDParser._
     def ~ [F](p: DDParser[F]): Sequence[F] = seq(q, p)(ddparser2)
+    def ~ (p: OperatorParser): OperatorParser = ???
   }
   
   implicit class DDParserOps[+T](q: DDParser[T]) { import Composable.DDParser; import DDParser._
     def ~ (p: Parser): Sequence[T] = seq(q, p)(ddparser1)
+  }
+  
+  implicit class OperatorParserOps(q: OperatorParser) {
+    def ~ (p: Parser): OperatorParser = ???
   }
   
   object Composable {
