@@ -38,14 +38,14 @@ trait AbstractParsers {
     def sequence(f: (Input, Int, SPPFLookup) => Result[R]): Sequence
     
     def index(a: A): Int
-    def intermediate(a: A, b: B, p: AbstractParser[R]): R    
+    def intermediate(a: A, b: B, p: AbstractParser[R], sppfLookup: SPPFLookup): R    
   }
   
   trait Alternative[A, B >: A] {
     type Alternation <: AbstractParser[B]
     def alternation(f: (Input, Int, SPPFLookup) => Result[B]): Alternation
     
-    def result(elem: B, p: AbstractParser[B], nt: AbstractParser[Any]): B
+    def result(e: B, p: AbstractParser[B], nt: AbstractParser[Any], sppfLookup: SPPFLookup): B
   }
   
   object AbstractParser {
@@ -55,7 +55,7 @@ trait AbstractParsers {
     
     def seq[A: Memoizable, B: Memoizable](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Composable[A, B]): builder.Sequence = {
       lazy val q: builder.Sequence = builder sequence { 
-        (input, i, sppfLookup) => p1(input, i, sppfLookup) flatMap { x1 => p2(input, builder index x1, sppfLookup)._map { x2 => builder intermediate (x1, x2, q) } } 
+        (input, i, sppfLookup) => p1(input, i, sppfLookup) flatMap { x1 => p2(input, builder index x1, sppfLookup)._map { x2 => builder intermediate (x1, x2, q, sppfLookup) } } 
       }
       q
     }
@@ -64,7 +64,7 @@ trait AbstractParsers {
       lazy val q: builder.Alternation = builder alternation { 
         lazy val q1: AbstractParser[A] = if (p1 isNonterminal) parser(p1) else p1 passHead q.head
         lazy val q2: AbstractParser[B] = if (p2 isNonterminal) parser(p2) else p2
-        (input, i, sppfLookup) => p1(input, i, sppfLookup).map(x1 => builder result (x1, q1, q.head)) orElse p2(input, i, sppfLookup).map(x2 => builder result (x2, q2, q.head)) 
+        (input, i, sppfLookup) => p1(input, i, sppfLookup).map(x1 => builder result (x1, q1, q.head, sppfLookup)) orElse p2(input, i, sppfLookup).map(x2 => builder result (x2, q2, q.head, sppfLookup)) 
       }
       q
     } 
