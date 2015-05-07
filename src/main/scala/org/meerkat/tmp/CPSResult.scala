@@ -2,6 +2,8 @@ package org.meerkat.tmp
 
 import java.util.Deque
 import java.util.ArrayDeque
+import java.util.Set 
+import java.util.LinkedHashSet
 
 trait Memoizable[-T] { 
   type U 
@@ -30,7 +32,7 @@ object CPSResult {
   def success[T](t: T): CPSResult[T] = new CPSResult[T] { def apply(k: K[T]) = k(t) }
   def failure[T]: CPSResult[T] = new CPSResult[T] { def apply(k: K[T]) = () }
   
-  def memo[T](res: => CPSResult[T]): CPSResult[T] = { import java.util.Set; import java.util.LinkedHashSet
+  def memo[T](res: => CPSResult[T]): CPSResult[T] = {
     val Ks: Deque[K[T]] = new ArrayDeque[K[T]]()
     val Rs: Set[T] = new LinkedHashSet[T]()
     
