@@ -19,6 +19,13 @@ trait SPPFNode {
   def flatChildren: Iterable[SPPFNode] = ???
 }
 
+class Blah extends Iterable[SPPFNode] {
+  override def iterator: Iterator[SPPFNode] = new Iterator[SPPFNode] {
+    def hasNext: Boolean = ???
+    def next: SPPFNode = ???
+  }
+}
+
 trait NonPackedNode extends SPPFNode {
  
   type T = PackedNode
@@ -60,7 +67,23 @@ trait NonPackedNode extends SPPFNode {
 	override def toString  = name + "," + leftExtent + "," + rightExtent
 }
 
-case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode
+case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
+//  override def flatChildren: Iterable[SPPFNode] = new Iterable[SPPFNode] {
+//    override def iterator: Iterator[SPPFNode] = new Iterator[SPPFNode] {
+//      
+//      var nextNode = this
+//      
+//      while (nextNode != null) {
+//        nextNode match {
+//          case n: NonterminalNode => nextNode = n   
+//        }
+//      }
+//      
+//      def hasNext: Boolean = ???
+//      def next: SPPFNode = ???
+//    }
+//  }
+}
 
 case class IntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode 
 
