@@ -50,19 +50,21 @@ case class Alt(s1: Symbol, s2: Symbol) extends Symbol {
   override def name = s1.name + "|" + s2.name
 }
 
-trait TreeVisitor {
-  def terminal(s: String): Terminal
-  def startNonterminal(): Unit
-  def endNonterminal(t: Rule, children: Iterable[Tree]): Appl
-  def buildAmb(it: Iterable[Rule]): Amb
+class DefaultTreeVisitor {
+  
+  def terminal(s: String): Terminal = new Terminal(s)
+  
+  def nonterminal(t: Rule, children: List[Tree]): Appl = Appl(t, children)
+  
+  def amb(set: Set[Tree]): Amb = Amb(set)
   
   def visit(node: SPPFNode): Tree = node match {
     case t: TerminalNode    => terminal(t.name)
     case n: NonterminalNode => {
       if (n isAmbiguous) {
-        Amb(n.children.flatMap { p => p.flatChildren.map { x => visit(x)} } toSet)
+        amb(n.children.flatMap { p => p.flatChildren.map { x => visit(x)} } toSet)
       } else {
-        startNonterminal(); endNonterminal(n.first.rule, n.flatChildren.map {x => visit(x)}) }        
+        nonterminal(n.first.rule, n.flatChildren.map { x => visit(x) } toList) }        
       }
   }
   
