@@ -15,7 +15,7 @@ object Recognizers extends AbstractParsers {
       = new Recognizers.Sequence { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) } 
     
     def index(a: Int): Int = a
-    def intermediate(a: Int, b: Int, p: AbstractParser[Int]): Int = b
+    def intermediate(a: Int, b: Int, p: AbstractParser[Int], sppfLookup: SPPFLookup): Int = b
   }
   
   implicit object obj2 extends Alternative[Int, Int] {
@@ -24,7 +24,7 @@ object Recognizers extends AbstractParsers {
     def alternation(f: (Input, Int, SPPFLookup) => Result[Int]): Alternation
       = new Alternation { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
     
-    def result(elem: Int, p: AbstractParser[Int], nt: AbstractParser[Any]): Int = elem
+    def result(e: Int, p: AbstractParser[Int], nt: AbstractParser[Any], sppfLookup: SPPFLookup): Int = e
   }
   
   implicit object obj3 extends Memoizable[Int] {
