@@ -11,11 +11,12 @@ import scala.collection.mutable._
 import org.meerkat.util.PrimeMultiplicatonHash
 import scala.collection.JavaConversions._
 import java.util.ArrayList
+import org.meerkat.tree.Rule
 
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
-//  def c: Iterable[SPPFNode]
+  def flatChildren: Iterable[SPPFNode] = ???
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -67,7 +68,7 @@ case class TerminalNode(s: Any, leftExtent: Int, rightExtent: Int) extends NonPa
 	
 	def this(c:Char, inputIndex: Int) = this(c + "", inputIndex, inputIndex + 1)
 	
-	override val name = s
+	override val name: String = s toString
 }
 
 case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
@@ -79,7 +80,7 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
     
   def pivot = rightChild.leftExtent
     
-  var values: List[SPPFNode] = null
+  def rule: Rule = ???
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
