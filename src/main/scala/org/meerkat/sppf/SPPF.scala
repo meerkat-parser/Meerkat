@@ -16,23 +16,15 @@ import org.meerkat.tree.Rule
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
-  def flatChildren: Iterable[SPPFNode] = ???
-}
-
-class Blah extends Iterable[SPPFNode] {
-  override def iterator: Iterator[SPPFNode] = new Iterator[SPPFNode] {
-    def hasNext: Boolean = ???
-    def next: SPPFNode = ???
-  }
 }
 
 trait NonPackedNode extends SPPFNode {
  
   type T = PackedNode
   
-  var first: T = null
+  var first: T = _
   
-  var rest: Buffer[T] = null
+  var rest: Buffer[T] = _
   
 	val name: Any
 	val leftExtent, rightExtent: Int
@@ -62,28 +54,25 @@ trait NonPackedNode extends SPPFNode {
     packedNode.rightChild = rightChild
 	}
 	
-	def isAmbiguous: Boolean = children != null
+	def isAmbiguous: Boolean = rest != null
+  
+  def flatChildren: ListBuffer[SPPFNode] = flatChildren(this)
+  
+  private def flatChildren(node: NonPackedNode): ListBuffer[SPPFNode] = {
+   if (isAmbiguous) {
+     ListBuffer(node)
+   } else {
+     val l = ListBuffer[SPPFNode]()
+     l ++= flatChildren(node.first.leftChild) 
+     if (node.first hasRightChild) l += node.first.rightChild
+     l
+   } 
+  }
 	
 	override def toString  = name + "," + leftExtent + "," + rightExtent
 }
 
-case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode {
-//  override def flatChildren: Iterable[SPPFNode] = new Iterable[SPPFNode] {
-//    override def iterator: Iterator[SPPFNode] = new Iterator[SPPFNode] {
-//      
-//      var nextNode = this
-//      
-//      while (nextNode != null) {
-//        nextNode match {
-//          case n: NonterminalNode => nextNode = n   
-//        }
-//      }
-//      
-//      def hasNext: Boolean = ???
-//      def next: SPPFNode = ???
-//    }
-//  }
-}
+case class NonterminalNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode
 
 case class IntermediateNode(name: Any, leftExtent: Int, rightExtent: Int) extends NonPackedNode 
 
@@ -106,6 +95,8 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
   def rule: Rule = ???
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
+  
+  def hasRightChild: Boolean  = rightChild != null
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
 
