@@ -12,7 +12,9 @@ object SPPFVisitor {
   
   def build(n: NonterminalNode, visitor: TreeVisitor): Tree = {
     
+    visitor.startNonterminal();
     
+    n.flatChildren map (x => visitor.)
     
     ???
   }
