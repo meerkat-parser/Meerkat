@@ -53,14 +53,14 @@ trait AbstractParsers {
     def parser[T](p: Parser[T]): AbstractParser[T] 
       = new AbstractParser[T] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) } 
     
-    protected def seq[A: Memoizable, B: Memoizable](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Composable[A, B]): builder.Sequence = {
+    def seq[A: Memoizable, B: Memoizable](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Composable[A, B]): builder.Sequence = {
       lazy val q: builder.Sequence = builder sequence { 
         (input, i, sppfLookup) => p1(input, i, sppfLookup) flatMap { x1 => p2(input, builder index x1, sppfLookup)._map { x2 => builder intermediate (x1, x2, q) } } 
       }
       q
     }
   
-    protected def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Alternative[A, B], m1: Memoizable[A], m2: Memoizable[B]): builder.Alternation = {
+    def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Alternative[A, B], m1: Memoizable[A], m2: Memoizable[B]): builder.Alternation = {
       lazy val q: builder.Alternation = builder alternation { 
         lazy val q1: AbstractParser[A] = if (p1 isNonterminal) parser(p1) else p1 passHead q.head
         lazy val q2: AbstractParser[B] = if (p2 isNonterminal) parser(p2) else p2

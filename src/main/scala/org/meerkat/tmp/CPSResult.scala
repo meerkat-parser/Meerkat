@@ -38,13 +38,12 @@ object CPSResult {
       def apply(k: K[T]) = { 
         if(Ks.isEmpty) {
           Ks.push(k)
-          res((t: T) => { 
+          res(t => 
                 if(!Rs.contains(t)) {
                   Rs.add(t)
                   val it = Ks.iterator()
                   while(it hasNext) Trampoline.call(it.next(), t) 
-                }
-              })
+                })
         } else { 
           Ks.push(k) 
           val it = Rs.iterator()
