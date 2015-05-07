@@ -10,11 +10,9 @@ package org.meerkat.meerkat
 import org.meerkat.sppf.SPPFNode
 import sun.util.locale.ParseStatus
 
-trait ParseResult
-  
-case class ParseSuccess(sppf: SPPFNode, stat: ParseStatistics) extends ParseResult
+case class ParseSuccess(sppf: SPPFNode, stat: ParseStatistics)
 		  				  
-case class ParseError(index: Int, slot: String) extends ParseResult
+case class ParseError(index: Int, slot: String)
 
 case class ParseStatistics(nanoTime: Long, 
                            userTime: Long,
