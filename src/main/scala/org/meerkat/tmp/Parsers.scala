@@ -71,8 +71,34 @@ trait Parsers {
   type Prec = Int
   
   trait OperatorParser extends (Prec => Parser) {
-    def ~ (p: OperatorParser): OperatorParser = ???
+    def apply(prec: Prec) = ???
     def |>| (p: OperatorParser): OperatorParser = ???
+    def |>| (p: Parser): OperatorParser = ???
+  }
+  
+  trait OperatorSequence extends OperatorParser {
+    def context: Operator = ???
+  }
+  
+  class PostfixSequence(p1: OperatorParser, p2: Parser) extends OperatorSequence {
+    def ~ (p: Operator): InfixSequence = ???
+    def ~ (p: Parser): PostfixSequence = ???
+  }
+  class PrefixSequence(p1: Parser, p2: OperatorParser) extends OperatorSequence {
+    def ~ (p: Operator): PrefixSequence = ???
+    def ~ (p: Parser): Parser = ??? // Sequence
+  }
+  class InfixSequence(p1: OperatorParser, p2: OperatorParser) extends OperatorSequence {
+    // p may be right-recursive end
+    def ~ (p: Operator): InfixSequence = new InfixSequence(new PostfixSequence(p1, p2(0)), p)
+    def ~ (p: Parser): PostfixSequence = ???
+  }
+  class OperatorAlternation extends OperatorParser
+  
+  class Operator extends OperatorParser {
+    // this may be left-recursive end
+    def ~ (p: Operator): InfixSequence = new InfixSequence(this, p)
+    def ~ (p: Parser): PostfixSequence = ???
   }
   
   implicit class ParserOps(q: Parser) { import Composable.DDParser; import DDParser._
