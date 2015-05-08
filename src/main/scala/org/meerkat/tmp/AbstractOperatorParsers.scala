@@ -14,9 +14,11 @@ object AbstractOperatorParsers {
   
   import AbstractCPSParsers._
   
-  type Pred = (Int, Int)
+  type Prec = (Int, Int)
   
-  trait AbstractOperatorParser[T] extends (Pred => AbstractParser[T]) {
+  val $: Prec = (0,0)
+  
+  trait AbstractOperatorParser[T] extends (Prec => AbstractParser[T]) {
      
     private var rec: Rec.Rec = Rec.UNKNOWN
     private var group: Group.Group = Group.UNKNOWN
