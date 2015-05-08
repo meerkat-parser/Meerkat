@@ -4,8 +4,6 @@ import org.meerkat.sppf.SPPFNode
 import org.meerkat.sppf.TerminalNode
 import org.meerkat.sppf.NonterminalNode
 
-import scala.collection.breakOut
-
 trait Tree
 
 case class Appl(r: Rule, ts: Seq[Tree]) extends Tree
@@ -50,18 +48,4 @@ case class Opt(s: Symbol) extends Symbol {
 
 case class Alt(s1: Symbol, s2: Symbol) extends Symbol {
   override def name = s1.name + "|" + s2.name
-}
-
-class DefaultTreeVisitor {
-  
-  def visit(node: SPPFNode): Tree = node match {
-    case t: TerminalNode    => Terminal(t.name)
-    case n: NonterminalNode => {
-      if (n isAmbiguous) {
-        Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.children) yield visit(c))) (breakOut) )
-      } else {
-        Appl(n.first.rule, n.flatChildren.map { x => visit(x) } toList) }        
-      }
-  }
-  
 }

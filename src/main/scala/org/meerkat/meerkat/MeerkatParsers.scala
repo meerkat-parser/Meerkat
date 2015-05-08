@@ -464,7 +464,7 @@ trait MeerkatParsers {
     Trampoline.run
   }
   
-  def parse(input: String, parser: MeerkatParser, parseOpt: Configuration, testOpt: Configuration): ParseResult = {
+  def parse(input: String, parser: MeerkatParser, parseOpt: Configuration, testOpt: Configuration): Either[ParseError, ParseSuccess] = {
     
     MeerkatLogging.reset
     if(testOpt == TESTING) MeerkatLogging.logger.setLevel(INFO)
@@ -500,21 +500,21 @@ trait MeerkatParsers {
                           println("Done!")
                         }
     }
-    
+
     startSymbol match {
-	  case None    => ParseError(0, " ")
-	  case Some(_) => ParseSuccess(startSymbol.get, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
-                                            			  					    (endUserTime - startUserTime) / 1000000,
-                                            			  					    (1000000) / 1000000,
-                                            			  					    sppf.countNonterminalNodes,
-                                            			  					    sppf.countIntermediateNodes,
-                                            			  					    sppf.countTerminalNodes,
-                                            			  					    sppf.countPackedNodes,
-                                            			  					    sppf.countAmbiguousNodes))
+  	  case None    => Left(ParseError(0, " "))
+  	  case Some(x) => Right(ParseSuccess(x, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
+                                              			  			(endUserTime - startUserTime) / 1000000,
+                                              			  			(1000000) / 1000000,
+                                              			  			sppf.countNonterminalNodes,
+                                              			  			sppf.countIntermediateNodes,
+                                              			  			sppf.countTerminalNodes,
+                                              			  		  sppf.countPackedNodes,
+                                              			  			sppf.countAmbiguousNodes)))
     }
   }
     
- def parse(parser: MeerkatParser, input: String, parseOpt: Configuration = ALL_PARSES): ParseResult = {
+ def parse(parser: MeerkatParser, input: String, parseOpt: Configuration = ALL_PARSES): Either[ParseError, ParseSuccess] = {
 	
 	MeerkatLogging.reset
 	MeerkatLogging.logger.setLevel(SEVERE)
@@ -535,17 +535,19 @@ trait MeerkatParsers {
 	val endSystemTime = getCpuTime
 	val endNanoTime: Long = System.nanoTime
 	
-	startSymbol match {
-	  case None    => ParseError(0, " ")
-	  case Some(_) => ParseSuccess(startSymbol.get, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
-                                            			  					    (endUserTime - startUserTime) / 1000000,
-                                            			  					    (endSystemTime - startSystemTime) / 1000000,
-                                            			  					    sppf.countNonterminalNodes,
-                                            			  					    sppf.countIntermediateNodes,
-                                            			  					    sppf.countTerminalNodes,
-                                            			  					    sppf.countPackedNodes,
-                                            			  					    sppf.countAmbiguousNodes)) 
-    }
+  
+  startSymbol match {
+    case None    => Left(ParseError(0, " "))
+    case Some(x) => Right(ParseSuccess(x, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
+                                                          (endUserTime - startUserTime) / 1000000,
+                                                          (1000000) / 1000000,
+                                                          sppf.countNonterminalNodes,
+                                                          sppf.countIntermediateNodes,
+                                                          sppf.countTerminalNodes,
+                                                          sppf.countPackedNodes,
+                                                          sppf.countAmbiguousNodes)))
+  }
+  
   }
 
 }

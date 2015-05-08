@@ -28,35 +28,29 @@ object BenchmarkJavaRegex {
       
 	def main(args: Array[String]) {
       
-        val s = start(CompilationUnit)
+    val s = start(CompilationUnit)
       
-        for (_ <- 0 until warmupCount) {
-          val input = scala.io.Source.fromFile("test-files/warmup.java").mkString
-          parse(s, input)
-        }
+    for (_ <- 0 until warmupCount) {
+      val input = scala.io.Source.fromFile("test-files/warmup.java").mkString
+      parse(s, input)
+     }
         
-       GcFinalization.awaitFullGc()
+    GcFinalization.awaitFullGc()
       
-        printf("%-20s %-20s %-20s %-20s %-20s %-15s %-15s\n", "size", "user_time", "nonterminal_nodes", "intermediate_nodes", "terminal_nodes", "packed_nodes", "ambiguous_nodes")
+    printf("%-20s %-20s %-20s %-20s %-20s %-15s %-15s\n", "size", "user_time", "nonterminal_nodes", "intermediate_nodes", "terminal_nodes", "packed_nodes", "ambiguous_nodes")
         
-        for (f <- files)  {
+    for (f <- files)  {
 			val input: String = scala.io.Source.fromFile(f).mkString
 			
 			println("#" + f)
+      print(input.length + "   ")
 			
 			for(i <- 0 until runCount) {
 			  val result = parse(s, input)
-			  
-			  result match {
-			    case ParseSuccess(sppf, ParseStatistics(nanoTime, userTime, cpuTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)) => {
-			    	printf("%-20d %-20d %-20d %-20d %-20d %-15d %-15d\n", input.length, userTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)
-			    }
-			    case ParseError(index, slot) => println("parse error")
-			  }
-			  
+			  result fold (a => println(a), b => println(b.stat))			  
 			  GcFinalization.awaitFullGc()
 			}
-        }      
+    }      
 	}
 	
 	def getFileNames(dir: String): ListBuffer[File] = {
