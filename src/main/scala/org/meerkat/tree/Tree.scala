@@ -8,7 +8,7 @@ trait Tree
 
 case class Appl(r: Rule, ts: Seq[Tree]) extends Tree
 
-case class Amb(rs: Set[Tree]) extends Tree
+case class Amb(ts: Set[Tree]) extends Tree
 
 trait AbstractRule {
   def head: Nonterminal
