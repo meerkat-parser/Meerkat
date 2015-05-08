@@ -46,6 +46,6 @@ object FlatteningTest {
   
     def main(args: Array[String]): Unit = {
       val r = new MeerkatParsers {} . parse(S, "bbb")
-      r.fold(a => println("Parse error"), b => Visualization.toDot(b.sppf))
+      r.fold(e => println(e), b => Visualization.toDot(b.sppf))
     }  
 }
