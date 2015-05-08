@@ -46,16 +46,16 @@ object OperatorParsers {
         }
   
   trait Nonterminal extends HasAlternationOp {
-    def ~ (p: Parsers.Symbol): Sequence = Postfix(this, p)
-    def ~ (p: Nonterminal): Sequence = Infix(this, p)
+    def ~ (p: Parsers.Symbol): Postfix = Postfix(this, p)
+    def ~ (p: Nonterminal): Infix = Infix(this, p)
   }
   
   case class Postfix(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractCPSParsers.AbstractParser[NonPackedNode]) extends Sequence { import Parsers._
     
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2)
     
-    def ~ (p: Parsers.Symbol): OperatorParsers.Sequence = Postfix(this, p)
-    def ~ (p: OperatorParsers.Nonterminal): OperatorParsers.Sequence = Infix(this, p)
+    def ~ (p: Parsers.Symbol): Postfix = Postfix(this, p)
+    def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(this, p)
   }
   
   case class Prefix(p1: AbstractCPSParsers.AbstractParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
@@ -63,19 +63,19 @@ object OperatorParsers {
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1, p2(prec))
     
     def ~ (p: Parsers.Symbol): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(Prefix.this($), p)
-    def ~ (p: OperatorParsers.Nonterminal): OperatorParsers.Sequence = Prefix(Prefix.this($), p)
+    def ~ (p: OperatorParsers.Nonterminal): Prefix = Prefix(Prefix.this($), p)
   }
   
   case class Infix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
     
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
     
-    def ~ (p: Parsers.Symbol): OperatorParsers.Sequence = Postfix(Postfix(p1, p2($)), p)
-    def ~ (p: OperatorParsers.Nonterminal): OperatorParsers.Sequence = Infix(Postfix(p1, p2($)), p)
+    def ~ (p: Parsers.Symbol): Postfix = Postfix(Postfix(p1, p2($)), p)
+    def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(Postfix(p1, p2($)), p)
   }
   
   implicit class ParsersOp(p: AbstractCPSParsers.AbstractParser[NonPackedNode]) {
-    def ~ (q: OperatorParsers.Nonterminal): OperatorParsers.Sequence = Prefix(p, q)
+    def ~ (q: OperatorParsers.Nonterminal): Prefix = Prefix(p, q)
     
     def | (q: Sequence): Alternation 
       = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(p, q(prec)) }
@@ -83,5 +83,8 @@ object OperatorParsers {
     def | (q: Nonterminal): Alternation
       = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(p, q(prec)) }
   }
+  
+  def op_nt(name: String)(p: => AbstractOperatorParser[NonPackedNode]): Nonterminal
+    = ???
 
 }
