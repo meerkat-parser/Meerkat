@@ -19,6 +19,7 @@ import org.meerkat.tree.Terminal
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
+  def flatChildren: ListBuffer[SPPFNode]
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -63,7 +64,7 @@ trait NonPackedNode extends SPPFNode {
   
   def isIntermediateNode: Boolean = this.isInstanceOf[IntermediateNode]
   
-  def flatChildren: ListBuffer[SPPFNode] = flatChildren(this)
+  override def flatChildren: ListBuffer[SPPFNode] = flatChildren(this)
   
   private def flatChildren(node: NonPackedNode): ListBuffer[SPPFNode] = {
    if (isAmbiguous) {
@@ -108,6 +109,11 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
   def hasRightChild: Boolean  = rightChild != null
+  
+  override def flatChildren = {
+    if (hasRightChild) leftChild.flatChildren ++ rightChild.flatChildren
+    else leftChild.flatChildren
+  }
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
 

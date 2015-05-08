@@ -17,7 +17,7 @@ object SPPFVisitor {
     case t: TerminalNode    => Terminal(t.name)
     case n: NonterminalNode => {
       if (n isAmbiguous) 
-        Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.children) yield buildTree(c))) (breakOut) )
+        Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
       else 
         Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList)
       }
