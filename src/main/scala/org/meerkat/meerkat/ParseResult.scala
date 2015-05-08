@@ -13,7 +13,7 @@ import sun.util.locale.ParseStatus
 case class ParseSuccess(sppf: SPPFNode, stat: ParseStatistics)
 		  				  
 case class ParseError(index: Int, slot: String) {
-  override def toString = "Parse error at $slot and $index"
+  override def toString = s"Parse error at $slot and $index"
 }
 
 case class ParseStatistics(nanoTime: Long, 
