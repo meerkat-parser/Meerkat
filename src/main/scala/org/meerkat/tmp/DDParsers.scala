@@ -4,9 +4,9 @@ import org.meerkat.sppf.NonPackedNode
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 
-case class ~[+A, +B](_1: A, _2: B)
-
 object DDParsers extends AbstractParsers {
+  
+  case class ~[+A, +B](_1: A, _2: B)
   
   type Result[+T] = CPSResult[T]
   

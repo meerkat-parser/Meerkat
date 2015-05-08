@@ -3,6 +3,7 @@ package org.meerkat.tmp
 import org.meerkat.sppf.NonPackedNode
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
+import scala.reflect.ClassTag
 
 object Parsers extends AbstractParsers {
   
@@ -60,6 +61,37 @@ object Parsers extends AbstractParsers {
   
   trait Terminal extends Symbol { 
     override def isTerminal = true 
+  }
+  
+  def nt(name: String)(p: => AbstractParser[NonPackedNode]): Nonterminal
+    = Nonterminal.memoize(p, name)
+    
+  implicit def terminal(s: String): Terminal 
+    = new Terminal { 
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
+          if (input.startsWith(s, i))
+            CPSResult.success(sppfLookup.getTerminalNode(s, i))
+          else CPSResult.failure
+        } 
+      }
+  
+  object Nonterminal { import CPSResult._
+    
+    def memoize(p: => AbstractParser[NonPackedNode], name: String)(implicit obj: ClassTag[Result[NonPackedNode]]): Nonterminal = {
+      var table: Array[Result[NonPackedNode]] = null
+      lazy val nt: Nonterminal = new Nonterminal {
+                                   lazy val q: AbstractParser[NonPackedNode] = p headed nt
+        
+                                   def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
+                                     if (table == null) table = new Array(input.length + 1)
+                                     val result = table(i)
+                                     if (result == null) memo(q(input, i, sppfLookup))
+                                     else result
+                                   }
+                                 }
+      nt named name
+    }
+    
   }
 
 }
