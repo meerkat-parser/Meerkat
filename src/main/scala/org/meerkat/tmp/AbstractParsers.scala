@@ -103,7 +103,7 @@ trait AbstractParsers {
   
 }
 
-trait AbstractCPSParsers extends AbstractParsers {
+object AbstractCPSParsers extends AbstractParsers {
     
   type Result[+T] = CPSResult[T]
   

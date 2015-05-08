@@ -5,7 +5,9 @@ import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import scala.reflect.ClassTag
 
-object Parsers extends AbstractCPSParsers {
+object Parsers {
+  
+  import AbstractCPSParsers._
   
   implicit object obj1 extends Composable[NonPackedNode, NonPackedNode] {
     type R = NonPackedNode
@@ -41,22 +43,25 @@ object Parsers extends AbstractCPSParsers {
       = new Nonterminal { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
   }
   
-  trait Sequence extends AbstractParser[NonPackedNode] { 
-    override def isSequence = true
-    
+  trait HasSequenceOp extends AbstractParser[NonPackedNode] {
     def ~ (p: Symbol): Sequence = AbstractParser.seq(this, p)
   }
   
-  trait Alternation extends AbstractParser[NonPackedNode] { 
-    override def isAlternation = true
-    
+  trait HasAlternationOp extends AbstractParser[NonPackedNode] {
     def | (p: Sequence): Alternation = AbstractParser.alt(this, p)
     def | (p: Symbol): Alternation = AbstractParser.alt(this, p)
   }
   
-  trait Symbol extends AbstractParser[NonPackedNode] {
-    def ~ (p: Symbol): Sequence = AbstractParser.seq(this, p)
-    def | (p: Symbol): Alternation = AbstractParser.alt(this, p)
+  trait Sequence extends HasSequenceOp with HasAlternationOp { 
+    override def isSequence = true
+  }
+  
+  trait Alternation extends HasAlternationOp { 
+    override def isAlternation = true
+  }
+  
+  trait Symbol extends HasSequenceOp with HasAlternationOp {
+    override def isSymbol = true
   }
   
   trait Nonterminal extends Symbol { 

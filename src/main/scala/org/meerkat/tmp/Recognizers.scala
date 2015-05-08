@@ -3,9 +3,9 @@ package org.meerkat.tmp
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 
-object Recognizers extends AbstractParsers {
+object Recognizers {
   
-  type Result[+T] = CPSResult[T]
+  import AbstractCPSParsers._
   
   implicit object obj1 extends Composable[Int, Int] {
     type R = Int
@@ -32,27 +32,39 @@ object Recognizers extends AbstractParsers {
     def value(t: Int) = t
   }
   
-  trait Sequence extends AbstractParser[Int] { 
-    override def isSequence = true
-    
+  implicit object obj4 extends CanBecomeNonterminal[Int] {
+    type Nonterminal = Recognizers.Nonterminal
+    def nonterminal(p: (Input, Int, SPPFLookup) => Result[Int]): Nonterminal 
+      = new Nonterminal { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
+  }
+  
+  trait HasSequenceOp extends AbstractParser[Int] {
     def ~ (p: Symbol): Sequence = AbstractParser.seq(this, p)
   }
   
-  trait Alternation extends AbstractParser[Int] { 
-    override def isAlternation = true
-    
+  trait HasAlternationOp extends AbstractParser[Int] {
     def | (p: Sequence): Alternation = AbstractParser.alt(this, p)
     def | (p: Symbol): Alternation = AbstractParser.alt(this, p)
   }
   
-  trait Symbol extends AbstractParser[Int] {
-    def ~ (p: Symbol): Sequence = AbstractParser.seq(this, p)
-    def | (p: Symbol): Alternation = AbstractParser.alt(this, p)
+  trait Sequence extends HasSequenceOp with HasAlternationOp { 
+    override def isSequence = true
+  }
+  
+  trait Alternation extends HasAlternationOp { 
+    override def isAlternation = true
+  }
+  
+  trait Symbol extends HasSequenceOp with HasAlternationOp {
+    override def isSymbol = true
   }
   
   trait Nonterminal extends Symbol { 
     override def isNonterminal = true 
   }
+  
+  def nt(name: String)(p: => AbstractParser[Int]): Nonterminal
+    = memoize(p, name)
   
   trait Terminal extends Symbol {
     override def isTerminal = true
