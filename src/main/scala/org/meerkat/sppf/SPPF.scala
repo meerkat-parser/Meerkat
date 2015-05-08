@@ -12,6 +12,9 @@ import org.meerkat.util.PrimeMultiplicatonHash
 import scala.collection.JavaConversions._
 import java.util.ArrayList
 import org.meerkat.tree.Rule
+import org.meerkat.tree.Rule
+import org.meerkat.tree.Nonterminal
+import org.meerkat.tree.Terminal
 
 trait SPPFNode {
 	type T <: SPPFNode
@@ -49,12 +52,16 @@ trait NonPackedNode extends SPPFNode {
       return true
     }
 		
-	def attachChildren(packedNode: PackedNode, leftChild: Option[NonPackedNode], rightChild: NonPackedNode) = {
-	  if (leftChild.isDefined) packedNode.leftChild = leftChild.get
-    packedNode.rightChild = rightChild
-	}
+	def attachChildren(packedNode: PackedNode, leftChild: Option[NonPackedNode], rightChild: NonPackedNode) = leftChild match {
+    case Some(c) => packedNode.leftChild = c; packedNode.rightChild = rightChild
+    case None    => packedNode.leftChild = rightChild
+   }
 	
 	def isAmbiguous: Boolean = rest != null
+  
+  def hasChildren: Boolean = first != null || rest != null
+  
+  def isIntermediateNode: Boolean = this.isInstanceOf[IntermediateNode]
   
   def flatChildren: ListBuffer[SPPFNode] = flatChildren(this)
   
@@ -63,7 +70,11 @@ trait NonPackedNode extends SPPFNode {
      ListBuffer(node)
    } else {
      val l = ListBuffer[SPPFNode]()
-     l ++= flatChildren(node.first.leftChild) 
+     if (node.hasChildren && node.first.leftChild.isIntermediateNode) 
+       l ++= flatChildren(node.first.leftChild) 
+     else 
+       l += node.first.leftChild
+       
      if (node.first hasRightChild) l += node.first.rightChild
      l
    } 
@@ -90,9 +101,9 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
   var leftChild: T = _
   var rightChild: T = _
     
-  def pivot = rightChild.leftExtent
+  def pivot = leftChild.rightExtent
     
-  def rule: Rule = ???
+  def rule: Rule = Rule(Nonterminal("A"), List(Terminal("a")))
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   

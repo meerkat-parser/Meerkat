@@ -16,10 +16,10 @@ object SPPFVisitor {
   def buildTree(node: SPPFNode): Tree = node match {
     case t: TerminalNode    => Terminal(t.name)
     case n: NonterminalNode => {
-      if (n isAmbiguous) {
+      if (n isAmbiguous) 
         Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.children) yield buildTree(c))) (breakOut) )
-      } else {
-        Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList) }        
+      else 
+        Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList)
       }
     case _                  => throw new RuntimeException("Should not reach here!")
   }
