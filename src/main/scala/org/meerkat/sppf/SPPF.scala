@@ -104,15 +104,25 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
     
   def pivot = leftChild.rightExtent
     
-  def rule: Rule = Rule(Nonterminal("A"), List(Terminal("a")))
+  def rule: Rule = null
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
   def hasRightChild: Boolean  = rightChild != null
   
   override def flatChildren = {
-    if (hasRightChild) leftChild.flatChildren ++ rightChild.flatChildren
-    else leftChild.flatChildren
+    val l = ListBuffer[SPPFNode]()
+    if (leftChild isIntermediateNode)
+      l ++= leftChild.flatChildren
+    else 
+      l += leftChild
+
+    if (hasRightChild)
+      if (rightChild isIntermediateNode)
+        l ++= rightChild.flatChildren
+      else 
+        l += rightChild
+    l      
   }
   
 	override def toString = name + "," + pivot + ", parent=(" + parent + ")"

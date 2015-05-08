@@ -7,6 +7,8 @@ import org.meerkat.meerkat._
 import org.meerkat.util.Visualization
 import org.meerkat.sppf.SPPFVisitor
 import org.meerkat.tree.Tree
+import org.meerkat.tree.Appl
+import org.meerkat.tree.Amb
 
 @RunWith(classOf[JUnitRunner])
 class FlatteningTest extends FunSuite {
@@ -35,8 +37,12 @@ object FlatteningTest {
 
     val r = new MeerkatParsers {} . parse(S, "bbb")
     r.fold(a => println("Parse Error"), b => Visualization.toDot(b.sppf))
-    val x = SPPFVisitor.buildTree(r.right.get.sppf)   
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)
     println(x)
+    x match {
+      case Appl(a, b) => println(b.length)
+      case Amb(a)     => println(a.size)
+    }
   }
   
   def main(args: Array[String]): Unit = {
