@@ -5,9 +5,7 @@ import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import scala.reflect.ClassTag
 
-object Parsers extends AbstractParsers {
-  
-  type Result[+T] = CPSResult[T]
+object Parsers extends AbstractCPSParsers {
   
   implicit object obj1 extends Composable[NonPackedNode, NonPackedNode] {
     type R = NonPackedNode
@@ -37,6 +35,12 @@ object Parsers extends AbstractParsers {
     def value(t: NonPackedNode): Int = t.rightExtent
   }
   
+  implicit object obj4 extends CanBecomeNonterminal[NonPackedNode] {
+    type Nonterminal = Parsers.Nonterminal
+    def nonterminal(p: (Input, Int, SPPFLookup) => Result[NonPackedNode]): Nonterminal 
+      = new Nonterminal { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
+  }
+  
   trait Sequence extends AbstractParser[NonPackedNode] { 
     override def isSequence = true
     
@@ -64,7 +68,7 @@ object Parsers extends AbstractParsers {
   }
   
   def nt(name: String)(p: => AbstractParser[NonPackedNode]): Nonterminal
-    = Nonterminal.memoize(p, name)
+    = memoize(p, name)
     
   implicit def terminal(s: String): Terminal 
     = new Terminal { 
@@ -75,23 +79,4 @@ object Parsers extends AbstractParsers {
         } 
       }
   
-  object Nonterminal { import CPSResult._
-    
-    def memoize(p: => AbstractParser[NonPackedNode], name: String)(implicit obj: ClassTag[Result[NonPackedNode]]): Nonterminal = {
-      var table: Array[Result[NonPackedNode]] = null
-      lazy val nt: Nonterminal = new Nonterminal {
-                                   lazy val q: AbstractParser[NonPackedNode] = p headed nt
-        
-                                   def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
-                                     if (table == null) table = new Array(input.length + 1)
-                                     val result = table(i)
-                                     if (result == null) memo(q(input, i, sppfLookup))
-                                     else result
-                                   }
-                                 }
-      nt named name
-    }
-    
-  }
-
 }
