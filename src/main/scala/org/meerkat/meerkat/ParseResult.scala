@@ -12,13 +12,18 @@ import sun.util.locale.ParseStatus
 
 case class ParseSuccess(sppf: SPPFNode, stat: ParseStatistics)
 		  				  
-case class ParseError(index: Int, slot: String)
+case class ParseError(index: Int, slot: String) {
+  override def toString = "Parse error at $slot and $index"
+}
 
 case class ParseStatistics(nanoTime: Long, 
                            userTime: Long,
                            systemTime: Long,
-                           countNonterminaldNodes: Int,
+                           countNonterminalNodes: Int,
                            countIntermediateNodes: Int,
                            countTerminalNodes: Int,
                            countPackedNodes: Int,
-                           countAmbiguousNodes: Int)
+                           countAmbiguousNodes: Int) {
+
+  override def toString = "%-20d %-20d %-20d %-20d %-15d %-15d\n".format(userTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)
+}

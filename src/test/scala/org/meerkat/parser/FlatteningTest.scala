@@ -45,12 +45,7 @@ object FlatteningTest {
     val S: MeerkatParser = "S" ::= S ~~ S ~~ S | S ~~ S | "b"
   
     def main(args: Array[String]): Unit = {
-      
       val r = new MeerkatParsers {} . parse(S, "bbb")
-      
-      r match {
-        case ParseSuccess(r, s) => Visualization.toDot(r) 
-        case _               => println("Parse error")
-      }    
+      r.fold(a => println("Parse error"), b => Visualization.toDot(b.sppf))
     }  
 }
