@@ -6,6 +6,7 @@ import org.scalatest.FunSuite
 import org.meerkat.meerkat._
 import org.meerkat.util.Visualization
 import org.meerkat.sppf.SPPFVisitor
+import org.meerkat.tree.Tree
 
 @RunWith(classOf[JUnitRunner])
 class FlatteningTest extends FunSuite {
@@ -18,34 +19,25 @@ class FlatteningTest extends FunSuite {
     val E: MeerkatParser = "E" ::= "e"
     val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
     
-    new MeerkatParsers {} . parse(S, "abcde")
-    
+    val r = new MeerkatParsers {} . parse(S, "abcde")
   }
   
 }
 
 object FlatteningTest {
   
-//  def main(args: Array[String]): Unit = {
-//    val A: MeerkatParser = "A" ::= "a"
-//    val B: MeerkatParser = "B" ::= "b"
-//    val C: MeerkatParser = "C" ::= "c"
-//    val D: MeerkatParser = "D" ::= "d"
-//    val E: MeerkatParser = "E" ::= "e"
-//    val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
-//    
-//    val r = new MeerkatParsers {} . parse(S, "abcde")
-//    r match {
-//      case ParseSuccess(r, s) => SPPFVisitor.preOrder(r)(n => println(n)) //Visualization.toDot(r) 
-//      case _               => println("Parse error")
-//    }
-//    
-//  }
+  def main(args: Array[String]): Unit = {
+    val A: MeerkatParser = "A" ::= "a"
+    val B: MeerkatParser = "B" ::= "b"
+    val C: MeerkatParser = "C" ::= "c"
+    val D: MeerkatParser = "D" ::= "d"
+    val E: MeerkatParser = "E" ::= "e"
+    val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
+
+    val r = new MeerkatParsers {} . parse(S, "abcde")
+    r.fold(a => println("Parse Error"), b => Visualization.toDot(b.sppf))
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)   
+    println(x)
+  }
   
-    val S: MeerkatParser = "S" ::= S ~~ S ~~ S | S ~~ S | "b"
-  
-    def main(args: Array[String]): Unit = {
-      val r = new MeerkatParsers {} . parse(S, "bbb")
-      r.fold(e => println(e), b => Visualization.toDot(b.sppf))
-    }  
 }
