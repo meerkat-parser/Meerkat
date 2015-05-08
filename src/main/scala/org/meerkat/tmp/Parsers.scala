@@ -4,6 +4,8 @@ import org.meerkat.sppf.NonPackedNode
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import scala.reflect.ClassTag
+import org.meerkat.sppf.DefaultSPPFLookup
+import org.meerkat.util.Visualization
 
 object Parsers {
   
@@ -83,5 +85,28 @@ object Parsers {
           else CPSResult.failure
         } 
       }
+  
+  def run(input: Input, sppf: SPPFLookup, parser: Nonterminal): Unit = {
+    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
+    Trampoline.run
+  }
+  
+  def parse(sentence: String, parser: Nonterminal): Unit = {
+    val input = new Input(sentence)
+    val sppf = new DefaultSPPFLookup(input)
+    
+    run(input, sppf, parser)
+    
+    val startSymbol = sppf.getStartNode(parser.name, 0, sentence.length())
+    
+    startSymbol match {
+      case None       => println("Parse error")
+      case Some(node) => println("Success: " + node)
+                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
+                         println("Visualizing...") 
+                         Visualization.toDot(startSymbol.get)
+                         println("Done!")
+    }
+  }
   
 }
