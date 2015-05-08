@@ -22,7 +22,7 @@ trait AbstractParsers {
   
   trait AbstractParser[+T] extends Parser[T] {
     
-    private var nm: String = "parser"
+    private var nm: String = s"p${this.hashCode()}"
     def name: String = nm
     def named(name: String): this.type = { nm = name; this }
     override def toString: String = nm

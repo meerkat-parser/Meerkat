@@ -80,10 +80,12 @@ object Parsers {
   implicit def terminal(s: String): Terminal 
     = new Terminal { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
-          if (input.startsWith(s, i))
-            CPSResult.success(sppfLookup.getTerminalNode(s, i))
-          else CPSResult.failure
-        } 
+          if (input.startsWith(s, i)) {
+            CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length()))
+          } else CPSResult.failure
+        }
+        
+        override def name = s
       }
   
   def run(input: Input, sppf: SPPFLookup, parser: Nonterminal): Unit = {
@@ -97,7 +99,8 @@ object Parsers {
     
     run(input, sppf, parser)
     
-    val startSymbol = sppf.getStartNode(parser.name, 0, sentence.length())
+    println(s"Trying to find: ${parser.name}(0,${sentence.length()})")
+    val startSymbol = sppf.getStartNode(parser, 0, sentence.length())
     
     startSymbol match {
       case None       => println("Parse error")
