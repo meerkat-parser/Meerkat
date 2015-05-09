@@ -3,6 +3,7 @@ package org.meerkat.tmp
 import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import scala.reflect.ClassTag
+import org.meerkat.sppf.Slot
 
 trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def map[U](f: T => U)(implicit m: Memoizable[T]): M[U]
@@ -20,7 +21,9 @@ trait AbstractParsers {
   
   protected type Parser[T] = (Input, Int, SPPFLookup) => Result[T]
   
-  trait AbstractParser[+T] extends Parser[T] {
+  trait AbstractParser[+T] extends Parser[T] with Slot {
+    
+    def ruleType = ???
     
     private var nm: String = s"p${this.hashCode()}"
     def name: String = nm

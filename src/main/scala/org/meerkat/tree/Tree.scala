@@ -6,20 +6,21 @@ import org.meerkat.sppf.NonterminalNode
 
 trait Tree
 
-case class Appl(r: Rule, ts: Seq[Tree]) extends Tree
+case class Appl(r: AbstractRule, ts: Seq[Tree]) extends Tree
 
 case class Amb(ts: Set[Tree]) extends Tree
 
 trait AbstractRule {
   def head: Nonterminal
-  def body: List[Symbol]
+  def body: Seq[Symbol]
 }
 
-case class Rule(head: Nonterminal, body: List[Symbol]) extends AbstractRule
+case class Rule(head: Nonterminal, body: Seq[Symbol]) extends AbstractRule
 
-case class PartialRule(r: Rule, i: Int) extends AbstractRule {
-  override def head = r.head
-  override def body = r.body
+case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends AbstractRule
+
+object PartialRule {
+  def apply(head: Nonterminal, body: Seq[Symbol]): PartialRule = PartialRule(head, body, body.length)
 }
 
 trait Symbol {
