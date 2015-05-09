@@ -28,12 +28,6 @@ object OperatorParsers {
     def |> (p: Nonterminal): Alternation
       = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
     
-    def |> (p: Parsers.Sequence): Alternation
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
-    
-    def |> (p: Parsers.Symbol): Alternation
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
-    
   }
   
   trait Sequence extends HasAlternationOp

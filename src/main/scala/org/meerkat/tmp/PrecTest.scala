@@ -15,23 +15,24 @@ object Test2 {
 object Test3 {
   // the use of |> and no occurences of operator nonterminal on left or right ends 
   // to the left of |> is a static error 
-  val E: OperatorParsers.Nonterminal = op_nt("E") { E ~ "+" ~ E |> "a" }
+  val E: OperatorParsers.Nonterminal = op_nt("E") { E ~ "*" ~ E |> E ~ "+" ~ E | "a" }
 }
 
 object Test4 {
   val open: Parsers.Terminal = "("
-  val close: Parsers.Terminal = "("
+  val close: Parsers.Terminal = ")"
    
-  val E: OperatorParsers.Nonterminal = op_nt("E") { open ~ E ~ "+" ~ E ~ close ~ E |> "a" }
+  val E: Parsers.Nonterminal = nt("E") { open ~ E ~ "+" ~ E ~ close | "a" }
 }
 
 object Test5 {
   val open: Parsers.Terminal = "("
-  val close: Parsers.Terminal = "("
+  val close: Parsers.Terminal = ")"
    
   val E: OperatorParsers.Nonterminal 
     = op_nt("E") {(    open ~ E ~ close 
-                    |  E ~ "+" ~ E 
-                    |> "a" 
+                    |  E ~ "*" ~ E
+                    |> E ~ "+" ~ E
+                    |  "a" 
                  )}
 }
