@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 CWI. All rights reserved.
+            * Copyright (c) 2014 CWI. All rights reserved.
  * 
  * Authors:
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
@@ -25,7 +25,10 @@ import com.sun.media.sound.SoftReverb.AllPass
 
 trait Layout { def parser: MeerkatParser }
 
-trait MeerkatParser extends Parser {
+trait MeerkatParser extends Parser with Slot {
+  
+  def ruleType: org.meerkat.tree.AbstractRule = ???
+  def symbol: org.meerkat.tree.Symbol = ???
   
   import MeerkatLogging._
   
@@ -86,6 +89,10 @@ trait MeerkatParser extends Parser {
                       p2(input, sppf, t1.rightExtent).mapNoMemo(t2 => 
                         sppf.getIntermediateNode(this, t1, t2)) })
                   }
+              
+                  override def ruleType 
+                    = if (this headed) org.meerkat.tree.Rule(org.meerkat.tree.Nonterminal(this.head), (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
+                      else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
               }  
     p.nameAs((if(p.headed) p.head + " ::= " else "") + p1.name.value + p2.name.value + p.hashCode() + "@")
     p.sequence
@@ -116,6 +123,7 @@ trait MeerkatParser extends Parser {
                     def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h, this.name.value, i)
                       MeerkatParser.this(input, sppf, i)
                     }
+                    override def ruleType = MeerkatParser.this.ruleType
                   }
                 } else
                   new MeerkatParser {
@@ -123,6 +131,7 @@ trait MeerkatParser extends Parser {
                       MeerkatParser.this(input, sppf, i).map(t => { endOfAlt(h, this.name.value, i, t)
                         sppf.getNonterminalNode(h, this, t) })
                     }
+                    override def ruleType = org.meerkat.tree.Rule(org.meerkat.tree.Nonterminal(h), List(MeerkatParser.this.symbol))
                   }
         if(this.sequenced) p.nameAs(this.name.value)  
         else p.nameAs(h + " ::= " + this.name.value + p.hashCode())
@@ -322,7 +331,9 @@ trait MeerkatParser extends Parser {
             
 }
 
-trait TerminalParser extends MeerkatParser
+trait TerminalParser extends MeerkatParser {
+  override def symbol = org.meerkat.tree.Terminal(this.toString())
+}
 
 class StartChar(c1: Char) {
   def --(c2: Char): TerminalParser

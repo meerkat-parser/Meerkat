@@ -49,6 +49,8 @@ object Rule {
                 }
                 
               }
+              
+              override def symbol = org.meerkat.tree.Nonterminal(this.name.value)
             }
     p.nameAs(r.getHead)
     p.resetWith(if(table != null) { table = null; r.getParser.reset() }) 

@@ -9,6 +9,8 @@ import org.meerkat.sppf.SPPFVisitor
 import org.meerkat.tree.Tree
 import org.meerkat.tree.Appl
 import org.meerkat.tree.Amb
+import org.meerkat.tree.Nonterminal
+import org.meerkat.tree.Nonterminal
 
 @RunWith(classOf[JUnitRunner])
 class FlatteningTest extends FunSuite {

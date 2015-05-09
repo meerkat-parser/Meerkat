@@ -19,10 +19,10 @@ trait SPPFLookup {
   def getTerminalNode(s: Any, inputIndex: Int): TerminalNode
   def getTerminalNode(s: Any, leftExtent: Int, rightExtent: Int): TerminalNode
   def getEpsilonNode(inputIndex: Int): TerminalNode
-  def getNonterminalNode(head: Any, slot: Any, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode
-  def getNonterminalNode(head: Any, slot: Any, rightChild: NonPackedNode): NonPackedNode
-  def getIntermediateNode(slot: Any, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode
-  def getIntermediateNode(slot: Any, leftChild: NonPackedNode, rightChild: NonPackedNode): NonPackedNode
+  def getNonterminalNode(head: Any, slot: Slot, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode
+  def getNonterminalNode(head: Any, slot: Slot, rightChild: NonPackedNode): NonPackedNode
+  def getIntermediateNode(slot: Slot, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode
+  def getIntermediateNode(slot: Slot, leftChild: NonPackedNode, rightChild: NonPackedNode): NonPackedNode
   def countNonterminalNodes: Int
   def countIntermediateNodes: Int
   def countPackedNodes: Int
@@ -54,7 +54,7 @@ class DefaultSPPFLookup(input: Input) extends SPPFLookup {
   
   override def getEpsilonNode(inputIndex: Int): TerminalNode = findOrElseCreateTerminalNode("epsilon", inputIndex, inputIndex)
     
-  override def getNonterminalNode(head: Any, slot: Any, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode = {
+  override def getNonterminalNode(head: Any, slot: Slot, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode = {
     
     val leftExtent = if (leftChild.isDefined) leftChild.get.leftExtent else rightChild.leftExtent
     val rightExtent = rightChild.rightExtent
@@ -71,11 +71,11 @@ class DefaultSPPFLookup(input: Input) extends SPPFLookup {
     return node
   }
   
-  override def getNonterminalNode(head: Any, slot: Any, rightChild: NonPackedNode): NonPackedNode = {
+  override def getNonterminalNode(head: Any, slot: Slot, rightChild: NonPackedNode): NonPackedNode = {
     return getNonterminalNode(head, slot, None, rightChild)
   }
   
-  override def getIntermediateNode(slot: Any, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode = {
+  override def getIntermediateNode(slot: Slot, leftChild: Option[NonPackedNode], rightChild: NonPackedNode): NonPackedNode = {
     
     val leftExtent = if (leftChild.isDefined) leftChild.get.leftExtent else rightChild.leftExtent 
     val rightExtent = rightChild.rightExtent
@@ -92,7 +92,7 @@ class DefaultSPPFLookup(input: Input) extends SPPFLookup {
     return node
   }
   
-  override def getIntermediateNode(slot: Any, leftChild: NonPackedNode, rightChild: NonPackedNode): NonPackedNode = {
+  override def getIntermediateNode(slot: Slot, leftChild: NonPackedNode, rightChild: NonPackedNode): NonPackedNode = {
     return getIntermediateNode(slot, Some(leftChild), rightChild);
   }
   

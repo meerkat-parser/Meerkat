@@ -15,6 +15,11 @@ import org.meerkat.tree.Rule
 import org.meerkat.tree.Rule
 import org.meerkat.tree.Nonterminal
 import org.meerkat.tree.Terminal
+import org.meerkat.tree.AbstractRule
+
+trait Slot {
+  def ruleType: AbstractRule
+}
 
 trait SPPFNode {
 	type T <: SPPFNode
@@ -95,7 +100,7 @@ case class TerminalNode(s: Any, leftExtent: Int, rightExtent: Int) extends NonPa
 	override val name: String = s toString
 }
 
-case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
+case class PackedNode(slot: Slot, parent: NonPackedNode) extends SPPFNode {
 
   type T = NonPackedNode
   
@@ -104,7 +109,7 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
     
   def pivot = leftChild.rightExtent
     
-  def rule: Rule = null
+  def rule: AbstractRule = slot.ruleType
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
@@ -125,10 +130,10 @@ case class PackedNode(name: Any, parent: NonPackedNode) extends SPPFNode {
     l      
   }
   
-	override def toString = name + "," + pivot + ", parent=(" + parent + ")"
+	override def toString = slot + "," + pivot + ", parent=(" + parent + ")"
 
   override def equals(o: Any) = o match {
-    case p: PackedNode => name == p.name && parent == p.parent && pivot == p.pivot
+    case p: PackedNode => slot == p.slot && parent == p.parent && pivot == p.pivot
     case _             => false
   }
 }
