@@ -18,7 +18,7 @@ object AbstractOperatorParsers {
   
   val $: Prec = (0,0)
   
-  trait AbstractOperatorParser[T] extends (Prec => AbstractParser[T]) {
+  trait AbstractOperatorParser[+T] extends (Prec => AbstractParser[T]) {
      
     private var rec: Rec.Rec = Rec.UNKNOWN
     private var group: Group.Group = Group.UNKNOWN
@@ -29,6 +29,19 @@ object AbstractOperatorParsers {
     def isLeft = rec == Rec.LEFT || rec == Rec.BOTH
     def isRight = rec == Rec.RIGHT || rec == Rec.BOTH
     def isLeftOrRight = Rec.BOTH
+    
+    private var l = 0
+    def assign(l: Int): Unit = this.l = l
+    def level: Int = l
+    
+    private var hd: AbstractOperatorParser[Any] = _
+    def head: AbstractOperatorParser[Any] = hd
+    def headed(head: AbstractOperatorParser[Any]): AbstractOperatorParser[T] = { hd = head; this }
+    
+    def isSequence = false
+    def isAlternation = false
+    
+    def isNonterminal = false
     
   }
 

@@ -36,3 +36,15 @@ object Test5 {
                     |  "a" 
                  )}
 }
+
+object Test6 {
+  val open: Parsers.Terminal = "("
+  val close: Parsers.Terminal = ")"
+  
+  val E: OperatorParsers.Nonterminal 
+    = op_nt("E") {(    open ~ E ~ close 
+                    |  left { E ~ "*" ~ E }
+                    |> E ~ "+" ~ E
+                    |  "a" 
+                 )}
+}
