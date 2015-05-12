@@ -17,6 +17,7 @@ import org.meerkat.util.JavaTokens._
 import scala.collection.JavaConversions._
 import Result._
 import Rule._
+import org.meerkat.util.Visualization._
 
 import MeerkatDDParser._
 
@@ -499,7 +500,7 @@ trait MeerkatParsers {
     val endNanoTime: Long = System.nanoTime()
     
     MeerkatLogging.logger.info("Parsing time (user): %d ms", new java.lang.Long((endUserTime - startUserTime) / 1000000))
-    MeerkatLogging.logger.info("Parsing time (nano): %d ms", new java.lang.Long((endNanoTime - startNanoTime) / 1000000))
+    MeerkatLogging.logger.info("Parsing time (nano): %d ms", new java.lang.Long((endNanoTime - startNanoTime) / 1000000)) 
     
     startSymbol match {
         case None    => println("Parse error")
@@ -507,7 +508,7 @@ trait MeerkatParsers {
         				println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                         if(testOpt == NO_TESTING) {
                           println("Visualizing...") 
-                          Visualization.toDot(startSymbol.get)
+                          visualize(node)
                           println("Done!")
                         }
     }

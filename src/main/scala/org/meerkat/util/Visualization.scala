@@ -17,36 +17,47 @@ import org.meerkat.sppf.NonterminalNode
 import org.meerkat.sppf.PackedNode
 import org.meerkat.sppf.SPPFNode
 import org.meerkat.sppf.TerminalNode
+import org.meerkat.tree.Tree
+import org.meerkat.sppf.NonPackedNode
 
 object Visualization {
-	
-    def toDot(node: SPPFNode): String = {
-		val sb = new StringBuilder
-
-		sb ++= """| digraph sppf {
-				      |     layout=dot
-				      |     nodesep=.6
-				      |     ranksep=.4		
-				      |     ordering=out
-		          |""".stripMargin
-		
-//		removePackedNodes(node, new HashSet)
-//		removeIntermediateNodes(node, new HashSet)
-		toDot(node, sb, new HashSet)
-		
-		sb ++= "}"
-		  
-		val file = new File("sppf.dot")  
-		val writer = new BufferedWriter(new FileWriter(file))
-		writer.write(sb.toString)
-		writer.close()
-		
-		"/usr/local/bin/dot -Tpdf -o sppf.pdf sppf.dot"!
-		  
-		return sb.toString
-    }
   
-	def toDot(node: SPPFNode, sb: StringBuilder, duplicateSet: Set[SPPFNode]) : Unit = {
+  implicit val f: NonPackedNode => String = toDot
+  implicit val g: Tree => String = toDot
+
+  def visualize[T](t: T, name: String = "sppf", path: String = ".")(implicit f: T => String): Unit = visualize(f(t), name, path)
+  
+  private def visualize(s: String, name: String, path: String): Unit = {
+  		val sb = new StringBuilder
+  
+  		sb ++= """| digraph sppf {
+  				      |     layout=dot
+  				      |     nodesep=.6
+  				      |     ranksep=.4		
+  				      |     ordering=out
+  		          |""".stripMargin
+  		
+  		sb ++= "}"
+  		  
+  		val file = new File("sppf.dot")  
+  		val writer = new BufferedWriter(new FileWriter(file))
+  		writer.write(sb.toString)
+  		writer.close()
+  		
+  		s"/usr/local/bin/dot -Tpdf -o $name.pdf $path/$name.dot"!
+  }
+  
+  def toDot(t: Tree): String = {
+    ???
+  }
+    
+  def toDot(node: NonPackedNode): String = {
+   val sb = new StringBuilder
+   toDot(node, sb, new HashSet())
+   sb.toString
+  }
+  
+	private def toDot(node: SPPFNode, sb: StringBuilder, duplicateSet: Set[SPPFNode]) : Unit = {
 	  
 	    if (!duplicateSet.contains(node)) {
 	      duplicateSet.add(node)
