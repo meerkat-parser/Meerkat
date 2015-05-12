@@ -12,15 +12,14 @@ import java.io.File
 import java.io.BufferedWriter
 import java.io.FileWriter
 import scala.sys.process._
-import org.meerkat.sppf.IntermediateNode
-import org.meerkat.sppf.NonterminalNode
-import org.meerkat.sppf.PackedNode
-import org.meerkat.sppf.SPPFNode
-import org.meerkat.sppf.TerminalNode
+import org.meerkat.sppf._
 import org.meerkat.tree.Tree
-import org.meerkat.sppf.NonPackedNode
+import org.meerkat.tree._
 
 object Visualization {
+  
+  import Shape._
+  import Style._
   
   implicit val f: NonPackedNode => String = toDot
   implicit val g: Tree => String = toDot
@@ -37,8 +36,10 @@ object Visualization {
   				      |     ordering=out
   		          |""".stripMargin
   		
-  		sb ++= "}"
+      sb ++= s
   		  
+      sb ++= "}\n"
+      
   		val file = new File("sppf.dot")  
   		val writer = new BufferedWriter(new FileWriter(file))
   		writer.write(sb.toString)
@@ -48,7 +49,15 @@ object Visualization {
   }
   
   def toDot(t: Tree): String = {
-    ???
+    val sb = new StringBuilder
+    toDot(t, sb)
+    sb.toString
+  }
+  
+  private def toDot(t: Tree, sb: StringBuilder): Unit = t match {
+    case Terminal(s) => sb ++= getShape(s, s, Rectangle, Rounded)
+    case Appl(r, s)  => sb ++= getShape(r.toString, r.toString, Rectangle, Rounded); s.foreach { t => toDot(t, sb) }
+    case Amb(s)      => s.foreach { t => toDot(t, sb) }
   }
     
   def toDot(node: NonPackedNode): String = {
@@ -67,21 +76,22 @@ object Visualization {
 	  
 		node match {
 		  case n@NonterminalNode(slot, leftExtent, rightExtent) => 
-		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="($slot, $leftExtent, $rightExtent)", fontsize=10];\n"""
+		    sb ++= getShape(n.toString(), s"($slot, $leftExtent, $rightExtent)", Rectangle, Rounded)
 		    for(t <- n.children) toDot(t, sb, duplicateSet)
 		    for(t <- n.children) addEdges(n, t, sb)
 		    		    
-		  case n@IntermediateNode(slot, leftExtent, rightExtent) => 
-		    sb ++= s""""${escape(n.toString)}"[shape=box, height=0.2, width=0.4, color=black, fontcolor=black, label="(${escape(slot.toString)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
+		  case n@IntermediateNode(slot, leftExtent, rightExtent) =>
+        sb ++= getShape(n.toString(), s"$slot, $leftExtent, $rightExtent", Rectangle)
 		    for(t <- n.children) toDot(t, sb, duplicateSet)
 		    for(t <- n.children) addEdges(n, t, sb)
 		    		    
 		  case n@TerminalNode(char, leftExtent, rightExtent) =>
+        sb ++= getShape(n.toString, char.toString, Rectangle, Rounded)
 		    sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(char)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
 		    
 		  case n@PackedNode(slot, parent) =>
-//		  sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(slot)}, $parent.pivot)", fontsize=10];\n"""
-		    sb ++= s""""${escape(n.toString)}"[shape=diamond, height=0.1, width=0.1, color=black, fontcolor=black, label="", fontsize=10];\n"""
+//        sb ++= getShape(n.toString, s"($slot, ${n.pivot})", Diamond)
+        sb ++= getShape(n.toString, "", Diamond)
 		    for(t <- n.children) {
 		      toDot(t, sb, duplicateSet)
 		      addEdges(n, t, sb)
@@ -95,4 +105,28 @@ object Visualization {
 		sb ++= s"""edge [color=black, style=solid, penwidth=0.5, arrowsize=0.7]; "${escape(src.toString)}" -> { "${escape(dst.toString)}" }\n"""
 	}
   
+  def getShape(id: String, label: String, shape: Shape, style: Style = Default) = 
+    s""""${escape(id)}"[$shape $style height=0.1, width=0.1, color=black, fontcolor=black, label="${escape(label)}", fontsize=10];\n""" 
+  
 }
+
+object Shape extends Enumeration {
+  
+  type Shape = Value
+  
+  val Rectangle = Shape("shape = box, ")
+  val Diamond   = Shape("shape = diamond, ")
+  val Circle    = Shape("shape = circle,")
+
+  def apply(s: String): Shape = Value(s)
+}
+
+object Style extends Enumeration {
+  type Style = Value
+  
+  val Default = Style("")
+  val Rounded = Style("style = rounded, ")
+  
+  def apply(s: String): Style = Value(s)
+}
+

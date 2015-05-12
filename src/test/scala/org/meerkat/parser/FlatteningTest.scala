@@ -49,7 +49,7 @@ object FlatteningTest {
   }
   
   def main(args: Array[String]): Unit = {
-    test2()
+    test1()
   }
   
 }
