@@ -5,6 +5,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.meerkat.meerkat._
 import org.meerkat.util.Visualization
+import org.meerkat.util.Visualization._
 import org.meerkat.sppf.SPPFVisitor
 import org.meerkat.tree.Tree
 import org.meerkat.tree.Appl
@@ -28,7 +29,7 @@ object FlatteningTest {
     val S: MeerkatParser = "S" ::= A ~~ B ~~ C ~~ D ~~ E
 
     val r = new MeerkatParsers {} . parse(S, "abcde")
-    r.fold(a => println("Parse Error"), b => Visualization.toDot(b.sppf))
+    r.fold(a => println("Parse Error"), b => visualize(b.sppf))
     val x = SPPFVisitor.buildTree(r.right.get.sppf)   
     println(x)
   }
@@ -38,7 +39,7 @@ object FlatteningTest {
   def test2() {
 
     val r = new MeerkatParsers {} . parse(S, "bbbb")
-    r.fold(a => println("Parse Error"), b => Visualization.toDot(b.sppf))
+    r.fold(a => println("Parse Error"), b => visualize(b.sppf))
     val x = SPPFVisitor.buildTree(r.right.get.sppf)
     println(x)
     x match {

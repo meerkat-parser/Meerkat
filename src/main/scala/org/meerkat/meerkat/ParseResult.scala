@@ -9,8 +9,9 @@ package org.meerkat.meerkat
 
 import org.meerkat.sppf.SPPFNode
 import sun.util.locale.ParseStatus
+import org.meerkat.sppf.NonPackedNode
 
-case class ParseSuccess(sppf: SPPFNode, stat: ParseStatistics)
+case class ParseSuccess(sppf: NonPackedNode, stat: ParseStatistics)
 		  				  
 case class ParseError(index: Int, slot: String) {
   override def toString = s"Parse error at $slot and $index"
