@@ -62,24 +62,21 @@ object OperatorParsers {
   trait Alternation extends HasAlternationOp {
     override def isAlternation = true
     
-    private var recursives: List[AbstractOperatorParser[NonPackedNode]] = _
-    private var groups: List[Int] = _
-    override def merge1[U >: NonPackedNode](alternative: AbstractOperatorParser[U]) = {
+    private var recursives: Groups[NonPackedNode] = _
+    override def merge1[U >: NonPackedNode](alt: AbstractOperatorParser[U]) 
+      = (this.recursives._1 :+ alt, this.recursives._2)
       
-      ???
-    }
+    override def merge2[U >: NonPackedNode](alt: AbstractOperatorParser[U])
+      = (this.recursives._1 :+ alt, this.recursives._2 :+ (this.recursives._1.length + 1))
       
-    override def merge2[U >: NonPackedNode](alternative: AbstractOperatorParser[U])
-      = ???
-      
-    def reset(recursives: List[AbstractOperatorParser[NonPackedNode]]): Unit
+    def reset(recursives: Groups[NonPackedNode]): Unit
       = this.recursives = recursives
   }
   
   def alternation(f: Prec => Parsers.Alternation): Alternation
     = new Alternation { 
-          def apply(prec: Prec): Parsers.Alternation = f(prec)
-        }
+        def apply(prec: Prec): Parsers.Alternation = f(prec)
+      }
   
   trait Nonterminal extends HasAlternationOp {
     override def isNonterminal = true

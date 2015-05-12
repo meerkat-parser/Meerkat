@@ -18,6 +18,8 @@ object AbstractOperatorParsers {
   
   val $: Prec = (0,0)
   
+  type Groups[T] = (List[AbstractOperatorParser[T]], List[Int])
+  
   trait AbstractOperatorParser[+T] extends (Prec => AbstractParser[T]) {
      
     private var rec: Rec.Rec = Rec.UNDEFINED
@@ -45,11 +47,11 @@ object AbstractOperatorParsers {
     
     def isNonterminal = false
     
-    def merge1[U >: T](alt: AbstractOperatorParser[U]): List[AbstractOperatorParser[U]] 
-      = List(this, alt)
+    def merge1[U >: T](alt: AbstractOperatorParser[U]): Groups[U] 
+      = (List(this, alt), List(0))
       
-    def merge2[U >: T](alt: AbstractOperatorParser[U]): List[AbstractOperatorParser[U]]
-      = merge1(alt)
+    def merge2[U >: T](alt: AbstractOperatorParser[U]): Groups[U]
+      = (List(this, alt), List(1))
     
   }
   
