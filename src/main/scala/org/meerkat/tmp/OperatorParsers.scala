@@ -25,11 +25,16 @@ object OperatorParsers {
     // TODO: propagate incrementing precedence level
     def |> (p: Sequence): Alternation = {     
       lazy val q: Alternation = alternation { import Parsers._;
-        lazy val p1 = if (this.isAlternation || this.isSequence) {
-          this assign (q.level + 1); this headed q.head; this
-        } else this
-        lazy val p2 = { p assign q.level; p headed q.head }
-        prec => AbstractCPSParsers.AbstractParser.alt(p1(prec), p(prec)) 
+        var l = -1
+        lazy val p1 
+          = if (this.isAlternation || this.isSequence) {
+              l = q.head.precedence.counter; q.head.precedence.incr
+              if (this isSequence) this assign q.head.precedence.counter 
+              this headed q.head
+              this
+            } else this
+        lazy val p2 = { p assign l; p headed q.head }
+        prec => AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec)) 
       }
       q
     }
@@ -113,6 +118,9 @@ object OperatorParsers {
               table.put(prec, nt)
               nt
             }
+        
+        override def precedence = new Precedence
+        
       }
 
 }

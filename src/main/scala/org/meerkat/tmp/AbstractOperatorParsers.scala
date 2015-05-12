@@ -2,12 +2,12 @@ package org.meerkat.tmp
 
 object Rec extends Enumeration {
   type Rec = Value
-  val UNKNOWN, NON, LEFT, RIGHT, BOTH = Value
+  val UNDEFINED, LEFT, RIGHT, BOTH = Value
 }
 
-object Group extends Enumeration {
-  type Group = Value
-  val UNKNOWN, NON, LEFT, RIGHT, ASSOC, NON_ASSOC = Value
+object Assoc extends Enumeration {
+  type Assoc = Value
+  val UNDEFINED, LEFT, RIGHT, ASSOC, NON_ASSOC = Value
 }
 
 object AbstractOperatorParsers {
@@ -20,11 +20,13 @@ object AbstractOperatorParsers {
   
   trait AbstractOperatorParser[+T] extends (Prec => AbstractParser[T]) {
      
-    private var rec: Rec.Rec = Rec.UNKNOWN
-    private var group: Group.Group = Group.UNKNOWN
+    private var rec: Rec.Rec = Rec.UNDEFINED
+    private var assoc: Assoc.Assoc = Assoc.UNDEFINED
+    
+    def precedence: Precedence = throw new RuntimeException("Not implemented!") 
     
     def defineRecursion(rec: Rec.Rec): Unit = this.rec = rec
-    def defineGroup(group: Group.Group): Unit = this.group = group
+    def defineAssoc(assoc: Assoc.Assoc): Unit = this.assoc = assoc
      
     def isLeft = rec == Rec.LEFT || rec == Rec.BOTH
     def isRight = rec == Rec.RIGHT || rec == Rec.BOTH
@@ -43,6 +45,31 @@ object AbstractOperatorParsers {
     
     def isNonterminal = false
     
+  }
+  
+  class Group(val assoc: Assoc.Assoc, val min: Int) {
+    
+    private var max: Int = -1
+    
+    def getMax = max
+    def assignMax(min: Int): Unit = this.max = max
+  }
+  
+  class Precedence {
+    
+    private var count = 1
+    private var group: Group = _
+    
+    def counter: Int = this.count
+    
+    def incr: Int = { this.count += 1; this.count }
+    
+    def newGroup(assoc: Assoc.Assoc): Unit = this.group = new Group(assoc, count)
+    
+    def finaliseCurrentGroup: Group = {
+      this.group.assignMax(count)
+      this.group
+    }
   }
 
 }
