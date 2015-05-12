@@ -45,6 +45,12 @@ object AbstractOperatorParsers {
     
     def isNonterminal = false
     
+    def merge1[U >: T](alt: AbstractOperatorParser[U]): List[AbstractOperatorParser[U]] 
+      = List(this, alt)
+      
+    def merge2[U >: T](alt: AbstractOperatorParser[U]): List[AbstractOperatorParser[U]]
+      = merge1(alt)
+    
   }
   
   class Group(val assoc: Assoc.Assoc, val min: Int) {

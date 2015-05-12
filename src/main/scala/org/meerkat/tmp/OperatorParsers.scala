@@ -10,17 +10,27 @@ object OperatorParsers {
   import AbstractOperatorParsers._
   
   trait HasAlternationOp extends AbstractOperatorParser[NonPackedNode] {
-    def | (p: Sequence): Alternation 
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
+    def | (p: Sequence): Alternation = {
+      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
+      if (this.isAlternation) {
+      }
+      res
+    }
     
-    def | (p: Nonterminal): Alternation
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
+    def | (p: Nonterminal): Alternation = {
+      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
+      res
+    }
     
-    def | (p: Parsers.Sequence): Alternation
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
+    def | (p: Parsers.Sequence): Alternation = {
+      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
+      res
+    }
     
-    def | (p: Parsers.Symbol): Alternation
-      = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
+    def | (p: Parsers.Symbol): Alternation = {
+      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
+      res
+    }
     
     // TODO: propagate incrementing precedence level
     def |> (p: Sequence): Alternation = {     
@@ -51,6 +61,19 @@ object OperatorParsers {
   
   trait Alternation extends HasAlternationOp {
     override def isAlternation = true
+    
+    private var recursives: List[AbstractOperatorParser[NonPackedNode]] = _
+    private var groups: List[Int] = _
+    override def merge1[U >: NonPackedNode](alternative: AbstractOperatorParser[U]) = {
+      
+      ???
+    }
+      
+    override def merge2[U >: NonPackedNode](alternative: AbstractOperatorParser[U])
+      = ???
+      
+    def reset(recursives: List[AbstractOperatorParser[NonPackedNode]]): Unit
+      = this.recursives = recursives
   }
   
   def alternation(f: Prec => Parsers.Alternation): Alternation
