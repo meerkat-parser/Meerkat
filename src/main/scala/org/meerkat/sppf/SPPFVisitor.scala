@@ -37,7 +37,15 @@ object SPPFVisitor {
   
   def flatten(t: Tree): Tree = t match {
     case a @ Appl(r, ts) => r match {
-      case Regular(s) => ???
+      
+      // TODO: we only need to check for the right most or left most node, so iterating over the list
+      // of children may not be the optimal way to go.
+      case Regular(Star(s)) => Appl(r, ts.filter(x => isEpsilon(x)).flatMap{ x => x match { case Appl(Regular(Star(s)), xs) => xs } })
+      
+      case Regular(Plus(s)) => Appl(r, ts.filter(x => isEpsilon(x)).flatMap{ x => x match { case Appl(Regular(Plus(s)), xs) => xs } })
+      
+      case Regular(Opt(s))  => Appl(r, ts.filter { x => isEpsilon(x) })
+      
       case _          => a
     }
     case x @ _          => x

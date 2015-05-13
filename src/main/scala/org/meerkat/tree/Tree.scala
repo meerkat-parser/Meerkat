@@ -21,6 +21,8 @@ object Tree {
   private def inc = { id += 1; id }
   
   val epsilon = Epsilon()
+  
+  def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
 case class Appl(r: RuleType, ts: Seq[Tree]) extends Tree {
