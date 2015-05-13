@@ -68,6 +68,8 @@ object OperatorParsers {
     
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2)
     
+    override def isLeft[U](p: AbstractOperatorParser[U]) = if (p1 isNonterminal) (p1 == p) else p1.isLeft(p)
+    
     def ~ (p: Parsers.Symbol): Postfix = Postfix(this, p)
     def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(this, p)
   }
@@ -75,6 +77,8 @@ object OperatorParsers {
   case class Prefix(p1: AbstractCPSParsers.AbstractParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
     
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1, p2(prec))
+    
+    override def isRight[U](p: AbstractOperatorParser[U]) = (p2 == p)
     
     def ~ (p: Parsers.Symbol): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(Prefix.this($), p)
     def ~ (p: OperatorParsers.Nonterminal): Prefix = Prefix(Prefix.this($), p)
@@ -84,12 +88,33 @@ object OperatorParsers {
     
     def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
     
+    override def isLeft[U](p: AbstractOperatorParser[U]) = if (p1 isNonterminal) (p1 == p) else p1.isLeft(p)
+    override def isRight[U](p: AbstractOperatorParser[U]) = (p2 == p)
+    
     def ~ (p: Parsers.Symbol): Postfix = Postfix(Postfix(p1, p2($)), p)
     def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(Postfix(p1, p2($)), p)
   }
   
-  def left(p: Infix): Infix = ???
-  def right(p: Infix): Infix = ???
+  case class LeftInfix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
+    override def isLeft = true
+    
+    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
+    
+    override def isLeft[U](p: AbstractOperatorParser[U]) = if (p1 isNonterminal) (p1 == p) else p1.isLeft(p)
+    override def isRight[U](p: AbstractOperatorParser[U]) = (p2 == p)
+  }
+  
+  case class RightInfix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
+    override def isRight = true
+    
+    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
+    
+    override def isLeft[U](p: AbstractOperatorParser[U]) = if (p1 isNonterminal) (p1 == p) else p1.isLeft(p)
+    override def isRight[U](p: AbstractOperatorParser[U]) = (p2 == p)
+  }
+  
+  def left(p: Infix): LeftInfix = LeftInfix(p.p1, p.p2)
+  def right(p: Infix): RightInfix = RightInfix(p.p1, p.p2)
   
   def left(p: Alternation): Alternation = ???
   def right(p: Alternation): Alternation = ???
@@ -124,7 +149,7 @@ object OperatorParsers {
       }
   
   private def assignPrecedence(groups: Groups[NonPackedNode]): Unit = {
-    val alternativesBackwards = groups.recs.reverse
+    val recsBackwards = groups.recs.reverse
     var atBackwards: List[Int] = List()
     
     var i = 0
@@ -137,8 +162,25 @@ object OperatorParsers {
         atBackwards = atBackwards.::(0)  
       }
     
+    val leftAtBackwards = groups.leftAt map { x => groups.recs.length - x - 1 }
+    val rightAtBackwards = groups.rightAt map { x => groups.recs.length - x - 1 }
+    
     val precedence = new Precedence
     
+    i = 0
+    var group = precedence.newGroup(Assoc.UNDEFINED)
+    for (rec <- recsBackwards) {
+      if (i != 0 && atBackwards.contains(i))
+        group = precedence.newGroup(Assoc.UNDEFINED)
+      
+      if (rec.isLeft || rec.isRight)
+        precedence.incr
+      
+      rec assign { precedence.counter }
+      rec assign { group }
+      
+      i += 1
+    }
     
   } 
 

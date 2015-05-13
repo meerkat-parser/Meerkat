@@ -30,9 +30,16 @@ object AbstractOperatorParsers {
     def isLeft = false // declared to be left
     def isRight = false // declared to be right
     
+    def isLeft[U](p: AbstractOperatorParser[U]) = false
+    def isRight[U](p: AbstractOperatorParser[U]) = false
+    
     private var l = 0
     def assign(l: Int): Unit = this.l = l
     def prLevel: Int = l
+    
+    private var group: Group = _
+    def assign(group: Group): Unit = this.group = group
+    def prGroup: Group = group
     
     private var hd: AbstractOperatorParser[Any] = _
     def head: AbstractOperatorParser[Any] = hd
@@ -83,7 +90,12 @@ object AbstractOperatorParsers {
     
     def incr: Int = { this.count += 1; this.count }
     
-    def newGroup(assoc: Assoc.Assoc): Unit = this.group = new Group(assoc, count)
+    def newGroup(assoc: Assoc.Assoc): Group = {
+      finaliseCurrentGroup
+      incr
+      this.group = new Group(assoc, count)
+      this.group
+    }
     
     def finaliseCurrentGroup: Group = {
       this.group.assignMax(count)
