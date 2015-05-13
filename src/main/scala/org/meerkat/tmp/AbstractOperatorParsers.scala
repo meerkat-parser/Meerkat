@@ -18,21 +18,17 @@ object AbstractOperatorParsers {
   
   val $: Prec = (0,0)
   
-  type Groups[T] = (List[AbstractOperatorParser[T]], List[Int])
+  class Groups[+T](val recs: List[AbstractOperatorParser[T]], 
+                  val at: List[Int], 
+                  val leftAt: List[Int], 
+                  val rightAt: List[Int])
   
   trait AbstractOperatorParser[+T] extends (Prec => AbstractParser[T]) {
      
-    private var rec: Rec.Rec = Rec.UNDEFINED
-    private var assoc: Assoc.Assoc = Assoc.UNDEFINED
-    
     def precedence: Precedence = throw new RuntimeException("Not implemented!") 
     
-    def defineRecursion(rec: Rec.Rec): Unit = this.rec = rec
-    def defineAssoc(assoc: Assoc.Assoc): Unit = this.assoc = assoc
-     
-    def isLeft = rec == Rec.LEFT || rec == Rec.BOTH
-    def isRight = rec == Rec.RIGHT || rec == Rec.BOTH
-    def isLeftOrRight = Rec.BOTH
+    def isLeft = false // declared to be left
+    def isRight = false // declared to be right
     
     private var l = 0
     def assign(l: Int): Unit = this.l = l
@@ -47,13 +43,26 @@ object AbstractOperatorParsers {
     
     def isNonterminal = false
     
-    def or[U >: T](alt: AbstractOperatorParser[U]): Groups[U] 
-      = (List(this, alt), List(0))
+    def or[U >: T](alt: AbstractOperatorParser[U]): Groups[U] = {
+      val gr = this.asGroups
       
-    def greater[U >: T](alt: AbstractOperatorParser[U]): Groups[U]
-      = (List(this, alt), List(1))
+      val recs = gr.recs.:+(alt)
+      val leftAt  = if (alt isLeft)  gr.leftAt.:+(gr.recs.length + 1)  else gr.leftAt
+      val rightAt = if (alt isRight) gr.rightAt.:+(gr.recs.length + 1) else gr.rightAt
+      new Groups(recs, gr.at, leftAt, rightAt)
+    }
       
-    def asGroups: Groups[T] = (List(this), List(0))
+    def greater[U >: T](alt: AbstractOperatorParser[U]): Groups[U] = {
+      val gr = this.asGroups
+      
+      val recs = gr.recs.:+(alt)
+      val leftAt  = if (alt isLeft)  gr.leftAt.:+(recs.length)  else gr.leftAt
+      val rightAt = if (alt isRight) gr.rightAt.:+(recs.length) else gr.rightAt
+      new Groups(recs, gr.at.:+(recs.length), leftAt, rightAt)
+    }
+      
+    def asGroups: Groups[T] 
+      = new Groups(List(this), List(0), if (isLeft) List() else List(0), if (isRight) List() else List(0))
     
   }
   

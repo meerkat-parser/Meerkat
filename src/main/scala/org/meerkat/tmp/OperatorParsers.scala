@@ -17,7 +17,6 @@ object OperatorParsers {
     def | (p: Nonterminal): Alternation 
       = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) })
         .set(this or p)
-    
 
     def | (p: Parsers.Sequence): Alternation 
       = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) })
@@ -46,12 +45,6 @@ object OperatorParsers {
     
     private var recursives: Groups[NonPackedNode] = _
     
-    override def or[U >: NonPackedNode](alt: AbstractOperatorParser[U]) 
-      = (this.recursives._1 :+ alt, this.recursives._2)
-      
-    override def greater[U >: NonPackedNode](alt: AbstractOperatorParser[U])
-      = (this.recursives._1 :+ alt, this.recursives._2 :+ (this.recursives._1.length + 1))
-      
     override def asGroups: Groups[NonPackedNode] = recursives
       
     def set(recursives: Groups[NonPackedNode]): Alternation
@@ -115,12 +108,13 @@ object OperatorParsers {
     = new Nonterminal {
         import Parsers._
         val table: java.util.Map[Prec, Parsers.Nonterminal] = new HashMap()
-        lazy val q: AbstractOperatorParser[NonPackedNode] = p headed this 
+        
+        lazy val groups: Groups[NonPackedNode] = p.asGroups 
         
         def apply(prec: Prec) 
           = if (table.containsKey(prec)) table.get(prec) 
             else { 
-              val nt = AbstractCPSParsers.memoize(q(prec), name + s"$prec")
+              val nt = AbstractCPSParsers.memoize(p(prec), name + s"$prec")
               table.put(prec, nt)
               nt
             }
@@ -128,5 +122,24 @@ object OperatorParsers {
         override def precedence = new Precedence
         
       }
+  
+  private def assignPrecedence(groups: Groups[NonPackedNode]): Unit = {
+    val alternativesBackwards = groups.recs.reverse
+    var atBackwards: List[Int] = List()
+    
+    var i = 0
+    for (_ <- groups.at)
+      if (i <= groups.at.length) {
+        val next = groups.at(i + 1)
+        i += 1
+        atBackwards = atBackwards.::(groups.at.length - (next - 1)) // next - 1 is the last element in the current group
+      } else {
+        atBackwards = atBackwards.::(0)  
+      }
+    
+    val precedence = new Precedence
+    
+    
+  } 
 
 }
