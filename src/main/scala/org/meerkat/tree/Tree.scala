@@ -4,15 +4,35 @@ import org.meerkat.sppf.SPPFNode
 import org.meerkat.sppf.TerminalNode
 import org.meerkat.sppf.NonterminalNode
 
-trait Tree
+trait Tree {
+  import Tree._  
+  val id = inc
+  
+  override def equals(o: Any) = o match {
+    case t: Tree => id == t.id
+    case _       => false
+  }
+  
+  override def hashCode = id
+}
 
-case class Appl(r: AbstractRule, ts: Seq[Tree]) extends Tree
+object Tree {
+  private var id = 0
+  private def inc = { id += 1; id }
+}
+
+case class Appl(r: AbstractRule, ts: Seq[Tree]) extends Tree {
+  override def toString = r.toString
+}
 
 case class Amb(ts: Set[Tree]) extends Tree
+
 
 trait AbstractRule {
   def head: Nonterminal
   def body: Seq[Symbol]
+  
+  override def toString = head + " ::= " + body.mkString(" ")
 }
 
 case class Rule(head: Nonterminal, body: Seq[Symbol]) extends AbstractRule
@@ -25,6 +45,8 @@ object PartialRule {
 
 trait Symbol {
   def name: String
+  
+  override def toString = name
 }
 
 case class Nonterminal(name: String) extends Symbol
