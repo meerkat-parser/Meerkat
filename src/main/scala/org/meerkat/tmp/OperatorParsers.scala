@@ -10,48 +10,30 @@ object OperatorParsers {
   import AbstractOperatorParsers._
   
   trait HasAlternationOp extends AbstractOperatorParser[NonPackedNode] {
-    def | (p: Sequence): Alternation = {
-      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
-      if (this.isAlternation) {
-      }
-      res
-    }
+    def | (p: Sequence): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) })
+        .set(this or p)
     
-    def | (p: Nonterminal): Alternation = {
-      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
-      res
-    }
+    def | (p: Nonterminal): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) })
+        .set(this or p)
     
-    def | (p: Parsers.Sequence): Alternation = {
-      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
-      res
-    }
+
+    def | (p: Parsers.Sequence): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) })
+        .set(this.asGroups)
     
-    def | (p: Parsers.Symbol): Alternation = {
-      val res = alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) }
-      res
-    }
+    def | (p: Parsers.Symbol): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p) })
+        .set(this.asGroups)
     
-    // TODO: propagate incrementing precedence level
-    def |> (p: Sequence): Alternation = {     
-      lazy val q: Alternation = alternation { import Parsers._;
-        var l = -1
-        lazy val p1 
-          = if (this.isAlternation || this.isSequence) {
-              l = q.head.precedence.counter; q.head.precedence.incr
-              if (this isSequence) this assign q.head.precedence.counter 
-              this headed q.head
-              this
-            } else this
-        lazy val p2 = { p assign l; p headed q.head }
-        prec => AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec)) 
-      }
-      q
-    }
+    def |> (p: Sequence): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) })
+        .set(this greater p)
     
-    def |> (p: Nonterminal): Alternation = {
-      alternation { import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) }
-    }
+    def |> (p: Nonterminal): Alternation 
+      = alternation({ import Parsers._; prec => AbstractCPSParsers.AbstractParser.alt(this(prec), p(prec)) })
+        .set(this greater p)
     
   }
   
@@ -63,14 +45,18 @@ object OperatorParsers {
     override def isAlternation = true
     
     private var recursives: Groups[NonPackedNode] = _
-    override def merge1[U >: NonPackedNode](alt: AbstractOperatorParser[U]) 
+    
+    override def or[U >: NonPackedNode](alt: AbstractOperatorParser[U]) 
       = (this.recursives._1 :+ alt, this.recursives._2)
       
-    override def merge2[U >: NonPackedNode](alt: AbstractOperatorParser[U])
+    override def greater[U >: NonPackedNode](alt: AbstractOperatorParser[U])
       = (this.recursives._1 :+ alt, this.recursives._2 :+ (this.recursives._1.length + 1))
       
-    def reset(recursives: Groups[NonPackedNode]): Unit
-      = this.recursives = recursives
+    override def asGroups: Groups[NonPackedNode] = recursives
+      
+    def set(recursives: Groups[NonPackedNode]): Alternation
+      = { this.recursives = recursives; this }
+    
   }
   
   def alternation(f: Prec => Parsers.Alternation): Alternation

@@ -36,7 +36,7 @@ object AbstractOperatorParsers {
     
     private var l = 0
     def assign(l: Int): Unit = this.l = l
-    def level: Int = l
+    def prLevel: Int = l
     
     private var hd: AbstractOperatorParser[Any] = _
     def head: AbstractOperatorParser[Any] = hd
@@ -47,11 +47,13 @@ object AbstractOperatorParsers {
     
     def isNonterminal = false
     
-    def merge1[U >: T](alt: AbstractOperatorParser[U]): Groups[U] 
+    def or[U >: T](alt: AbstractOperatorParser[U]): Groups[U] 
       = (List(this, alt), List(0))
       
-    def merge2[U >: T](alt: AbstractOperatorParser[U]): Groups[U]
+    def greater[U >: T](alt: AbstractOperatorParser[U]): Groups[U]
       = (List(this, alt), List(1))
+      
+    def asGroups: Groups[T] = (List(this), List(0))
     
   }
   
