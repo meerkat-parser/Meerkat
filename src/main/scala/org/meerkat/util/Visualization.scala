@@ -55,12 +55,17 @@ object Visualization {
   }
   
   private def toDot(t: Tree, sb: StringBuilder): Unit = t match {
+
+    case n @ Epsilon()   => sb ++= getShape(n.id, "&epsilon;", Rectangle, Rounded)
     
     case n @ Terminal(s) => sb ++= getShape(n.id, "\"" + s + "\"", Rectangle, Rounded)
     
     case n @ Appl(r, s)  => {
-      sb ++= getShape(n.id, r.toString, Rectangle, Rounded)
-      s.foreach { t => addEdge(n.id, t.id, sb); toDot(t, sb) }
+      r match {
+        case r: Rule        => sb ++= getShape(n.id, s"${r.head}\\n[$r]", Rectangle, Rounded)
+        case r: PartialRule => sb ++= getShape(n.id, s"${r.head}\\n[$r]", Rectangle)
+      }
+      s.foreach { t => addEdge(n.id, t.id, sb); toDot(t, sb) }      
     }
     
     case n @ Amb(s)      => {

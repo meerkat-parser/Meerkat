@@ -2,6 +2,7 @@ package org.meerkat.sppf
 
 import org.meerkat.meerkat.Rule
 import org.meerkat.tree.Tree
+import org.meerkat.tree.Tree._
 import org.meerkat.tree._
 
 import scala.collection.breakOut
@@ -15,13 +16,14 @@ object SPPFVisitor {
    
   def buildTree(node: SPPFNode): Tree = node match {
     
-    case t: TerminalNode    => Terminal(t.name)
+    case t: TerminalNode    => if (t.leftExtent == t.rightExtent) epsilon 
+                               else Terminal(t.name)
     
     case n: NonterminalNode => {
       if (n isAmbiguous)
         Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
-      else 
-        Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList)
+      else
+    	  Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList)        
       }
     
     case i: IntermediateNode => {
@@ -31,5 +33,14 @@ object SPPFVisitor {
     
     case _                  => throw new RuntimeException("Should not reach here!")
   }
-
+  
+  
+  def flatten(t: Tree): Tree = t match {
+    case a @ Appl(r, ts) => r match {
+      case Regular(s) => ???
+      case _          => a
+    }
+    case x @ _          => x
+  }
+  
 }
