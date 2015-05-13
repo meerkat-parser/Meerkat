@@ -7,7 +7,7 @@ import org.meerkat.sppf.NonterminalNode
 trait Tree {
   import Tree._  
   val id = inc
-  
+
   override def equals(o: Any) = o match {
     case t: Tree => id == t.id
     case _       => false
@@ -19,16 +19,21 @@ trait Tree {
 object Tree {
   private var id = 0
   private def inc = { id += 1; id }
+  
+  val epsilon = Epsilon()
 }
 
-case class Appl(r: AbstractRule, ts: Seq[Tree]) extends Tree {
+case class Appl(r: RuleType, ts: Seq[Tree]) extends Tree {
   override def toString = r.toString
 }
 
 case class Amb(ts: Set[Tree]) extends Tree
 
+case class Epsilon() extends Tree
 
-trait AbstractRule {
+trait RuleType 
+
+trait AbstractRule extends RuleType{
   def head: Nonterminal
   def body: Seq[Symbol]
   
@@ -38,6 +43,10 @@ trait AbstractRule {
 case class Rule(head: Nonterminal, body: Seq[Symbol]) extends AbstractRule
 
 case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends AbstractRule
+
+case class Regular(s: Symbol) extends RuleType {
+  override def toString = s.toString
+}
 
 object PartialRule {
   def apply(head: Nonterminal, body: Seq[Symbol]): PartialRule = PartialRule(head, body, body.length)
