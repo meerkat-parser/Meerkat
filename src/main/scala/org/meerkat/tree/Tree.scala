@@ -44,12 +44,6 @@ case class Rule(head: Nonterminal, body: Seq[Symbol]) extends RuleType
 
 case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends RuleType
 
-case class Regular(s: Symbol) extends RuleType {
-  override def head = ???
-  override def body = ???
-  override def toString = s.toString
-}
-
 object PartialRule {
   def apply(head: Nonterminal, body: Seq[Symbol]): PartialRule = PartialRule(head, body, body.length)
 }
@@ -60,26 +54,38 @@ trait Symbol {
   override def toString = name
 }
 
-case class Nonterminal(name: String) extends Symbol
+trait Nonterminal extends Symbol {
+  def name: String
+  
+  def isRegular(n: Nonterminal): Boolean = true
+}
+
+object Nonterminal {
+  def apply(s: String) = SimpleNonterminal(s)
+}
+
+case class SimpleNonterminal(name: String) extends Nonterminal {
+  override def isRegular(n: Nonterminal): Boolean = false
+}
 
 case class Terminal(name: String) extends Symbol with Tree
 
-case class Star(s: Symbol) extends Symbol {
+case class Star(s: Symbol) extends Nonterminal {
   override def name = s.name + "*"
 }
 
-case class Plus(s: Symbol) extends Symbol {
+case class Plus(s: Symbol) extends Nonterminal {
   override def name = s.name + "+"
 }
 
-case class Group(ss: List[Symbol]) extends Symbol {
+case class Group(ss: List[Symbol]) extends Nonterminal {
   override def name = "(" + ss.map { _.name }.mkString + ")"
 }
 
-case class Opt(s: Symbol) extends Symbol {
+case class Opt(s: Symbol) extends Nonterminal {
   override def name = s.name + "?"
 }
 
-case class Alt(s1: Symbol, s2: Symbol) extends Symbol {
+case class Alt(s1: Symbol, s2: Symbol) extends Nonterminal {
   override def name = s1.name + "|" + s2.name
 }

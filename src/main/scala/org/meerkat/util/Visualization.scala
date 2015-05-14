@@ -63,7 +63,7 @@ object Visualization {
     case n @ Appl(r, s)  => {
       r match {
         case r: Rule        => sb ++= getShape(n.id, s"$r", Rectangle, Rounded)
-        case r: PartialRule => { println("Fuck"); sb ++= getShape(n.id, s"$r", Rectangle) }
+        case r: PartialRule => sb ++= getShape(n.id, s"$r", Rectangle)
       }
       s.foreach { t => addEdge(n.id, t.id, sb); toDot(t, sb) }      
     }
