@@ -23,7 +23,8 @@ object AbstractOperatorParsers {
     def isLeftRec = false
     def isRightRec = false
     
-    def level: Int = ???
+    def level: Int = -1
+    def assoc: Assoc.Assoc = Assoc.UNDEFINED
     def pass(group: Group): Unit = ???
     def pass(head: AbstractOperatorParser[Any]): Unit = ???
     
@@ -37,12 +38,32 @@ object AbstractOperatorParsers {
   class Group(val assoc: Assoc.Assoc, min: Int) {
     
     private var max: Int = min
+    private var undef: Int = -1 
     
     def minimum = min
     def maximum = max
     
-    def startNew(assoc: Assoc.Assoc) = new Group(assoc, max + 1)
+    def startNew(assoc: Assoc.Assoc) = {
+      if (max != min) {
+        max -= 1
+      }
+      new Group(assoc, max + 1)
+    }
     
+    def get(assoc: Assoc.Assoc): Int = {
+      if (assoc == Assoc.UNDEFINED && undef == -1) {
+        undef = max
+        max += 1
+        undef
+      } else if (assoc == Assoc.UNDEFINED) {
+        undef
+      } else {
+        val cur = max
+        max += 1
+        cur
+      }
+    }
+        
     private var assocs: List[Group] = _
   }
   

@@ -10,49 +10,92 @@ object OperatorParsers {
   import AbstractOperatorParsers._
   
   trait HasAlternationOp extends AbstractOperatorParser[NonPackedNode] {
-    def | (p: Sequence): Alternation = alternation(this, p)
-    
+    def | (p: Sequence): Alternation = alternation(this, p)   
     def | (p: Nonterminal): Alternation = alternation(this, p)
 
     def | (p: Parsers.Sequence): Alternation = alternation(this, p)
-    
     def | (p: Parsers.Symbol): Alternation = alternation(this, p)
     
-    def |> (p: Sequence): Alternation = alternation(this, p)
-    
-    def |> (p: Nonterminal): Alternation = alternation(this, p)
+    def |> (p: Sequence): Alternation = greater(this, p)
+    def |> (p: Nonterminal): Alternation = greater(this, p)
     
   }
   
-  trait Sequence extends HasAlternationOp {
+  trait Sequence extends HasAlternationOp { 
     override def isSequence = true
+    
+    private var lvl: Int = -1
+    override def level: Int = lvl
+    
+    private var group: Group = _
+    override def pass(group: Group) = {
+      if (isLeftRec || isRightRec) {
+        this.group = group
+        this.lvl =  this.group.get(this.assoc)
+      }
+    }
+    
+    protected var cond: Prec => Boolean = null
+    
+    private def condition: Unit = {
+      if (isLeftRec && isRightRec) {
+        cond = prec => { group.maximum >= prec._1 && group.maximum >= prec._2 } 
+      } else if (isLeftRec) {
+        cond = prec => { group.maximum >= prec._2 }
+      } else if (isRightRec) {
+        cond = prec => { group.maximum >= prec._1 }
+      }    
+    }
+    
   }
   
-  trait Alternation extends HasAlternationOp {
-    override def isAlternation = true
-  }
+  trait Alternation extends HasAlternationOp { override def isAlternation = true }
   
   def alternation(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractOperatorParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec))
+        
         override def pass(head: AbstractOperatorParser[Any]) = { 
-          if (!p1.isNonterminal) p1.pass(head)
-          if (!p2.isNonterminal) p2.pass(head) 
+          if (!p1.isNonterminal) p1 pass head
+          if (!p2.isNonterminal) p2 pass head 
+        }
+    
+        override def pass(group: Group) = {
+          if (!p1.isNonterminal) p1 pass group
+          if (!p2.isNonterminal) p2 pass group
         }
       }
   
   def alternation(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractCPSParsers.AbstractParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2)
-        override def pass(head: AbstractOperatorParser[Any]) = { if (!p1.isNonterminal) p1.pass(head) }
+        
+        override def pass(head: AbstractOperatorParser[Any]) = { if (!p1.isNonterminal) p1 pass head }
+        override def pass(group: Group) = { if (!p1.isNonterminal) p1 pass group }
       }
   
   def alternation(p1: AbstractCPSParsers.AbstractParser[NonPackedNode], p2: AbstractOperatorParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1, p2(prec))
-        override def pass(head: AbstractOperatorParser[Any]) = { if (!p2.isNonterminal) p2.pass(head) }
+        override def pass(head: AbstractOperatorParser[Any]) = { if (!p2.isNonterminal) p2 pass head }
+        override def pass(group: Group) = { if (!p2.isNonterminal) p2 pass group }
       }
   
+  def greater(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractOperatorParser[NonPackedNode]) 
+    = new Alternation { import Parsers._
+        def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec))
+        
+        override def pass(head: AbstractOperatorParser[Any]) = { 
+          if (!p1.isNonterminal) p1 pass head
+          if (!p2.isNonterminal) p2 pass head 
+        }
+    
+        override def pass(group: Group) = {
+          if (!p1.isNonterminal) p1 pass group.startNew(Assoc.UNDEFINED)
+          if (!p2.isNonterminal) p2 pass group
+        }
+      }
+    
   trait Nonterminal extends HasAlternationOp {
     override def isNonterminal = true
     
@@ -72,7 +115,7 @@ object OperatorParsers {
                       else { p1 pass head; p1 isLeftRec }
       if (isLeftRec) rec = Rec.LEFT
     }
-    
+  
     def ~ (p: Parsers.Symbol): Postfix = Postfix(this, p)
     def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(this, p)
   }
@@ -85,7 +128,7 @@ object OperatorParsers {
     override def isRightRec = rec == Rec.RIGHT
     
     override def pass(head: AbstractOperatorParser[Any]) = if (p2 == head) rec = Rec.RIGHT
-    
+        
     def ~ (p: Parsers.Symbol): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(Prefix.this($), p)
     def ~ (p: OperatorParsers.Nonterminal): Prefix = Prefix(Prefix.this($), p)
   }
@@ -114,23 +157,9 @@ object OperatorParsers {
     def ~ (p: Parsers.Symbol): Postfix = Postfix(Postfix(p1, p2($)), p)
     def ~ (p: OperatorParsers.Nonterminal): Infix = Infix(Postfix(p1, p2($)), p)
   }
-  
-  case class LeftInfix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
-    // override def isLeft = true
-    
-    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
-    
-  }
-  
-  case class RightInfix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
-    // override def isRight = true
-    
-    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
-    
-  }
-  
-  def left(p: Infix): LeftInfix = LeftInfix(p.p1, p.p2)
-  def right(p: Infix): RightInfix = RightInfix(p.p1, p.p2)
+   
+  def left(p: Infix): Infix = new Infix(p.p1, p.p2) { override def assoc = Assoc.LEFT }
+  def right(p: Infix): Infix = new Infix(p.p1, p.p2) { override def assoc = Assoc.RIGHT }
   
   def left(p: Alternation): Alternation = ???
   def right(p: Alternation): Alternation = ???
