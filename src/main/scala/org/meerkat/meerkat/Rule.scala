@@ -12,9 +12,10 @@ import Result.memo
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import org.meerkat.tree.RuleType
+import org.meerkat.tree.Nonterminal
 
 class Head(head: String) {
-  def ::= (parser: => MeerkatParser): Rule = new Rule(head, parser.rule(head))
+  def ::= (parser: => MeerkatParser): Rule = new Rule(head, parser.rule(Nonterminal(head)))
 }
 
 class Rule(head: String, parser: => MeerkatParser) {
@@ -58,7 +59,8 @@ object Rule {
     p
   }
   
-  def regular(rType: RuleType, parser: => MeerkatParser): MeerkatParser = {
+  def regular(sym: Nonterminal, parser: => MeerkatParser): MeerkatParser = {
+    lazy val q = parser.rule(sym)
     var table: Array[Result[NonPackedNode]] = null
     val p = new MeerkatParser {
               def apply(input: Input, sppf: SPPFLookup, i: Int): Result[NonPackedNode]= {
@@ -67,7 +69,7 @@ object Rule {
                 }
                 val result = table(i)
                 if(result == null) {
-                  table(i) = memo(parser(input, sppf, i))
+                  table(i) = memo(q(input, sppf, i))
                   table(i)
                 } else {
                   result
@@ -75,10 +77,9 @@ object Rule {
                 
               }
               
-              override def symbol = org.meerkat.tree.Nonterminal(this.name.value)
-              override def ruleType = rType
+              override def symbol = sym
             }
-    p.nameAs(rType.toString())
+    p.nameAs(sym.toString())
     p.resetWith(if(table != null) { table = null; parser.reset() }) 
     p
   }

@@ -55,7 +55,7 @@ object FlatteningTest {
 
     println("Here!")
     
-    val r = new MeerkatParsers {} . parse(S, "aa")
+    val r = new MeerkatParsers {} . parse(S, "")
     visualize(r.right.get.sppf)
     val x = SPPFVisitor.buildTree(r.right.get.sppf)   
     visualize(x)

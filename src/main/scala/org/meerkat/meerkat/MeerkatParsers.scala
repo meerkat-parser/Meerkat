@@ -21,7 +21,7 @@ import org.meerkat.util.Visualization._
 import MeerkatDDParser._
 import Configuration._
 import com.sun.media.sound.SoftReverb.AllPass
-import org.meerkat.tree.Regular
+import org.meerkat.tree.Nonterminal
 
 trait Layout { def parser: MeerkatParser }
 
@@ -36,9 +36,9 @@ trait MeerkatParser extends Parser with Slot {
   def nameAs(name: => String): Unit = this.name = new Lazy(name)
   override def toString: String = this.name.value
     
-  var head: String = ""
-  def head(head: String): Unit = this.head = head
-  def headed: Boolean = !head.isEmpty()
+  var head: Nonterminal = null
+  def head(head: Nonterminal): Unit = this.head = head
+  def headed: Boolean = head != null
     
   var seq = false
   def sequenced: Boolean = seq
@@ -82,7 +82,7 @@ trait MeerkatParser extends Parser with Slot {
                 = if(this.headed) {
                     p1(input, sppf, i).flatMap(t1 => { inSequence(t1, p2.name.value)
                       p2(input, sppf, t1.rightExtent).mapNoMemo(t2 => {
-                        val r = sppf.getNonterminalNode(this.head, this, Some(t1), t2); endOfAlt(this.head, this.name.value, i, r)
+                        val r = sppf.getNonterminalNode(this.head.name, this, Some(t1), t2); endOfAlt(this.head.name, this.name.value, i, r)
                         r }) })
                   } else {
                     p1(input, sppf, i).flatMap(t1 => { inSequence(t1, p2.name.value)
@@ -91,7 +91,7 @@ trait MeerkatParser extends Parser with Slot {
                   }
               
                   override def ruleType 
-                    = if (this headed) org.meerkat.tree.Rule(org.meerkat.tree.Nonterminal(this.head), (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
+                    = if (this headed) org.meerkat.tree.Rule(this.head, (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
                       else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
               }  
     p.nameAs((if(p.headed) p.head + " ::= " else "") + p1.name.value + p2.name.value + p.hashCode() + "@")
@@ -113,25 +113,25 @@ trait MeerkatParser extends Parser with Slot {
     p
   }
     
-  def rule(h: String): MeerkatParser 
+  def rule(h: Nonterminal): MeerkatParser 
     = if(this.alternated) {
         this.head(h); this
       } else {
         val p = if(this.sequenced) {
                   this.head(h)
                   new MeerkatParser {
-                    def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h, this.name.value, i)
+                    def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h.name, this.name.value, i)
                       MeerkatParser.this(input, sppf, i)
                     }
                     override def ruleType = MeerkatParser.this.ruleType
                   }
                 } else
                   new MeerkatParser {
-                    def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h, this.name.value, i)
-                      MeerkatParser.this(input, sppf, i).map(t => { endOfAlt(h, this.name.value, i, t)
-                        sppf.getNonterminalNode(h, this, t) })
+                    def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h.name, this.name.value, i)
+                      MeerkatParser.this(input, sppf, i).map(t => { endOfAlt(h.name, this.name.value, i, t)
+                        sppf.getNonterminalNode(h.name, this, t) })
                     }
-                    override def ruleType = org.meerkat.tree.Rule(org.meerkat.tree.Nonterminal(h), List(MeerkatParser.this.symbol))
+                    override def ruleType = org.meerkat.tree.Rule(h, List(MeerkatParser.this.symbol))
                   }
         if(this.sequenced) p.nameAs(this.name.value)  
         else p.nameAs(h + " ::= " + this.name.value + p.hashCode())
@@ -169,8 +169,8 @@ trait MeerkatParser extends Parser with Slot {
   var star_no_layout: Option[MeerkatParser] = None
   def **(): MeerkatParser = {
     star_no_layout.getOrElse({
-      // this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
-      val p = regular(org.meerkat.tree.Regular(org.meerkat.tree.Star(this.symbol)), star_no_layout.get ~~ this | epsilon)
+      // val p =  this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
+      val p = regular(org.meerkat.tree.Star(this.symbol), star_no_layout.get ~~ this | epsilon)
       star_no_layout = Option(p)
       p
     })
