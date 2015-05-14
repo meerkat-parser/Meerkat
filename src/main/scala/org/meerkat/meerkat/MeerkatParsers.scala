@@ -168,8 +168,9 @@ trait MeerkatParser extends Parser with Slot {
    */
   var star_no_layout: Option[MeerkatParser] = None
   def **(): MeerkatParser = {
-    star_no_layout.getOrElse({      
-      val p = this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
+    star_no_layout.getOrElse({
+      // this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
+      val p = regular(org.meerkat.tree.Regular(org.meerkat.tree.Star(this.symbol)), star_no_layout.get ~~ this | epsilon)
       star_no_layout = Option(p)
       p
     })

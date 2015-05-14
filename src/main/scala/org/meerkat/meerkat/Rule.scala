@@ -11,6 +11,7 @@ import org.meerkat.sppf.NonPackedNode
 import Result.memo
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
+import org.meerkat.tree.RuleType
 
 class Head(head: String) {
   def ::= (parser: => MeerkatParser): Rule = new Rule(head, parser.rule(head))
@@ -54,6 +55,31 @@ object Rule {
             }
     p.nameAs(r.getHead)
     p.resetWith(if(table != null) { table = null; r.getParser.reset() }) 
+    p
+  }
+  
+  def regular(rType: RuleType, parser: => MeerkatParser): MeerkatParser = {
+    var table: Array[Result[NonPackedNode]] = null
+    val p = new MeerkatParser {
+              def apply(input: Input, sppf: SPPFLookup, i: Int): Result[NonPackedNode]= {
+                if(table == null) {
+                  table = new Array(input.length + 1)
+                }
+                val result = table(i)
+                if(result == null) {
+                  table(i) = memo(parser(input, sppf, i))
+                  table(i)
+                } else {
+                  result
+                }
+                
+              }
+              
+              override def symbol = org.meerkat.tree.Nonterminal(this.name.value)
+              override def ruleType = rType
+            }
+    p.nameAs(rType.toString())
+    p.resetWith(if(table != null) { table = null; parser.reset() }) 
     p
   }
 }
