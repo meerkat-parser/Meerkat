@@ -15,10 +15,10 @@ import org.meerkat.tree.Rule
 import org.meerkat.tree.Rule
 import org.meerkat.tree.Nonterminal
 import org.meerkat.tree.Terminal
-import org.meerkat.tree.AbstractRule
+import org.meerkat.tree.RuleType
 
 trait Slot {
-  def ruleType: AbstractRule
+  def ruleType: RuleType
 }
 
 trait SPPFNode {
@@ -109,7 +109,7 @@ case class PackedNode(slot: Slot, parent: NonPackedNode) extends SPPFNode {
     
   def pivot = leftChild.rightExtent
     
-  def rule: AbstractRule = slot.ruleType
+  def ruleType: RuleType = slot.ruleType
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   

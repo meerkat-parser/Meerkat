@@ -21,14 +21,14 @@ object SPPFVisitor {
     
     case n: NonterminalNode => {
       if (n isAmbiguous)
-        Amb( (for (p <- n.children) yield Appl(p.rule, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
+        Amb( (for (p <- n.children) yield Appl(p.ruleType, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
       else
-    	  Appl(n.first.rule, n.flatChildren.map { x => buildTree(x) } toList)        
+    	  Appl(n.first.ruleType, n.flatChildren.map { x => buildTree(x) } toList)        
       }
     
     case i: IntermediateNode => {
       if (! i.isAmbiguous) throw new RuntimeException(s"$i should be ambiguous")
-      Amb( (for (p <- i.children) yield Appl(p.rule, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
+      Amb( (for (p <- i.children) yield Appl(p.ruleType, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
     }
     
     case _                  => throw new RuntimeException("Should not reach here!")

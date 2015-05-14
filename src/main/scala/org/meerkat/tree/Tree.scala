@@ -33,20 +33,20 @@ case class Amb(ts: Set[Tree]) extends Tree
 
 case class Epsilon() extends Tree
 
-trait RuleType 
-
-trait AbstractRule extends RuleType{
+trait RuleType {
   def head: Nonterminal
   def body: Seq[Symbol]
   
   override def toString = head + " ::= " + body.mkString(" ")
-}
+} 
 
-case class Rule(head: Nonterminal, body: Seq[Symbol]) extends AbstractRule
+case class Rule(head: Nonterminal, body: Seq[Symbol]) extends RuleType
 
-case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends AbstractRule
+case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends RuleType
 
 case class Regular(s: Symbol) extends RuleType {
+  override def head = ???
+  override def body = ???
   override def toString = s.toString
 }
 

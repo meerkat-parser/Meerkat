@@ -18,17 +18,16 @@ import scala.collection.JavaConversions._
 import Result._
 import Rule._
 import org.meerkat.util.Visualization._
-
 import MeerkatDDParser._
-
 import Configuration._
 import com.sun.media.sound.SoftReverb.AllPass
+import org.meerkat.tree.Regular
 
 trait Layout { def parser: MeerkatParser }
 
 trait MeerkatParser extends Parser with Slot {
   
-  def ruleType: org.meerkat.tree.AbstractRule = ???
+  def ruleType: org.meerkat.tree.RuleType = ???
   def symbol: org.meerkat.tree.Symbol = ???
   
   import MeerkatLogging._
@@ -169,8 +168,8 @@ trait MeerkatParser extends Parser with Slot {
    */
   var star_no_layout: Option[MeerkatParser] = None
   def **(): MeerkatParser = {
-    star_no_layout.getOrElse({
-      val p: MeerkatParser = this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
+    star_no_layout.getOrElse({      
+      val p = this.name.value + "**" ::= star_no_layout.get ~~ this | epsilon
       star_no_layout = Option(p)
       p
     })
