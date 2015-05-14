@@ -62,7 +62,7 @@ object Visualization {
     
     case n @ Appl(r, s)  => {
       r match {
-        case r: Rule        => sb ++= getShape(n.id, s"$r", Rectangle, Rounded)
+        case r: Rule        => sb ++= getShape(n.id, if (r.head.isRegular) s"${r.head}" else s"$r", Rectangle, Rounded)
         case r: PartialRule => sb ++= getShape(n.id, s"$r", Rectangle)
       }
       s.foreach { t => addEdge(n.id, t.id, sb); toDot(t, sb) }      

@@ -106,7 +106,9 @@ trait MeerkatParser extends Parser with Slot {
     val q2: MeerkatParser = alt2.groupAlt
     val p2: Lazy[MeerkatParser] = q2.rule(p.head)
       
-    p = new MeerkatParser { def apply(input: Input, sppf: SPPFLookup, i: Int) = p1.value(input, sppf, i) orElse p2.value(input, sppf, i) }
+    p = new MeerkatParser { 
+          def apply(input: Input, sppf: SPPFLookup, i: Int) = p1.value(input, sppf, i) orElse p2.value(input, sppf, i)
+        }
     p.nameAs(this.name.value + " | " + q2.name.value)
     p.alternate
     p.resetWith({ p1.value.reset(); p2.value.reset() })
@@ -324,7 +326,8 @@ trait MeerkatParser extends Parser with Slot {
   var group: Option[MeerkatParser] = None
   def gr(): MeerkatParser = {
     group.getOrElse({
-      val p: MeerkatParser = "(" + this.name.value + ")" ::= this
+//      val p: MeerkatParser = "(" + this.name.value + ")" ::= this
+      val p = regular(org.meerkat.tree.Group(this.ruleType.body), this)
       group = Option(p)
       p
     })

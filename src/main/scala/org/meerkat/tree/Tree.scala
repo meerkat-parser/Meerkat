@@ -35,17 +35,17 @@ case class Epsilon() extends Tree
 
 trait RuleType {
   def head: Nonterminal
-  def body: Seq[Symbol]
+  def body: Symbol
   
-  override def toString = head + " ::= " + body.mkString(" ")
+  override def toString = head + " ::= " + body
 } 
 
-case class Rule(head: Nonterminal, body: Seq[Symbol]) extends RuleType
+case class Rule(head: Nonterminal, body: Symbol) extends RuleType
 
-case class PartialRule(head: Nonterminal, body: Seq[Symbol], i: Int) extends RuleType
+case class PartialRule(head: Nonterminal, body: Symbol, i: Int) extends RuleType
 
 object PartialRule {
-  def apply(head: Nonterminal, body: Seq[Symbol]): PartialRule = PartialRule(head, body, body.length)
+  def apply(head: Nonterminal, body: Symbol): PartialRule = PartialRule(head, body, 0)
 }
 
 trait Symbol {
@@ -57,7 +57,7 @@ trait Symbol {
 trait Nonterminal extends Symbol {
   def name: String
   
-  def isRegular(n: Nonterminal): Boolean = true
+  def isRegular: Boolean = true
 }
 
 object Nonterminal {
@@ -65,7 +65,7 @@ object Nonterminal {
 }
 
 case class SimpleNonterminal(name: String) extends Nonterminal {
-  override def isRegular(n: Nonterminal): Boolean = false
+  override def isRegular: Boolean = false
 }
 
 case class Terminal(name: String) extends Symbol with Tree
@@ -78,8 +78,12 @@ case class Plus(s: Symbol) extends Nonterminal {
   override def name = s.name + "+"
 }
 
-case class Group(ss: List[Symbol]) extends Nonterminal {
-  override def name = "(" + ss.map { _.name }.mkString + ")"
+case class Sequence(ss: Seq[Symbol]) extends Nonterminal {
+  override def name = ss mkString " "
+}
+
+case class Group(s: Symbol) extends Nonterminal {
+  override def name = "(" + s + ")"
 }
 
 case class Opt(s: Symbol) extends Nonterminal {
