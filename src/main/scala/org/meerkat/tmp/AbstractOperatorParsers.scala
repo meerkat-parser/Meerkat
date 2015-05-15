@@ -63,6 +63,9 @@ object AbstractOperatorParsers {
         cur
       }
     }
+    
+    def canClimb(level: Int): Boolean
+      = min == max
         
     private var assocs: List[Group] = _
   }

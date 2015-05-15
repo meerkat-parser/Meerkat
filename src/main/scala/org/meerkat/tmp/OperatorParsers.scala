@@ -35,16 +35,59 @@ object OperatorParsers {
       }
     }
     
-    protected var cond: Prec => Boolean = null
-    
-    private def condition: Unit = {
+    protected def condition: Prec => Boolean = {
       if (isLeftRec && isRightRec) {
-        cond = prec => { group.maximum >= prec._1 && group.maximum >= prec._2 } 
+        if (group.canClimb(level)) {
+          return prec => group.maximum >= prec._1 && group.maximum >= prec._2  
+        } else {
+          assoc match {
+            case Assoc.UNDEFINED => return prec => group.maximum >= prec._1 && group.maximum >= prec._2
+            case Assoc.LEFT      => return prec => group.maximum >= prec._1 && group.maximum >= prec._2 && level != prec._2
+            case Assoc.RIGHT     => return prec => group.maximum >= prec._1 && group.maximum >= prec._2 && level != prec._1
+            case _ =>
+          }
+        }
       } else if (isLeftRec) {
-        cond = prec => { group.maximum >= prec._2 }
+        if (group.canClimb(level)) {
+          return prec => group.maximum >= prec._2  
+        } else {
+          assoc match {
+            case Assoc.UNDEFINED => return prec => group.maximum >= prec._2
+            case Assoc.LEFT      => return prec => group.maximum >= prec._2 && level != prec._2
+            case _ =>
+          }
+        }
       } else if (isRightRec) {
-        cond = prec => { group.maximum >= prec._1 }
-      }    
+        if (group.canClimb(level)) {
+          return prec => group.maximum >= prec._1  
+        } else {
+          assoc match {
+            case Assoc.UNDEFINED => return prec => group.maximum >= prec._1
+            case Assoc.RIGHT     => return prec => group.maximum >= prec._1 && level != prec._1
+            case _ =>
+          }
+        }
+      }
+      return null
+    }
+    
+    protected def arguments: (Prec, Prec) = {
+      if (isLeftRec || isRightRec) {
+        if (group.canClimb(level)) {
+          assoc match {
+            case Assoc.UNDEFINED => 
+              return (if (isLeftRec) (level, level) else $, 
+                      if (isRightRec) (level, level) else $)
+            case Assoc.LEFT => 
+              return (if (isLeftRec) (level, level) else $, if (isRightRec) (level + 1, level + 1) else $)
+            case Assoc.RIGHT => 
+              return (if (isLeftRec) (level + 1, level + 1) else $, if (isRightRec) (level, level) else $)
+          }
+        } else {
+          return (if (isLeftRec) (level, level) else $, if (isRightRec) (level, level) else $)
+        }
+      }
+      return ($,$)
     }
     
   }
@@ -105,7 +148,14 @@ object OperatorParsers {
   
   case class Postfix(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractCPSParsers.AbstractParser[NonPackedNode]) extends Sequence { import Parsers._
     
-    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2)
+    lazy val cond = condition
+    
+    def apply(prec: Prec): Parsers.Sequence = {
+      if (cond == null || cond(prec)) {
+        AbstractCPSParsers.AbstractParser.seq(p1(prec), p2)
+      }
+      ???
+    }
     
     protected var rec: Rec.Rec = Rec.UNDEFINED
     override def isLeftRec = rec == Rec.LEFT
