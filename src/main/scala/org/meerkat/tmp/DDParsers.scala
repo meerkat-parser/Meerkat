@@ -23,13 +23,13 @@ object DDParsers {
       = (sppfLookup.getIntermediateNode(p, a._1, b._1), new ~(a._2, b._2)) 
   }
   
-  implicit def obj2[A, B >: A] = new Alternative[(NonPackedNode, A), (NonPackedNode, B)] {
-    type Alternation = DDParsers.Alternation[B]
+  implicit def obj2[A] = new Alternative[(NonPackedNode, A)] {
+    type Alternation = DDParsers.Alternation[A]
     
-    def alternation(f: (Input, Int, SPPFLookup) => Result[(NonPackedNode, B)]): Alternation
-      = new DDParsers.Alternation[B] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
+    def alternation(f: (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)]): Alternation
+      = new DDParsers.Alternation[A] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
     
-    def result(e: (NonPackedNode, B), p: AbstractParser[(NonPackedNode, B)], nt: AbstractParser[Any], sppfLookup: SPPFLookup): (NonPackedNode, B)
+    def result(e: (NonPackedNode, A), p: AbstractParser[(NonPackedNode, A)], nt: AbstractParser[Any], sppfLookup: SPPFLookup): (NonPackedNode, A)
       = (sppfLookup.getNonterminalNode(nt, p, e._1), e._2)
   }
   

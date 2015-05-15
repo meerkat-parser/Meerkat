@@ -24,7 +24,7 @@ object Parsers {
       = sppfLookup.getIntermediateNode(p, a, b) 
   }
   
-  implicit object obj2 extends Alternative[NonPackedNode, NonPackedNode] {
+  implicit object obj2 extends Alternative[NonPackedNode] {
     type Alternation = Parsers.Alternation
     
     def alternation(f: (Input, Int, SPPFLookup) => Result[NonPackedNode]): Alternation
@@ -107,7 +107,7 @@ object Parsers {
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...") 
-                         Visualization.toDot(startSymbol.get)
+                         Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
                          println("Done!")
     }
   }

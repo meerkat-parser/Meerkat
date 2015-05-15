@@ -53,7 +53,7 @@ trait AbstractParsers {
     def intermediate(a: A, b: B, p: AbstractParser[R], sppfLookup: SPPFLookup): R    
   }
   
-  trait Alternative[A, B >: A] {
+  trait Alternative[B] {
     type Alternation <: AbstractParser[B]
     def alternation(f: (Input, Int, SPPFLookup) => Result[B]): Alternation
     
@@ -80,13 +80,11 @@ trait AbstractParsers {
     /**
      * @param p2 isn't a result of alternation
      */
-    def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: Alternative[A, B], m1: Memoizable[A], m2: Memoizable[B]): builder.Alternation = {
-      lazy val q: builder.Alternation = builder alternation {  
-        lazy val q1: AbstractParser[A] = if (p1 isAlternation) p1 headed q.head 
-                                         else if (p1 isSymbol) parser(p1) 
-                                         else p1
+    def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder1: Alternative[A], builder2: Alternative[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.Alternation = {
+      lazy val q: builder2.Alternation = builder2 alternation {  
+        lazy val q1: AbstractParser[A] = (if (p1 isAlternation) p1 else alt(p1)) headed q.head 
         lazy val q2: AbstractParser[B] = if (p2 isSymbol) parser(p2) else p2
-        (input, i, sppfLookup) => p1(input, i, sppfLookup).map(x1 => builder result (x1, q1, q.head, sppfLookup)) orElse p2(input, i, sppfLookup).map(x2 => builder result (x2, q2, q.head, sppfLookup)) 
+        (input, i, sppfLookup) => q1(input, i, sppfLookup) orElse p2(input, i, sppfLookup).map(x2 => builder2 result (x2, q2, q.head, sppfLookup)) 
       }
       q
     }
@@ -94,7 +92,7 @@ trait AbstractParsers {
     /**
      * @param p isn't a result of alternation
      */
-    def alt[B: Memoizable](p: AbstractParser[B])(implicit builder: Alternative[B, B]): AbstractParser[B] = {
+    def alt[B: Memoizable](p: AbstractParser[B])(implicit builder: Alternative[B]): AbstractParser[B] = {
       val q = if (p isSymbol) parser(p) else p
       lazy val a: AbstractParser[B] = parser {
         (input, i, sppfLookup) => p(input, i, sppfLookup).map { x => builder result (x, q, a.head, sppfLookup) }
@@ -116,12 +114,14 @@ object AbstractCPSParsers extends AbstractParsers {
     def nonterminal(p: (Input, Int, SPPFLookup) => Result[A]): Nonterminal
   }
   
-  def memoize[A: Memoizable](p: => AbstractParser[A], name: String)(implicit ntb: CanBecomeNonterminal[A], altb: Alternative[A, A], obj: ClassTag[Result[A]]): ntb.Nonterminal = {
+  def memoize[A: Memoizable](p: => AbstractParser[A], name: String)(implicit ntb: CanBecomeNonterminal[A], altb: Alternative[A], obj: ClassTag[Result[A]]): ntb.Nonterminal = {
       var table: Array[Result[A]] = null
       lazy val nt: ntb.Nonterminal 
         = ntb nonterminal {
-            lazy val q: AbstractParser[A] 
-              = (if (p isAlternation) p else AbstractParser.alt(p)) headed nt
+            lazy val q: AbstractParser[A] = {
+              val _p = p
+              (if (_p isAlternation) _p else AbstractParser.alt(_p)) headed nt
+            }
         
             (input, i, sppfLookup) => {
               if (table == null) 

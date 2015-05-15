@@ -4,6 +4,8 @@ import org.meerkat.sppf.NonPackedNode
 import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import java.util.HashMap
+import org.meerkat.sppf.DefaultSPPFLookup
+import org.meerkat.util.Visualization
 
 object OperatorParsers {
   
@@ -218,8 +220,7 @@ object OperatorParsers {
     override def pass(head: AbstractOperatorParser[Any]) = {
       val isLeftRec = if (p1 isNonterminal) p1 == head else { p1 pass head; p1 isLeftRec }
       if (isLeftRec) {
-        if (p2 == head) rec = Rec.BOTH
-        else rec = Rec.LEFT
+        if (p2 == head) rec = Rec.BOTH else rec = Rec.LEFT
       } else {
         if (p2 == head) rec = Rec.RIGHT
       }
@@ -248,7 +249,11 @@ object OperatorParsers {
         import Parsers._
         val table: java.util.Map[Prec, Parsers.Nonterminal] = new HashMap()
         
-        lazy val q = { p pass this; p pass Group(); p}
+        lazy val q = { 
+          val _p = p
+          _p pass this; _p pass Group()
+          _p 
+        }
         
         def apply(prec: Prec) 
           = if (table.containsKey(prec)) table.get(prec) 
@@ -259,5 +264,30 @@ object OperatorParsers {
             }
         
       }
+  
+  def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
+    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
+    Trampoline.run
+  }
+  
+  def parse(sentence: String, parser: Nonterminal): Unit = {
+    val input = new Input(sentence)
+    val sppf = new DefaultSPPFLookup(input)
+    
+    val p = parser((0,0))
+    run(input, sppf, p)
+    
+    println(s"Trying to find: ${p.name}(0,${sentence.length()})")
+    val startSymbol = sppf.getStartNode(p, 0, sentence.length())
+    
+    startSymbol match {
+      case None       => println("Parse error")
+      case Some(node) => println("Success: " + node)
+                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
+                         println("Visualizing...") 
+                         Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
+                         println("Done!")
+    }
+  }
   
 }

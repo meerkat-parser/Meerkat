@@ -18,7 +18,7 @@ object Recognizers {
     def intermediate(a: Int, b: Int, p: AbstractParser[Int], sppfLookup: SPPFLookup): Int = b
   }
   
-  implicit object obj2 extends Alternative[Int, Int] {
+  implicit object obj2 extends Alternative[Int] {
     type Alternation = Recognizers.Alternation
     
     def alternation(f: (Input, Int, SPPFLookup) => Result[Int]): Alternation

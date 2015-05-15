@@ -67,6 +67,8 @@ object AbstractOperatorParsers {
     def canClimb(level: Int): Boolean = min == max
         
     private var assocs: List[Group] = _
+    
+    override def toString = s"Group($min,$max,$undef)" 
   }
   
   object Group {

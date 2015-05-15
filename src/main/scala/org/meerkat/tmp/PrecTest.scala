@@ -15,7 +15,12 @@ object Test2 {
 object Test3 {
   // the use of |> and no occurences of operator nonterminal on left or right ends 
   // to the left of |> is a static error 
-  val E: OperatorParsers.Nonterminal = op_nt("E") { E ~ "*" ~ E |> E ~ "+" ~ E | "a" }
+  val E: OperatorParsers.Nonterminal 
+    = op_nt("E") { E ~ "*" ~ E |> right { E ~ "+" ~ E } | "a" }
+  
+  def main(args: Array[String]): Unit = {
+    OperatorParsers.parse("a+a*a+a", E)  
+  }
 }
 
 object Test4 {
