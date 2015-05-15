@@ -98,49 +98,45 @@ object OperatorParsers {
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec))
         
-        override def pass(head: AbstractOperatorParser[Any]) = { 
-          if (!p1.isNonterminal) p1 pass head
-          if (!p2.isNonterminal) p2 pass head 
-        }
-    
-        override def pass(group: Group) = {
-          if (!p1.isNonterminal) p1 pass group
-          if (!p2.isNonterminal) p2 pass group
-        }
+        override def pass(head: AbstractOperatorParser[Any]) = { p1 pass head; p2 pass head }
+        override def pass(group: Group) = { p2 pass group; p1 pass group; if (p1.isSequence) group.finalise }
       }
   
   def alternation(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractCPSParsers.AbstractParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2)
         
-        override def pass(head: AbstractOperatorParser[Any]) = { if (!p1.isNonterminal) p1 pass head }
-        override def pass(group: Group) = { if (!p1.isNonterminal) p1 pass group }
+        override def pass(head: AbstractOperatorParser[Any]) = { p1 pass head }
+        override def pass(group: Group) = { p1 pass group; if (p1.isSequence) group.finalise }
       }
   
   def alternation(p1: AbstractCPSParsers.AbstractParser[NonPackedNode], p2: AbstractOperatorParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1, p2(prec))
-        override def pass(head: AbstractOperatorParser[Any]) = { if (!p2.isNonterminal) p2 pass head }
-        override def pass(group: Group) = { if (!p2.isNonterminal) p2 pass group }
+        override def pass(head: AbstractOperatorParser[Any]) = { p2 pass head }
+        override def pass(group: Group) = { p2 pass group; if (p2.isSequence) group.finalise }
       }
   
   def greater(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractOperatorParser[NonPackedNode]) 
     = new Alternation { import Parsers._
         def apply(prec: Prec): Parsers.Alternation = AbstractCPSParsers.AbstractParser.alt(p1(prec), p2(prec))
         
-        override def pass(head: AbstractOperatorParser[Any]) = { 
-          if (!p1.isNonterminal) p1 pass head
-          if (!p2.isNonterminal) p2 pass head 
-        }
+        override def pass(head: AbstractOperatorParser[Any]) = { p1 pass head; p2 pass head }
     
         override def pass(group: Group) = {
-          if (!p1.isNonterminal) p1 pass group.startNew(Assoc.UNDEFINED)
-          if (!p2.isNonterminal) p2 pass group
+          p2 pass group
+          
+          val newGroup = group.startNew(Assoc.UNDEFINED)
+          p1 pass newGroup
+          if (p1.isSequence) newGroup.finalise
         }
       }
     
   trait Nonterminal extends HasAlternationOp {
     override def isNonterminal = true
+    
+    override def pass(head: AbstractOperatorParser[Any]) = {}
+    override def pass(group: Group) = {}
     
     def ~ (p: Parsers.Symbol): Postfix = Postfix(this, p)
     def ~ (p: Nonterminal): Infix = Infix(this, p)
@@ -227,10 +223,12 @@ object OperatorParsers {
         import Parsers._
         val table: java.util.Map[Prec, Parsers.Nonterminal] = new HashMap()
         
+        lazy val q = { p pass this; p pass Group(); p}
+        
         def apply(prec: Prec) 
           = if (table.containsKey(prec)) table.get(prec) 
             else { 
-              val nt = AbstractCPSParsers.memoize(p(prec), name + s"$prec")
+              val nt = AbstractCPSParsers.memoize(q(prec), name + s"$prec")
               table.put(prec, nt)
               nt
             }

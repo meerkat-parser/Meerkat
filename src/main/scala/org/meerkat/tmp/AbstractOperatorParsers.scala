@@ -44,11 +44,11 @@ object AbstractOperatorParsers {
     def maximum = max
     
     def startNew(assoc: Assoc.Assoc) = {
-      if (max != min) {
-        max -= 1
-      }
+      finalise
       new Group(assoc, max + 1)
     }
+    
+    def finalise = if (max != min) max -= 1
     
     def get(assoc: Assoc.Assoc): Int = {
       if (assoc == Assoc.UNDEFINED && undef == -1) {
@@ -64,8 +64,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def canClimb(level: Int): Boolean
-      = min == max
+    def canClimb(level: Int): Boolean = min == max
         
     private var assocs: List[Group] = _
   }
