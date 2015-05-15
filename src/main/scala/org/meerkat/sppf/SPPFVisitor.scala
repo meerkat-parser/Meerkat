@@ -1,6 +1,5 @@
 package org.meerkat.sppf
 
-import org.meerkat.meerkat.Rule
 import org.meerkat.tree.Tree
 import org.meerkat.tree.Tree._
 import org.meerkat.tree._
@@ -23,7 +22,7 @@ object SPPFVisitor {
       if (n isAmbiguous)
         Amb( (for (p <- n.children) yield Appl(p.ruleType, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
       else
-    	  Appl(n.first.ruleType, n.flatChildren.map { x => buildTree(x) } toList)        
+    	  flatten(Appl(n.first.ruleType, n.flatChildren.map { x => buildTree(x) } toList))        
       }
     
     case i: IntermediateNode => {
@@ -35,20 +34,15 @@ object SPPFVisitor {
   }
   
   
-//  def flatten(t: Tree): Tree = t match {
-//    case a @ Appl(r, ts) => r match {
-//      
-//      // TODO: we only need to check for the right most or left most node, so iterating over the list
-//      // of children may not be the optimal way to go.
-//      case Regular(Star(s)) => Appl(r, ts.filter(x => isEpsilon(x)).flatMap{ x => x match { case Appl(Regular(Star(s)), xs) => xs } })
-//      
-//      case Regular(Plus(s)) => Appl(r, ts.filter(x => isEpsilon(x)).flatMap{ x => x match { case Appl(Regular(Plus(s)), xs) => xs } })
-//      
-//      case Regular(Opt(s))  => Appl(r, ts.filter { x => isEpsilon(x) })
-//      
-//      case _          => a
-//    }
-//    case x @ _          => x
-//  }
+  def flatten(t: Tree): Tree = t match {
+      
+      case Appl(r@Rule(Star(s), _), List(epsilon)) => Appl(r, List())
+      
+      case Appl(r@Rule(Star(s), _), Appl(Rule(Star(c), _), first) :: rest) => if (s == c) Appl(r, first ++ rest) else t
+      
+      case Appl(r@Rule(Plus(s), _), Appl(Rule(Plus(c), _), first) :: rest) => if (s == c) Appl(r, first ++ rest) else t
+      
+      case a @ _          => a
+  }
   
 }
