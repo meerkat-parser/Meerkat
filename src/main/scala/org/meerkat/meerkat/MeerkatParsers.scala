@@ -90,10 +90,12 @@ trait MeerkatParser extends Parser with Slot {
                       p2(input, sppf, t1.rightExtent).mapNoMemo(t2 => 
                         sppf.getIntermediateNode(this, t1, t2)) })
                   }
-              
+                  
+                  override def symbol = if (p1 sequenced) p1.ruleType.body else Sequence(p1.symbol, p2.symbol)
+                  
                   override def ruleType 
-                    = if (this headed) org.meerkat.tree.Rule(this.head, if (p1 sequenced) p1.ruleType.body else Sequence(p1.symbol, p2.symbol))
-                      else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), if (p1 sequenced) p1.ruleType.body else Sequence(p1.symbol, p2.symbol))
+                    = if (this headed) org.meerkat.tree.Rule(this.head, symbol)
+                      else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), symbol)
               }  
     p.nameAs((if(p.headed) p.head + " ::= " else "") + p1.name.value + p2.name.value + p.hashCode() + "@")
     p.sequence
@@ -109,6 +111,7 @@ trait MeerkatParser extends Parser with Slot {
       
     p = new MeerkatParser { 
           def apply(input: Input, sppf: SPPFLookup, i: Int) = p1.value(input, sppf, i) orElse p2.value(input, sppf, i)
+          override def symbol = org.meerkat.tree.Alt(p1.value.symbol, p2.value.symbol) 
         }
     p.nameAs(this.name.value + " | " + q2.name.value)
     p.alternate
@@ -135,6 +138,7 @@ trait MeerkatParser extends Parser with Slot {
                         sppf.getNonterminalNode(h.name, this, t) })
                     }
                     override def ruleType = org.meerkat.tree.Rule(h, MeerkatParser.this.symbol)
+                    override def symbol = MeerkatParser.this.symbol
                   }
         if(this.sequenced) p.nameAs(this.name.value)  
         else p.nameAs(h + " ::= " + this.name.value + p.hashCode())
@@ -328,7 +332,7 @@ trait MeerkatParser extends Parser with Slot {
   def gr(): MeerkatParser = {
     group.getOrElse({
 //      val p: MeerkatParser = "(" + this.name.value + ")" ::= this
-      val p = regular(org.meerkat.tree.Group(this.ruleType.body), this)
+      val p = regular(org.meerkat.tree.Group(MeerkatParser.this.symbol), this)
       group = Option(p)
       p
     })
