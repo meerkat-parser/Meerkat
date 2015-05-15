@@ -78,7 +78,7 @@ case class Plus(s: Symbol) extends Nonterminal {
   override def name = s.name + "+"
 }
 
-case class Sequence(ss: Seq[Symbol]) extends Nonterminal {
+case class Sequence(ss: Symbol*) extends Nonterminal {
   override def name = ss mkString " "
 }
 

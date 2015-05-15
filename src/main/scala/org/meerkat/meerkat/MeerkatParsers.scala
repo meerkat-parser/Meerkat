@@ -22,6 +22,7 @@ import MeerkatDDParser._
 import Configuration._
 import com.sun.media.sound.SoftReverb.AllPass
 import org.meerkat.tree.Nonterminal
+import org.meerkat.tree.Sequence
 
 trait Layout { def parser: MeerkatParser }
 
@@ -91,8 +92,8 @@ trait MeerkatParser extends Parser with Slot {
                   }
               
                   override def ruleType 
-                    = if (this headed) org.meerkat.tree.Rule(this.head, (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
-                      else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), (if (p1 sequenced) p1.ruleType.body else List(p1.symbol)) :+ p2.symbol)
+                    = if (this headed) org.meerkat.tree.Rule(this.head, if (p1 sequenced) p1.ruleType.body else Sequence(p1.symbol, p2.symbol))
+                      else org.meerkat.tree.PartialRule(org.meerkat.tree.Nonterminal(""), if (p1 sequenced) p1.ruleType.body else Sequence(p1.symbol, p2.symbol))
               }  
     p.nameAs((if(p.headed) p.head + " ::= " else "") + p1.name.value + p2.name.value + p.hashCode() + "@")
     p.sequence
@@ -133,7 +134,7 @@ trait MeerkatParser extends Parser with Slot {
                       MeerkatParser.this(input, sppf, i).map(t => { endOfAlt(h.name, this.name.value, i, t)
                         sppf.getNonterminalNode(h.name, this, t) })
                     }
-                    override def ruleType = org.meerkat.tree.Rule(h, List(MeerkatParser.this.symbol))
+                    override def ruleType = org.meerkat.tree.Rule(h, MeerkatParser.this.symbol)
                   }
         if(this.sequenced) p.nameAs(this.name.value)  
         else p.nameAs(h + " ::= " + this.name.value + p.hashCode())
