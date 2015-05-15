@@ -68,6 +68,7 @@ object OperatorParsers {
           }
         }
       }
+      
       return null
     }
     
@@ -142,23 +143,29 @@ object OperatorParsers {
     def ~ (p: Nonterminal): Infix = Infix(this, p)
   }
   
+  object FailingSequence extends Parsers.Sequence {
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.failure[NonPackedNode]
+  }
+  
   case class Postfix(p1: AbstractOperatorParser[NonPackedNode], p2: AbstractCPSParsers.AbstractParser[NonPackedNode]) extends Sequence { import Parsers._
     
     lazy val cond = condition
+    lazy val args = arguments
     
     def apply(prec: Prec): Parsers.Sequence = {
-      if (cond == null || cond(prec)) {
+      if (level == -1) 
         AbstractCPSParsers.AbstractParser.seq(p1(prec), p2)
-      }
-      ???
+      else if (cond(prec))
+        AbstractCPSParsers.AbstractParser.seq(p1(args._1), p2)
+      else
+        FailingSequence
     }
     
     protected var rec: Rec.Rec = Rec.UNDEFINED
     override def isLeftRec = rec == Rec.LEFT
     
     override def pass(head: AbstractOperatorParser[Any]) = {
-      val isLeftRec = if (p1 isNonterminal) p1 == head
-                      else { p1 pass head; p1 isLeftRec }
+      val isLeftRec = if (p1 isNonterminal) p1 == head else { p1 pass head; p1 isLeftRec }
       if (isLeftRec) rec = Rec.LEFT
     }
   
@@ -168,7 +175,17 @@ object OperatorParsers {
   
   case class Prefix(p1: AbstractCPSParsers.AbstractParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
     
-    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1, p2(prec))
+    lazy val cond = condition
+    lazy val args = arguments
+    
+    def apply(prec: Prec): Parsers.Sequence = {
+      if (level == -1)
+        AbstractCPSParsers.AbstractParser.seq(p1, p2(prec))
+      else if (cond(prec))
+        AbstractCPSParsers.AbstractParser.seq(p1, p2(args._2))
+      else 
+        FailingSequence
+    }
     
     protected var rec: Rec.Rec = Rec.UNDEFINED
     override def isRightRec = rec == Rec.RIGHT
@@ -181,7 +198,17 @@ object OperatorParsers {
   
   case class Infix(p1: AbstractOperatorParser[NonPackedNode], p2: Nonterminal) extends Sequence { import Parsers._
     
-    def apply(prec: Prec): Parsers.Sequence = AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
+    lazy val cond = condition
+    lazy val args = arguments
+    
+    def apply(prec: Prec): Parsers.Sequence = {
+      if (level == -1)
+        AbstractCPSParsers.AbstractParser.seq(p1(prec), p2(prec))
+      else if (cond(prec))
+        AbstractCPSParsers.AbstractParser.seq(p1(args._1), p2(args._2))
+      else 
+        FailingSequence
+    }
     
     protected var rec: Rec.Rec = Rec.UNDEFINED
     
@@ -189,9 +216,7 @@ object OperatorParsers {
     override def isRightRec = rec == Rec.RIGHT || rec == Rec.BOTH
     
     override def pass(head: AbstractOperatorParser[Any]) = {
-      val isLeftRec = if (p1 isNonterminal) p1 == head
-                      else { p1 pass head; p1 isLeftRec }
-      
+      val isLeftRec = if (p1 isNonterminal) p1 == head else { p1 pass head; p1 isLeftRec }
       if (isLeftRec) {
         if (p2 == head) rec = Rec.BOTH
         else rec = Rec.LEFT
