@@ -10,7 +10,7 @@ object DDParsers {
   
   case class ~[+A, +B](_1: A, _2: B)
   
-  implicit def obj1[A, B] = new Composable[(NonPackedNode, A), (NonPackedNode, B)] {
+  implicit def obj1[A, B] = new CanBuildSequence[(NonPackedNode, A), (NonPackedNode, B)] {
     type R = (NonPackedNode, A~B)
     
     type Sequence = DDParsers.Sequence[A~B]
@@ -23,11 +23,14 @@ object DDParsers {
       = (sppfLookup.getIntermediateNode(p, a._1, b._1), new ~(a._2, b._2)) 
   }
   
-  implicit def obj2[A] = new Alternative[(NonPackedNode, A)] {
+  implicit def obj2[A] = new CanBuildAlternation[(NonPackedNode, A)] {
     type Alternation = DDParsers.Alternation[A]
     
-    def alternation(f: (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)]): Alternation
-      = new DDParsers.Alternation[A] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
+    def alternation(f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)]): Alternation
+      = new Alternation { 
+          lazy val p: (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)] = f(head.getOrElse(this))
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) 
+        }
     
     def result(e: (NonPackedNode, A), p: AbstractParser[(NonPackedNode, A)], nt: AbstractParser[Any], sppfLookup: SPPFLookup): (NonPackedNode, A)
       = (sppfLookup.getNonterminalNode(nt, p, e._1), e._2)
@@ -38,10 +41,15 @@ object DDParsers {
     def value(t: (NonPackedNode, A)): (Int, A) = (t._1.rightExtent, t._2)
   }
   
-  implicit def obj4[A] = new CanBecomeNonterminal[(NonPackedNode, A)] {
+  implicit def obj4[A] = new CanBuildNonterminal[(NonPackedNode, A)] {
     type Nonterminal = DDParsers.Nonterminal[A]
-    def nonterminal(p: (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)]): Nonterminal
-      = new DDParsers.Nonterminal[A] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
+    def nonterminal(nt: String, f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)]): Nonterminal
+      = new Nonterminal {
+          lazy val p: (Input, Int, SPPFLookup) => Result[(NonPackedNode, A)] = f(this)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          
+          override def name = nt
+        }
   }
   
   trait HasSequenceOp[+T] extends AbstractParser[(NonPackedNode, T)] {
@@ -55,10 +63,20 @@ object DDParsers {
   
   trait Sequence[+T] extends HasSequenceOp[T] with HasAlternationOp[T] { 
     override def isSequence = true
+    
+    private val nm = s"p${this.hashCode()}"
+    override def name = nm
   }
   
   trait Alternation[+T] extends HasAlternationOp[T] { 
-    override def isAlternation = true    
+    override def isAlternation = true
+    
+    private val nm = s"p${this.hashCode()}"
+    override def name = nm
+    
+    private var hd: Option[AbstractParser[Any]] = None
+    override def head: Option[AbstractParser[Any]] = hd
+    override def pass(head: AbstractParser[Any]) = hd = Option(head)
   }
   
   trait Symbol[+T] extends HasSequenceOp[T] with HasAlternationOp[T] {
@@ -72,7 +90,7 @@ object DDParsers {
   def nt[T](name: String)(p: => AbstractParser[(NonPackedNode, T)]): Nonterminal[T]
     = memoize(p, name)
   
-  implicit def obj5[B] = new Composable[NonPackedNode, (NonPackedNode, B)] {
+  implicit def obj5[B] = new CanBuildSequence[NonPackedNode, (NonPackedNode, B)] {
     type R = (NonPackedNode, B)
       
     type Sequence = DDParsers.Sequence[B]
@@ -93,7 +111,7 @@ object DDParsers {
     def ~ [U] (q: Symbol[U]): Sequence[U] = AbstractParser.seq(p, q)(Parsers.obj3, obj3, obj5)
   }
   
-  implicit def obj6[A] = new Composable[(NonPackedNode, A), NonPackedNode] {
+  implicit def obj6[A] = new CanBuildSequence[(NonPackedNode, A), NonPackedNode] {
     type R = (NonPackedNode, A)
       
     type Sequence = DDParsers.Sequence[A]

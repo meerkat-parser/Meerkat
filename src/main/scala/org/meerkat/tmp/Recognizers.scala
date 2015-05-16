@@ -7,7 +7,7 @@ object Recognizers {
   
   import AbstractCPSParsers._
   
-  implicit object obj1 extends Composable[Int, Int] {
+  implicit object obj1 extends CanBuildSequence[Int, Int] {
     type R = Int
     type Sequence = Recognizers.Sequence
     
@@ -18,11 +18,17 @@ object Recognizers {
     def intermediate(a: Int, b: Int, p: AbstractParser[Int], sppfLookup: SPPFLookup): Int = b
   }
   
-  implicit object obj2 extends Alternative[Int] {
+  val empty: AbstractParser[Int] 
+    = new AbstractParser[Int] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(i) }
+  
+  implicit object obj2 extends CanBuildAlternation[Int] {
     type Alternation = Recognizers.Alternation
     
-    def alternation(f: (Input, Int, SPPFLookup) => Result[Int]): Alternation
-      = new Alternation { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
+    def alternation(f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[Int]): Alternation
+      = new Alternation {
+          lazy val p: (Input, Int, SPPFLookup) => Result[Int] = f(empty)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) 
+        }
     
     def result(e: Int, p: AbstractParser[Int], nt: AbstractParser[Any], sppfLookup: SPPFLookup): Int = e
   }
@@ -32,10 +38,13 @@ object Recognizers {
     def value(t: Int) = t
   }
   
-  implicit object obj4 extends CanBecomeNonterminal[Int] {
+  implicit object obj4 extends CanBuildNonterminal[Int] {
     type Nonterminal = Recognizers.Nonterminal
-    def nonterminal(p: (Input, Int, SPPFLookup) => Result[Int]): Nonterminal 
-      = new Nonterminal { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
+    def nonterminal(nt: String, f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[Int]): Nonterminal 
+      = new Nonterminal {
+          lazy val p: (Input, Int, SPPFLookup) => Result[Int] = f(empty)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) 
+        }
   }
   
   trait HasSequenceOp extends AbstractParser[Int] {

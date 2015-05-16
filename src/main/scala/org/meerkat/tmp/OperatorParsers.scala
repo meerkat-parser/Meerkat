@@ -11,6 +11,23 @@ object OperatorParsers {
   
   import AbstractOperatorParsers._
   
+  trait OperatorSequence extends AbstractOperatorSequence[NonPackedNode]
+  
+  trait OperatorParserWithAlternationOp extends AbstractOperatorParser[NonPackedNode] {
+    def | (p: OperatorSequence): OperatorAlternation = ???   
+    def | (p: Nonterminal): OperatorAlternation = ???
+
+    def | (p: Parsers.Sequence): OperatorAlternation = ???
+    def | (p: Parsers.Symbol): OperatorAlternation = ???
+    
+    def |> (p: Sequence): OperatorAlternation = ???
+    def |> (p: Nonterminal): OperatorAlternation = ???
+  }
+  
+  trait OperatorAlternation extends AbstractOperatorParser[NonPackedNode]
+  
+  trait OperatorNonterminal extends AbstractOperatorParser[NonPackedNode]
+  
   trait HasAlternationOp extends AbstractOperatorParser[NonPackedNode] {
     def | (p: Sequence): Alternation = alternation(this, p)   
     def | (p: Nonterminal): Alternation = alternation(this, p)

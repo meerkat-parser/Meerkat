@@ -11,24 +11,27 @@ object Parsers {
   
   import AbstractCPSParsers._
   
-  implicit object obj1 extends Composable[NonPackedNode, NonPackedNode] {
+  implicit object obj1 extends CanBuildSequence[NonPackedNode, NonPackedNode] {
     type R = NonPackedNode
     
     type Sequence = Parsers.Sequence
     
     def sequence(f: (Input, Int, SPPFLookup) => Result[NonPackedNode]): Sequence 
-      = new Parsers.Sequence { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) } 
+      = new Sequence { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) } 
     
     def index(a: NonPackedNode): Int = a.rightExtent
     def intermediate(a: NonPackedNode, b: NonPackedNode, p: AbstractParser[NonPackedNode], sppfLookup: SPPFLookup): NonPackedNode 
       = sppfLookup.getIntermediateNode(p, a, b) 
   }
   
-  implicit object obj2 extends Alternative[NonPackedNode] {
+  implicit object obj2 extends CanBuildAlternation[NonPackedNode] {
     type Alternation = Parsers.Alternation
     
-    def alternation(f: (Input, Int, SPPFLookup) => Result[NonPackedNode]): Alternation
-      = new Alternation { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = f(input, i, sppfLookup) }
+    def alternation(f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[NonPackedNode]): Alternation
+      = new Alternation { 
+          lazy val p: (Input, Int, SPPFLookup) => Result[NonPackedNode] = f(head.getOrElse(this))
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+        }
     
     def result(e: NonPackedNode, p: AbstractParser[NonPackedNode], nt: AbstractParser[Any], sppfLookup: SPPFLookup): NonPackedNode
       = sppfLookup.getNonterminalNode(nt, p, e)
@@ -39,10 +42,16 @@ object Parsers {
     def value(t: NonPackedNode): Int = t.rightExtent
   }
   
-  implicit object obj4 extends CanBecomeNonterminal[NonPackedNode] {
+  implicit object obj4 extends CanBuildNonterminal[NonPackedNode] {
     type Nonterminal = Parsers.Nonterminal
-    def nonterminal(p: (Input, Int, SPPFLookup) => Result[NonPackedNode]): Nonterminal 
-      = new Nonterminal { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }
+    
+    def nonterminal(nt: String, f: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[NonPackedNode]): Nonterminal 
+      = new Nonterminal {
+          lazy val p: (Input, Int, SPPFLookup) => Result[NonPackedNode] = f(this)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          
+          override def name = nt
+        }
   }
   
   trait HasSequenceOp extends AbstractParser[NonPackedNode] {
@@ -56,10 +65,19 @@ object Parsers {
   
   trait Sequence extends HasSequenceOp with HasAlternationOp { 
     override def isSequence = true
+    private val nm = s"p${this.hashCode()}"
+    override def name = nm
   }
   
   trait Alternation extends HasAlternationOp { 
     override def isAlternation = true
+    
+    private val nm = s"p${this.hashCode()}"
+    override def name = nm
+    
+    private var hd: Option[AbstractParser[Any]] = None
+    override def head: Option[AbstractParser[Any]] = hd
+    override def pass(head: AbstractParser[Any]) = hd = Option(head)
   }
   
   trait Symbol extends HasSequenceOp with HasAlternationOp {

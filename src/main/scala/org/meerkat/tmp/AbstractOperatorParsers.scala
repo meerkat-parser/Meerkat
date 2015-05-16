@@ -35,6 +35,14 @@ object AbstractOperatorParsers {
     
   }
   
+  object AbstractOperatorParser {
+    def seq[A, B](p1: AbstractOperatorParser[A], p2: AbstractOperatorParser[B]) = ???
+    def seq[A, B](p1: AbstractParser[A], p2: AbstractOperatorParser[B]) = ???
+    def seq[A, B](p1: AbstractOperatorParser[A], p2: AbstractParser[B]) = ???
+  }
+  
+  trait AbstractOperatorSequence[+T] extends ((Prec, Prec) => AbstractParser[T])
+  
   class Group(val assoc: Assoc.Assoc, min: Int) {
     
     private var max: Int = min
