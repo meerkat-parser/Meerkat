@@ -74,12 +74,12 @@ trait AbstractParsers {
     }
   
     /**
-     * @param p2 isn't a result of alternation
+     * @param p2 can be a result of alternation
      */
     def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.Alternation = {
       builder2 alternation { head => 
         val q1 = if (p1 isAlternation) p1 else alt(p1); q1 pass head
-        val q2 = alt(p2); q2 pass head
+        val q2 = if (p2.isSymbol) alt(p2) else p2; q2 pass head
         (input, i, sppfLookup) => q1(input, i, sppfLookup) orElse q2(input, i, sppfLookup) 
       } 
     }

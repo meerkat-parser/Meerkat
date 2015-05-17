@@ -116,11 +116,13 @@ object OperatorParsers {
     
     def | (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)   
     def | (p: OperatorNonterminal): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
+    def | (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
 
     def | (p: Sequence): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
     def | (p: Symbol): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
     
     def |> (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
+    // def |> (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
   }
   
   trait OperatorParserWithAlternationOp extends AbstractOperatorParser[NonPackedNode] { import OperatorImplicits._
@@ -135,6 +137,7 @@ object OperatorParsers {
     
     def | (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)   
     def | (p: OperatorNonterminal): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
+    def | (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
 
     def | (p: Sequence): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
     def | (p: Symbol): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
@@ -156,6 +159,7 @@ object OperatorParsers {
   implicit class ParsersAltOps(p: AbstractCPSParsers.AbstractParser[NonPackedNode]) { import OperatorImplicits._
     def | (q: OperatorSequence) = AbstractOperatorParser.alt(p, q)(obj2)
     def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
+    def | (q: OperatorAlternation) = AbstractOperatorParser.alt(p, q)(obj2)
   }
   
   implicit class StringSeqOps(term: String) { import OperatorImplicits._
