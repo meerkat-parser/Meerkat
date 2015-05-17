@@ -4,18 +4,17 @@ import OperatorParsers._
 import Parsers._
   
 object Test1 {
-  val E: Parsers.Nonterminal = nt("E") { E ~ "+" ~ E | "a" }
+  val E: Nonterminal = nt("E") { E ~ "+" ~ E | "a" }
 }
 
 object Test2 {
-  // explicit type
-  val E: OperatorParsers.Nonterminal = op_nt("E") { E ~ "+" ~ E | "a" }
+  val E: OperatorNonterminal = op_nt("E") { E ~ "+" ~ E | "a" }
 }
 
 object Test3 {
   // the use of |> and no occurences of operator nonterminal on left or right ends 
   // to the left of |> is a static error 
-  val E: OperatorParsers.Nonterminal 
+  val E: OperatorNonterminal 
     = op_nt("E") { E ~ "*" ~ E |> right { E ~ "+" ~ E } | "a" }
   
   def main(args: Array[String]): Unit = {
@@ -23,33 +22,33 @@ object Test3 {
   }
 }
 
-object Test4 {
-  val open: Parsers.Terminal = "("
-  val close: Parsers.Terminal = ")"
-   
-  val E: Parsers.Nonterminal = nt("E") { open ~ E ~ "+" ~ E ~ close | "a" }
-}
-
-object Test5 {
-  val open: Parsers.Terminal = "("
-  val close: Parsers.Terminal = ")"
-   
-  val E: OperatorParsers.Nonterminal 
-    = op_nt("E") {(    open ~ E ~ close 
-                    |  E ~ "*" ~ E
-                    |> E ~ "+" ~ E
-                    |  "a" 
-                 )}
-}
-
-object Test6 {
-  val open: Parsers.Terminal = "("
-  val close: Parsers.Terminal = ")"
-  
-  val E: OperatorParsers.Nonterminal 
-    = op_nt("E") {(    open ~ E ~ close 
-                    |  left { E ~ "*" ~ E }
-                    |> E ~ "+" ~ E
-                    |  "a" 
-                 )}
-}
+//object Test4 {
+//  val open: Parsers.Terminal = "("
+//  val close: Parsers.Terminal = ")"
+//   
+//  val E: Parsers.Nonterminal = nt("E") { open ~ E ~ "+" ~ E ~ close | "a" }
+//}
+//
+//object Test5 {
+//  val open: Parsers.Terminal = "("
+//  val close: Parsers.Terminal = ")"
+//   
+//  val E: OperatorParsers.Nonterminal 
+//    = op_nt("E") {(    open ~ E ~ close 
+//                    |  E ~ "*" ~ E
+//                    |> E ~ "+" ~ E
+//                    |  "a" 
+//                 )}
+//}
+//
+//object Test6 {
+//  val open: Parsers.Terminal = "("
+//  val close: Parsers.Terminal = ")"
+//  
+//  val E: OperatorParsers.Nonterminal 
+//    = op_nt("E") {(    open ~ E ~ close 
+//                    |  left { E ~ "*" ~ E }
+//                    |> E ~ "+" ~ E
+//                    |  "a" 
+//                 )}
+//}
