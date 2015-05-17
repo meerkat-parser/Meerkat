@@ -157,6 +157,20 @@ object AbstractOperatorParsers {
       }
     }
     
+    def greater[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
+      import builder._
+      alternation { (head, group) => 
+        p2 pass (head, group); p1 pass head
+        val next = group.startGroup; val l = level(p1, next);  
+        val subgroup = group.subgroup; next.closeGroup
+        println(s"|>: ($l, $group); subgroup: $subgroup")
+        if (l != -1) {
+          val q1 = filter(p1, l, group, subgroup)
+          prec => AbstractParser.alt(q1(prec), p2(prec))
+        } else prec => AbstractParser.alt(p1(prec, prec), p2(prec))
+      }
+    }
+    
     def greater[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => 
@@ -314,7 +328,7 @@ object AbstractOperatorParsers {
                      prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (prec._1,l)) else fail
                    else prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (l,l)) else fail
         }
-      else
+      else if (subgroup == None)
         p.assoc match {
           case Assoc.UNDEFINED => 
             return if (group.hasPostfixBelow && group.hasPrefixBelow)
@@ -349,6 +363,7 @@ object AbstractOperatorParsers {
                      prec => if (cond(prec)) p((l+1,l+1), (prec._1,l+1)) else fail
                    else prec => if (cond(prec)) p((l+1,l+1), (l+1,l+1)) else fail
         } 
+      else ??? // TODO: handle this case
     }
     
     object fail extends AbstractParser[Nothing] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.failure }

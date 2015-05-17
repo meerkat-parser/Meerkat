@@ -122,7 +122,7 @@ object OperatorParsers {
     def | (p: Symbol): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
     
     def |> (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
-    // def |> (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
+    def |> (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
   }
   
   trait OperatorParserWithAlternationOp extends AbstractOperatorParser[NonPackedNode] { import OperatorImplicits._
@@ -143,6 +143,7 @@ object OperatorParsers {
     def | (p: Symbol): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)
     
     def |> (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
+    def |> (p: OperatorAlternation): OperatorAlternation = AbstractOperatorParser.greater(this, p)(obj2)
   }
   
   trait OperatorAlternation extends OperatorParserWithAlternationOp
@@ -182,6 +183,10 @@ object OperatorParsers {
   
   def non_assoc(p: OperatorSequence): OperatorSequence = { import OperatorImplicits._
     AbstractOperatorParser.non_assoc(obj1)(p)
+  }
+  
+  def left(p: OperatorAlternation): OperatorAlternation = { import OperatorImplicits._
+    AbstractOperatorParser.left(obj2)(p)
   }
   
   def op_nt(name: String)(p: => AbstractOperatorParser[NonPackedNode])

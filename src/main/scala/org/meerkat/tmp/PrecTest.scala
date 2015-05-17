@@ -14,10 +14,8 @@ object Test2 {
 object Test3 {
   val E: OperatorNonterminal 
     = op_nt("E")( "(" ~ E ~ ")" 
-                 |> E ~ "*" ~ E
-                 | E ~ "/" ~ E
-                 |> left { E ~ "+" ~ E }
-                 | E ~ "-" ~ E
+                 |> left { E ~ "*" ~ E | E ~ "/" ~ E }
+                 |> left { E ~ "+" ~ E | E ~ "-" ~ E }
                  |> "-" ~ E
                  | "a" )
   
