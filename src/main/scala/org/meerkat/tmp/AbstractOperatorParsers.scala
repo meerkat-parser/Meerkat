@@ -139,6 +139,7 @@ object AbstractOperatorParsers {
     def greater[A, B >: A](p1: AbstractOperatorParser[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => p2 pass head; val l = level(p2, group); p1 pass (head, group.startNew(Assoc.UNDEFINED))
+        println(s"|>: ($l, $group)")
         if (l != -1) {
           val q2 = filter(p2, l, group)
           prec => AbstractParser.alt(p1(prec), q2(prec))
@@ -150,13 +151,14 @@ object AbstractOperatorParsers {
       import builder._
       alternation { (head, group) => 
         p2 pass head; val l2 = level(p2, group)
-        p1 pass head; val newGroup = group.startNew(Assoc.UNDEFINED); val l1 = level(p1, newGroup); newGroup.close
+        p1 pass head; val next = group.startNew(Assoc.UNDEFINED); val l1 = level(p1, next); next.close
+        println(s"|>: ($l1, $next), ($l2, $group)")
         if (l1 != -1 && l2 != -1) {
-          val q1 = filter(p1, l1, newGroup)
+          val q1 = filter(p1, l1, next)
           val q2 = filter(p2, l2, group)
           prec => AbstractParser.alt(q1(prec), q2(prec))
         } else if (l1 != -1) {
-          val q1 = filter(p1, l1, newGroup)
+          val q1 = filter(p1, l1, next)
           prec => AbstractParser.alt(q1(prec), p2(prec, prec))
         } else if (l2 != -1) {
           val q2 = filter(p2, l2, group)
@@ -191,6 +193,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => p1 pass head; p2 pass head; val l2 = level(p2, group); val l1 = level(p1, group); group.close
+        println(s"|: ($l1, $group), ($l2, $group)")
         if (l1 != -1 && l2 != -1) {
           val q1 = filter(p1, l1, group); val q2 = filter(p2, l2, group)
           prec => AbstractParser.alt(q1(prec), q2(prec))
@@ -205,6 +208,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => p1 pass head; val l = level(p1, group); group.close
+        println(s"|: ($l, $group)")
         if (l != -1) {
           val q1 = filter(p1, l, group); prec => AbstractParser.alt(q1(prec), p2(prec))
         } else prec => AbstractParser.alt(p1(prec, prec), p2(prec))
@@ -223,6 +227,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => p1 pass head; val l = level(p1, group); group.close
+        println(s"|: ($l, $group)")
         if (l != -1) {
           val q1 = filter(p1, l, group)
           prec => AbstractParser.alt(q1(prec), p2)
@@ -232,6 +237,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => p2 pass head; val l = level(p2, group); group.close
+        println(s"|: ($l, $group)")
         if (l != -1) {
           val q2 = filter(p2, l, group)
           prec => AbstractParser.alt(p1, q2(prec))
@@ -240,7 +246,10 @@ object AbstractOperatorParsers {
     }
     
     def level[A](p: AbstractOperatorSequence[A], group: Group): Int
-      = if (p.isInfix || p.isPrefix || p.isPostfix) group.get(p.assoc) else -1
+      = if (p.isInfix || p.isPrefix || p.isPostfix) {
+          if (p.isPrefix) group.prefix; if (p.isPostfix) group.postfix; 
+          group.get(p.assoc) 
+        } else -1
     
     def filter[A](p: AbstractOperatorSequence[A], l: Int, group: Group): Prec => AbstractParser[A] = {
       val cond: Prec => Boolean =
@@ -250,24 +259,72 @@ object AbstractOperatorParsers {
       if (!group.canClimb(l)) {
         p.assoc match {
           case Assoc.UNDEFINED => 
-            return prec => if (cond(prec)) p((l, l), (l, l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec)) p((l,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec)) p((l,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec)) p((l,l), (prec._1,l)) else fail
+                   else prec => if (cond(prec)) p((l,l), (l,l)) else fail
           case Assoc.LEFT      =>
-            return prec => if (cond(prec) && prec._2 != l) p((l,l), (l,l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec) && prec._2 != l) p((l,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec) && prec._2 != l) p((l,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec) && prec._2 != l) p((l,l), (prec._1,l)) else fail
+                   else prec => if (cond(prec) && prec._2 != l) p((l,l), (l,l)) else fail
           case Assoc.RIGHT     => 
-            return prec => if (cond(prec) && prec._1 != l) p((l,l), (l,l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec) && prec._1 != l) p((l,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec) && prec._1 != l) p((l,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec) && prec._1 != l) p((l,l), (prec._1,l)) else fail
+                   else prec => if (cond(prec) && prec._1 != l) p((l,l), (l,l)) else fail
           case Assoc.NON_ASSOC => 
-            return prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (l,l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (prec._1,l)) else fail
+                   else prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (l,l)) else fail
         }
       } else {
         p.assoc match {
           case Assoc.UNDEFINED => 
-            return prec => if (cond(prec)) p((l, l), (l, l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec)) p((l,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec)) p((l,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec)) p((l,l), (prec._1,l)) else fail
+                   else prec => if (cond(prec)) p((l,l), (l,l)) else fail
           case Assoc.LEFT      =>
-            return prec => if (cond(prec)) p((l,l), (l+1,l+1)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec)) p((l,prec._2), (prec._1,l+1)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec)) p((l,prec._2), (l+1,l+1)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec)) p((l,l), (prec._1,l+1)) else fail
+                   else prec => if (cond(prec)) p((l,l), (l+1,l+1)) else fail
           case Assoc.RIGHT     => 
-            return prec => if (cond(prec)) p((l+1,l+1), (l,l)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec)) p((l+1,prec._2), (prec._1,l)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec)) p((l+1,prec._2), (l,l)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec)) p((l+1,l+1), (prec._1,l)) else fail
+                   else prec => if (cond(prec)) p((l+1,l+1), (l,l)) else fail
           case Assoc.NON_ASSOC => 
-            return prec => if (cond(prec)) p((l+1,l+1), (l+1,l+1)) else fail
+            return if (group.hasPostfix && group.hasPrefix)
+                     prec => if (cond(prec)) p((l+1,prec._2), (prec._1,l+1)) else fail
+                   else if (group.hasPostfix)
+                     prec => if (cond(prec)) p((l+1,prec._2), (l+1,l+1)) else fail
+                   else if (group.hasPrefix)
+                     prec => if (cond(prec)) p((l+1,l+1), (prec._1,l+1)) else fail
+                   else prec => if (cond(prec)) p((l+1,l+1), (l+1,l+1)) else fail
         } 
       }
     }
@@ -279,12 +336,29 @@ object AbstractOperatorParsers {
   class Group(val assoc: Assoc.Assoc, min: Int) {
     
     private var max: Int = min
-    private var undef: Int = -1 
+    private var undef: Int = -1
+    
+    private var postfixHere = false
+    private var prefixHere = false
+    
+    private var postfixBelow = false
+    private var prefixBelow = false
+    
+    def postfix: Unit = postfixHere = true
+    def prefix: Unit = prefixHere = true
+    
+    def hasPostfix = postfixBelow
+    def hasPrefix = prefixBelow
     
     def minimum = min
     def maximum = max
     
-    def startNew(assoc: Assoc.Assoc) = { close; new Group(assoc, max + 1) }
+    def startNew(assoc: Assoc.Assoc) = { 
+      close; val group = new Group(assoc, max + 1)
+      group.postfixBelow = postfixHere || postfixBelow
+      group.prefixBelow = prefixHere || prefixBelow
+      group
+    }
     
     def close = if (max != min) max -= 1
     
@@ -303,7 +377,7 @@ object AbstractOperatorParsers {
         
     private var assocs: List[Group] = _
     
-    override def toString = s"Group($min,$max,$undef)" 
+    override def toString = s"Group($min,$max,$undef,$prefixBelow,$postfixBelow)" 
   }
   
   object Group { def apply() = new Group(Assoc.UNDEFINED, 1) }
