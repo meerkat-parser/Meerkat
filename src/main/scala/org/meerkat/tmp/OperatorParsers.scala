@@ -158,6 +158,16 @@ object OperatorParsers {
     def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
   }
   
+  implicit class StringSeqOps(term: String) { import OperatorImplicits._
+    def ~ (q: OperatorNonterminal) = AbstractOperatorParser.seq(term, q)(obj1) 
+  }
+  
+  implicit class StringAltOps(term: String) { import OperatorImplicits._
+    val p: AbstractCPSParsers.AbstractParser[NonPackedNode] = term
+    def | (q: OperatorSequence) = AbstractOperatorParser.alt(p, q)(obj2)
+    def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
+  }
+  
   def left(p: OperatorSequence): OperatorSequence = { import OperatorImplicits._
     AbstractOperatorParser.left(obj1)(p)
   }
