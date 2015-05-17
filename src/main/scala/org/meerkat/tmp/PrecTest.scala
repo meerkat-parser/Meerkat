@@ -13,14 +13,15 @@ object Test2 {
 
 object Test3 {
   val E: OperatorNonterminal 
-    = op_nt("E")( "(" ~ E ~ ")" 
-                 |> left { E ~ "*" ~ E | E ~ "/" ~ E }
-                 |> left { E ~ "+" ~ E | E ~ "-" ~ E }
+    = op_nt("E")(   "(" ~ E ~ ")" 
+                 |> left(E ~ "*" ~ E | E ~ "/" ~ E)
+                 |> left(E ~ "+" ~ E | E ~ "-" ~ E)
                  |> "-" ~ E
                  | "a" )
   
   def main(args: Array[String]): Unit = {
     // OperatorParsers.parse("a+a*a+a", E)
     OperatorParsers.parse("a+-a+a/a", E)
+    // OperatorParsers.parse("a+a-a", E)
   }
 }

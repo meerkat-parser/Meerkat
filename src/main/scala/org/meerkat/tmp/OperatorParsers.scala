@@ -23,6 +23,7 @@ object OperatorParsers {
       def sequence(f: AbstractOperatorParser[Any] => OperatorSequence): OperatorSequence 
         = new OperatorSequence {
             lazy val p: OperatorSequence = f(head.get)
+            override def define = p 
             
             def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
             
@@ -99,6 +100,7 @@ object OperatorParsers {
       def alternation(f: (AbstractOperatorParser[Any], Group) => Prec => AbstractCPSParsers.AbstractParser[NonPackedNode]): OperatorAlternation 
         = new OperatorAlternation {
             lazy val p: Prec => AbstractCPSParsers.AbstractParser[NonPackedNode] = f(head.getOrElse(this), group.getOrElse(Group()))
+            override def define = p
             def apply(prec: Prec) = p(prec)
           }
     }
@@ -109,7 +111,8 @@ object OperatorParsers {
     
     private var hd: Option[AbstractOperatorParser[Any]] = None
     override def head = hd
-    override def pass(head: AbstractOperatorParser[Any]) = hd = Option(head)
+    override def pass(head: AbstractOperatorParser[Any]) = { hd = Option(head); define }
+    def define = {}
     
     def ~ (p: OperatorNonterminal): OperatorSequence = AbstractOperatorParser.seq(this, p)(obj1)
     def ~ (p: Symbol): OperatorSequence = AbstractOperatorParser.seq(this, p)(obj1)
@@ -133,7 +136,10 @@ object OperatorParsers {
     private var gr: Option[Group] = None
     override def group = gr
     
-    override def pass(head: AbstractOperatorParser[Any], group: Group) = { hd = Option(head); gr = Option(group) }
+    override def pass(head: AbstractOperatorParser[Any], group: Group) 
+      = { hd = Option(head); gr = Option(group); define }
+  
+    def define = {}
     
     def | (p: OperatorSequence): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)   
     def | (p: OperatorNonterminal): OperatorAlternation = AbstractOperatorParser.alt(this, p)(obj2)

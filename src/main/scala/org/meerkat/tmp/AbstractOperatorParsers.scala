@@ -147,9 +147,9 @@ object AbstractOperatorParsers {
     def greater[A, B >: A](p1: AbstractOperatorParser[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => 
-        p2 pass head; val l = level(p2, group); 
-        val subgroup = group.subgroup 
-        p1 pass (head, group.startGroup); println(s"|>: ($l, $group); subgroup: $subgroup")
+        p2 pass head; val l = level(p2, group); val subgroup = group.subgroup
+        val next = group.startGroup; println(s"|>: ($l, $group); subgroup: $subgroup")
+        p1 pass (head, next)
         if (l != -1) {
           val q2 = filter(p2, l, group, subgroup)
           prec => AbstractParser.alt(p1(prec), q2(prec))
@@ -162,7 +162,7 @@ object AbstractOperatorParsers {
       alternation { (head, group) => 
         p2 pass (head, group); p1 pass head
         val next = group.startGroup; val l = level(p1, next);  
-        val subgroup = group.subgroup; next.closeGroup
+        val subgroup = group.subgroup; next.close
         println(s"|>: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
           val q1 = filter(p1, l, group, subgroup)
@@ -175,7 +175,7 @@ object AbstractOperatorParsers {
       import builder._
       alternation { (head, group) => 
         p2 pass head; val l2 = level(p2, group)
-        p1 pass head; val next = group.startGroup; val l1 = level(p1, next); next.closeGroup
+        p1 pass head; val next = group.startGroup; val l1 = level(p1, next); next.close
         val subgroup = group.subgroup // By construction, either None or the same
         println(s"|>: ($l1, $next), ($l2, $group); subgroup: $subgroup")
         if (l1 != -1 && l2 != -1) {
@@ -207,7 +207,7 @@ object AbstractOperatorParsers {
     }
     def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
-      alternation { (head, group) => p2 pass (head, group); group.closeGroup
+      alternation { (head, group) => p2 pass (head, group); group.close
         prec => AbstractParser.alt(p1, p2(prec))
       }
     }
@@ -216,8 +216,9 @@ object AbstractOperatorParsers {
       import builder._
       alternation { (head, group) => 
         p1 pass head; p2 pass head
-        val l2 = level(p2, group); val l1 = level(p1, group); group.closeGroup
+        val l2 = level(p2, group); val l1 = level(p1, group)
         val subgroup = group.subgroup // By construction, either None or the same
+        group.close
         println(s"|: ($l1, $group), ($l2, $group); subgroup: $subgroup")
         if (l1 != -1 && l2 != -1) {
           val q1 = filter(p1, l1, group, subgroup); val q2 = filter(p2, l2, group, subgroup)
@@ -234,7 +235,7 @@ object AbstractOperatorParsers {
       import builder._
       alternation { (head, group) => 
         p2 pass (head, group); p1 pass head
-        val l = level(p1, group); val subgroup = group.subgroup; group.closeGroup
+        val l = level(p1, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
           val q1 = filter(p1, l, group, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec))
@@ -257,7 +258,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractOperatorSequence[A], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => 
-        p1 pass head; val l = level(p1, group); val subgroup = group.subgroup; group.closeGroup
+        p1 pass head; val l = level(p1, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
           val q1 = filter(p1, l, group, subgroup)
@@ -268,7 +269,7 @@ object AbstractOperatorParsers {
     def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractOperatorSequence[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => 
-        p2 pass head; val l = level(p2, group); val subgroup = group.subgroup; group.closeGroup
+        p2 pass head; val l = level(p2, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
           val q2 = filter(p2, l, group, subgroup)
@@ -279,7 +280,10 @@ object AbstractOperatorParsers {
     
     def left[A](implicit builder: CanBuildAlternation[A,A]): builder.OperatorAlternation => builder.OperatorAlternation 
       = { p => builder.alternation { (head, group) => 
-            val started = group.startSubgroup(Assoc.LEFT); p pass (head, group); if (started) group.closeSubgroup
+            val started = group.startSubgroup(Assoc.LEFT);
+            val subgroup = group.subgroup
+            p pass (head, group);
+            println(s"Close: $subgroup")
             prec => p(prec) } 
         }
     
@@ -392,7 +396,7 @@ object AbstractOperatorParsers {
     
     def startGroup = { 
       if (!started) { // Precedence inside subgroups is ignored
-        this.closeGroup; val group = new Group(Assoc.UNDEFINED, max + 1)
+        this.close; val group = new Group(Assoc.UNDEFINED, max + 1)
         group.prefixBelow = prefixHere || prefixBelow
         group.postfixBelow = postfixHere || postfixBelow
         group
@@ -400,28 +404,25 @@ object AbstractOperatorParsers {
         this
     }
     
-    def closeGroup = {
-      if (started) this.closeSubgroup
-      if (max != min) max -= 1 // min == max indicates that the group has not been used
+    def close = {
+      if (!started) {
+        if (max != min) max -= 1 // min == max indicates that the group has not been used
+      } else {
+        val group = subgroups(0)
+        if (group.minimum != group.max) { // min == max indicates that the group has not been used
+          max = group.max; group.max -= 1
+        } else subgroups = subgroups.tail
+        started = false
+      }
     }
     
     def startSubgroup(assoc: Assoc.Assoc): Boolean 
-      = if (!started) { // Subgroups inside subgroups are ignored 
+      = if (!started) { // Subgroups inside subgroups are ignored
           started = true; subgroups = subgroups.+:(new Group(assoc, max))
           true 
         } else false
     
-    def closeSubgroup = {
-      val group = subgroups(0)
-      if (group.minimum != group.max) { // min == max indicates that the group has not been used
-        max = group.max
-        group.max -= -1
-      } else 
-        subgroups = subgroups.tail
-      started = false
-    }
-    
-    def get(assoc: Assoc.Assoc): Int
+   def get(assoc: Assoc.Assoc): Int
       = if (started) {
           val group = subgroups(0)
           if (assoc == Assoc.UNDEFINED || assoc == group.assoc) 
@@ -454,7 +455,7 @@ object AbstractOperatorParsers {
     
     private var assocs: List[Group] = _
     
-    override def toString = s"Group($min,$max,$undef,$prefixBelow,$postfixBelow)" 
+    override def toString = s"Group($min,$max,$undef,$prefixBelow,$postfixBelow,$subgroups)" 
   }
   
   object Group { def apply() = new Group(Assoc.UNDEFINED, 1) }
