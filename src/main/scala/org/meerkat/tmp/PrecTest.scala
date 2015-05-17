@@ -22,25 +22,25 @@ object Test3 {
   }
 }
 
-//object Test4 {
-//  val open: Parsers.Terminal = "("
-//  val close: Parsers.Terminal = ")"
-//   
-//  val E: Parsers.Nonterminal = nt("E") { open ~ E ~ "+" ~ E ~ close | "a" }
-//}
-//
-//object Test5 {
-//  val open: Parsers.Terminal = "("
-//  val close: Parsers.Terminal = ")"
-//   
-//  val E: OperatorParsers.Nonterminal 
-//    = op_nt("E") {(    open ~ E ~ close 
-//                    |  E ~ "*" ~ E
-//                    |> E ~ "+" ~ E
-//                    |  "a" 
-//                 )}
-//}
-//
+object Test4 {
+  val open: Parsers.Terminal = "("
+  val close: Parsers.Terminal = ")"
+   
+  val E: Parsers.Nonterminal = nt("E") { open ~ E ~ "+" ~ E ~ close | "a" }
+}
+
+object Test5 {
+  val open: Terminal = "("
+  val close: Terminal = ")"
+   
+  val E: OperatorNonterminal 
+    = op_nt("E") {(    open ~ E ~ close 
+                    |  E ~ "*" ~ E
+                    |> E ~ "+" ~ E
+                    |  "a" 
+                 )}
+}
+
 //object Test6 {
 //  val open: Parsers.Terminal = "("
 //  val close: Parsers.Terminal = ")"

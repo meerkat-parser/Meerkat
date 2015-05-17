@@ -149,6 +149,15 @@ object OperatorParsers {
     def ~ (p: Symbol): OperatorSequence = AbstractOperatorParser.seq(this, p)(obj1)
   }
   
+  implicit class ParsersSeqOps(p: Symbol) { import OperatorImplicits._
+    def ~ (q: OperatorNonterminal) = AbstractOperatorParser.seq(p, q)(obj1) 
+  }
+  
+  implicit class ParsersAltOps(p: AbstractCPSParsers.AbstractParser[NonPackedNode]) { import OperatorImplicits._
+    def | (q: OperatorSequence) = AbstractOperatorParser.alt(p, q)(obj2)
+    def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
+  }
+  
   def left(p: OperatorSequence): OperatorSequence = { import OperatorImplicits._
     AbstractOperatorParser.left(obj1)(p)
   }
