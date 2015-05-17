@@ -151,8 +151,7 @@ object AbstractOperatorParsers {
         val next = group.startGroup; println(s"|>: ($l, $group); subgroup: $subgroup")
         p1 pass (head, next)
         if (l != -1) {
-          val q2 = filter(p2, l, group, subgroup)
-          prec => AbstractParser.alt(p1(prec), q2(prec))
+          lazy val q2 = filter(p2, l, group, subgroup); prec => AbstractParser.alt(p1(prec), q2(prec))
         } else prec => AbstractParser.alt(p1(prec), p2(prec, prec))
       }
     }
@@ -165,7 +164,7 @@ object AbstractOperatorParsers {
         val subgroup = group.subgroup; next.close
         println(s"|>: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
-          val q1 = filter(p1, l, group, subgroup)
+          lazy val q1 = filter(p1, l, group, subgroup)
           prec => AbstractParser.alt(q1(prec), p2(prec))
         } else prec => AbstractParser.alt(p1(prec, prec), p2(prec))
       }
@@ -179,12 +178,12 @@ object AbstractOperatorParsers {
         val subgroup = group.subgroup // By construction, either None or the same
         println(s"|>: ($l1, $next), ($l2, $group); subgroup: $subgroup")
         if (l1 != -1 && l2 != -1) {
-          val q1 = filter(p1, l1, next, subgroup); val q2 = filter(p2, l2, group, subgroup)
+          lazy val q1 = filter(p1, l1, next, subgroup); lazy val q2 = filter(p2, l2, group, subgroup)
           prec => AbstractParser.alt(q1(prec), q2(prec))
         } else if (l1 != -1) {
-          val q1 = filter(p1, l1, next, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec, prec))
+          lazy val q1 = filter(p1, l1, next, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec, prec))
         } else if (l2 != -1) {
-          val q2 = filter(p2, l2, group, subgroup); prec => AbstractParser.alt(p1(prec, prec), q2(prec))
+          lazy val q2 = filter(p2, l2, group, subgroup); prec => AbstractParser.alt(p1(prec, prec), q2(prec))
         } else prec => AbstractParser.alt(p1(prec, prec), p2(prec, prec))
       }
     }
@@ -221,12 +220,12 @@ object AbstractOperatorParsers {
         group.close
         println(s"|: ($l1, $group), ($l2, $group); subgroup: $subgroup")
         if (l1 != -1 && l2 != -1) {
-          val q1 = filter(p1, l1, group, subgroup); val q2 = filter(p2, l2, group, subgroup)
+          lazy val q1 = filter(p1, l1, group, subgroup); lazy val q2 = filter(p2, l2, group, subgroup)
           prec => AbstractParser.alt(q1(prec), q2(prec))
         } else if (l1 != -1) {
-          val q1 = filter(p1, l1, group, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec, prec))
+          lazy val q1 = filter(p1, l1, group, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec, prec))
         } else if (l2 != -1) {
-          val q2 = filter(p2, l2, group, subgroup); prec => AbstractParser.alt(p1(prec, prec), q2(prec))
+          lazy val q2 = filter(p2, l2, group, subgroup); prec => AbstractParser.alt(p1(prec, prec), q2(prec))
         } else prec => AbstractParser.alt(p1(prec, prec), p2(prec, prec))
       }
     }
@@ -238,7 +237,7 @@ object AbstractOperatorParsers {
         val l = level(p1, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
-          val q1 = filter(p1, l, group, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec))
+          lazy val q1 = filter(p1, l, group, subgroup); prec => AbstractParser.alt(q1(prec), p2(prec))
         } else prec => AbstractParser.alt(p1(prec, prec), p2(prec))
       }
     }
@@ -249,7 +248,7 @@ object AbstractOperatorParsers {
         p1 pass (head, group)
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
-          val q2 = filter(p2, l, group, subgroup)
+          lazy val q2 = filter(p2, l, group, subgroup)
           prec => AbstractParser.alt(p1(prec), q2(prec))
         } else prec => AbstractParser.alt(p1(prec), p2(prec, prec))
       }
@@ -261,7 +260,7 @@ object AbstractOperatorParsers {
         p1 pass head; val l = level(p1, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
-          val q1 = filter(p1, l, group, subgroup)
+          lazy val q1 = filter(p1, l, group, subgroup)
           prec => AbstractParser.alt(q1(prec), p2)
         } else prec => AbstractParser.alt(p1(prec, prec), p2)
       }
@@ -272,20 +271,14 @@ object AbstractOperatorParsers {
         p2 pass head; val l = level(p2, group); val subgroup = group.subgroup; group.close
         println(s"|: ($l, $group); subgroup: $subgroup")
         if (l != -1) {
-          val q2 = filter(p2, l, group, subgroup)
+          lazy val q2 = filter(p2, l, group, subgroup)
           prec => AbstractParser.alt(p1, q2(prec))
         } else prec => AbstractParser.alt(p1, p2(prec, prec))
       }
     }
     
     def left[A](implicit builder: CanBuildAlternation[A,A]): builder.OperatorAlternation => builder.OperatorAlternation 
-      = { p => builder.alternation { (head, group) => 
-            val started = group.startSubgroup(Assoc.LEFT);
-            val subgroup = group.subgroup
-            p pass (head, group);
-            println(s"Close: $subgroup")
-            prec => p(prec) } 
-        }
+      = { p => builder.alternation { (head, group) => val started = group.startSubgroup(Assoc.LEFT); p pass (head, group); prec => p(prec) } }
     
     def level[A](p: AbstractOperatorSequence[A], group: Group): Int
       = if (p.isInfix || p.isPrefix || p.isPostfix) {
@@ -297,7 +290,7 @@ object AbstractOperatorParsers {
       val cond: Prec => Boolean = if (p.isInfix)       prec => group.maximum >= prec._1 && group.maximum >= prec._2
                                   else if (p.isPrefix) prec => group.maximum >= prec._1
                                   else                 prec => group.maximum >= prec._2
-      if (!group.canClimb(l))
+      if (!group.canClimb(l)) // TODO: take subgroups into account
         p.assoc match {
           case Assoc.UNDEFINED => 
             return if (group.hasPostfixBelow && group.hasPrefixBelow)
@@ -332,8 +325,8 @@ object AbstractOperatorParsers {
                      prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (prec._1,l)) else fail
                    else prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (l,l)) else fail
         }
-      else if (subgroup == None)
-        p.assoc match {
+      else
+        (if (subgroup != None && p.assoc == Assoc.UNDEFINED) subgroup.get.assoc else p.assoc) match {
           case Assoc.UNDEFINED => 
             return if (group.hasPostfixBelow && group.hasPrefixBelow)
                      prec => if (cond(prec)) p((l,prec._2), (prec._1,l)) else fail
@@ -366,8 +359,7 @@ object AbstractOperatorParsers {
                    else if (group.hasPrefixBelow)
                      prec => if (cond(prec)) p((l+1,l+1), (prec._1,l+1)) else fail
                    else prec => if (cond(prec)) p((l+1,l+1), (l+1,l+1)) else fail
-        } 
-      else ??? // TODO: handle this case
+        }
     }
     
     object fail extends AbstractParser[Nothing] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.failure }
@@ -444,6 +436,7 @@ object AbstractOperatorParsers {
         min == max
       else if (subgroups.length == 1) {
         val group = subgroups(0)
+        println(s"Can climb: $level, $this");
         if (this.min == group.minimum && this.max == group.max 
             && group.undef == level) true
         else false
