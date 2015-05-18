@@ -29,7 +29,7 @@ trait Layout { def parser: MeerkatParser }
 trait MeerkatParser extends Parser with Slot {
   
   def ruleType: org.meerkat.tree.RuleType = ???
-  def symbol: org.meerkat.tree.Symbol = ???
+  def symbol: org.meerkat.tree.Symbol
   
   import MeerkatLogging._
   
@@ -61,11 +61,15 @@ trait MeerkatParser extends Parser with Slot {
   def postFilter(p: (Input, NonPackedNode) => Boolean): MeerkatParser 
     = new MeerkatParser {
         def apply(input: Input, sppf: SPPFLookup, i: Int) = MeerkatParser.this(input, sppf, i).filter(t => p(input, t))
+        override def symbol = MeerkatParser.this.symbol
+        override def ruleType = MeerkatParser.this.ruleType
       }
     
   def preFilter(p: (Input, Int) => Boolean): MeerkatParser
     = new MeerkatParser {
         def apply(input: Input, sppf: SPPFLookup, i: Int) = if(p(input, i)) MeerkatParser.this(input, sppf, i) else failure
+        override def symbol = MeerkatParser.this.symbol
+        override def ruleType = MeerkatParser.this.ruleType
       }
     
   /**
@@ -111,7 +115,7 @@ trait MeerkatParser extends Parser with Slot {
       
     p = new MeerkatParser { 
           def apply(input: Input, sppf: SPPFLookup, i: Int) = p1.value(input, sppf, i) orElse p2.value(input, sppf, i)
-          override def symbol = org.meerkat.tree.Alt(p1.value.symbol, p2.value.symbol) 
+          override def symbol = org.meerkat.tree.Alt(MeerkatParser.this.symbol, q2.symbol) 
         }
     p.nameAs(this.name.value + " | " + q2.name.value)
     p.alternate
@@ -129,7 +133,9 @@ trait MeerkatParser extends Parser with Slot {
                     def apply(input: Input, sppf: SPPFLookup, i: Int) = { beginOfAlt(h.name, this.name.value, i)
                       MeerkatParser.this(input, sppf, i)
                     }
-                    override def ruleType = MeerkatParser.this.ruleType
+                    
+                    override def symbol = ???
+                    override def ruleType = org.meerkat.tree.Rule(h, MeerkatParser.this.symbol)
                   }
                 } else
                   new MeerkatParser {
@@ -137,8 +143,8 @@ trait MeerkatParser extends Parser with Slot {
                       MeerkatParser.this(input, sppf, i).map(t => { endOfAlt(h.name, this.name.value, i, t)
                         sppf.getNonterminalNode(h.name, this, t) })
                     }
+                    override def symbol = ???
                     override def ruleType = org.meerkat.tree.Rule(h, MeerkatParser.this.symbol)
-                    override def symbol = MeerkatParser.this.symbol
                   }
         if(this.sequenced) p.nameAs(this.name.value)  
         else p.nameAs(h + " ::= " + this.name.value + p.hashCode())
@@ -456,6 +462,8 @@ object MeerkatDDParser {
       = new MeerkatParser {
           lazy val _p = { if(q.headed) p.head(q.head); p }
           def apply(input: Input, sppf: SPPFLookup, i: Int) = _p(input, sppf, i).mapNoMemo(t => t._1) 
+          override def symbol = ???
+          override def ruleType = ???
         }
     q.nameAs(p.name.value)
     if(p.sequenced) q.sequence
