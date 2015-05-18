@@ -337,8 +337,11 @@ trait MeerkatParser extends Parser with Slot {
   var group: Option[MeerkatParser] = None
   def gr(): MeerkatParser = {
     group.getOrElse({
-//      val p: MeerkatParser = "(" + this.name.value + ")" ::= this
-      val p = regular(org.meerkat.tree.Group(MeerkatParser.this.symbol), this)
+      val symbol = MeerkatParser.this.symbol
+      val p = symbol match {
+        case a: org.meerkat.tree.Alt => regular(a, this) 
+        case _                       => regular(org.meerkat.tree.Group(symbol), this)
+      }
       group = Option(p)
       p
     })
