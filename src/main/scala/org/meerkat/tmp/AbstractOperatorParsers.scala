@@ -136,6 +136,10 @@ object AbstractOperatorParsers {
     def non_assoc[A](implicit builder: CanBuildSequence[A,A]): builder.OperatorSequence => builder.OperatorSequence 
       = { p => builder.sequence { head => p pass head; if (p.isInfix || p.isPrefix || p.isPostfix) builder.non_assoc(p) else p } }
     
+    /**
+     * seq pass head; (l,gr) = level(seq, group) (gr => prec => parser, gr)
+     */
+    
     def greater[A, B >: A](p1: AbstractOperatorParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternation = {
       import builder._
       alternation { (head, group) => 
@@ -290,7 +294,32 @@ object AbstractOperatorParsers {
       val cond: Prec => Boolean = if (p.isInfix)       prec => group.maximum >= prec._1 && group.maximum >= prec._2
                                   else if (p.isPrefix) prec => group.maximum >= prec._1
                                   else                 prec => group.maximum >= prec._2
-      if (!group.canClimb(l)) // TODO: take subgroups into account
+      if (!group.canClimb(l)) {
+        val extra: Prec => Boolean = if (subgroup == None) prec => true 
+                                     else {
+                                       val value = subgroup.get
+                                       if (p.isInfix) {
+                                         value.assoc match {
+                                           case Assoc.LEFT => prec => prec._2 == l || !(value.minimum <= prec._2 && prec._2 <= value.maximum)
+                                           case Assoc.RIGHT => prec => prec._1 == l || !(value.minimum <= prec._1 && prec._1 <= value.maximum)
+                                           case Assoc.NON_ASSOC => prec => (prec._1 == l && prec._2 == l) || !(value.minimum <= prec._1 && prec._1 <= value.maximum 
+                                                                              && value.minimum <= prec._2 && prec._2 <= value.maximum)
+                                         }
+                                       } else if (p.isPrefix) {
+                                         value.assoc match {
+                                           case Assoc.LEFT => prec => true
+                                           case Assoc.RIGHT => prec => prec._1 == l || !(value.minimum <= prec._1 && prec._1 <= value.maximum)
+                                           case Assoc.NON_ASSOC => prec => prec._1 == l || !(value.minimum <= prec._1 && prec._1 <= value.maximum)
+                                         }
+                                       } else {
+                                         value.assoc match {
+                                           case Assoc.LEFT => prec => prec._2 == l || !(value.minimum <= prec._2 && prec._2 <= value.maximum)
+                                           case Assoc.RIGHT => prec => prec._1 == l || !(value.minimum <= prec._1 && prec._1 <= value.maximum)
+                                           case Assoc.NON_ASSOC => prec => (prec._1 == l && prec._2 == l) || !(value.minimum <= prec._1 && prec._1 <= value.maximum 
+                                                                              && value.minimum <= prec._2 && prec._2 <= value.maximum)
+                                         }
+                                       } 
+                                     }
         p.assoc match {
           case Assoc.UNDEFINED => 
             return if (group.hasPostfixBelow && group.hasPrefixBelow)
@@ -325,8 +354,8 @@ object AbstractOperatorParsers {
                      prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (prec._1,l)) else fail
                    else prec => if (cond(prec) && prec._1 != l && prec._2 != l) p((l,l), (l,l)) else fail
         }
-      else
-        (if (subgroup != None && p.assoc == Assoc.UNDEFINED) subgroup.get.assoc else p.assoc) match {
+      } else
+        (if (subgroup != None) subgroup.get.assoc else p.assoc) match {
           case Assoc.UNDEFINED => 
             return if (group.hasPostfixBelow && group.hasPrefixBelow)
                      prec => if (cond(prec)) p((l,prec._2), (prec._1,l)) else fail
@@ -436,7 +465,6 @@ object AbstractOperatorParsers {
         min == max
       else if (subgroups.length == 1) {
         val group = subgroups(0)
-        println(s"Can climb: $level, $this");
         if (this.min == group.minimum && this.max == group.max 
             && group.undef == level) true
         else false
