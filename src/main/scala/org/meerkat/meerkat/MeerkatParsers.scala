@@ -545,7 +545,7 @@ trait MeerkatParsers {
     }
   }
     
- def parse(parser: MeerkatParser, input: String, parseOpt: Configuration = ALL_PARSES): Either[ParseError, ParseSuccess] = {
+ def parse(parser: MeerkatParser, input: Input, parseOpt: Configuration = ALL_PARSES): Either[ParseError, ParseSuccess] = {
 	
 	MeerkatLogging.reset
 	MeerkatLogging.logger.setLevel(SEVERE)
@@ -556,11 +556,10 @@ trait MeerkatParsers {
 	val startSystemTime = getCpuTime
 	val startNanoTime = System.nanoTime
 	
-  val in = new Input(input)
-	val sppf = new DefaultSPPFLookup(in)
-	run(in, sppf, parser, parseOpt)
+	val sppf = new DefaultSPPFLookup(input)
+	run(input, sppf, parser, parseOpt)
   
-	val startSymbol = sppf.getStartNode(parser.name.value, 0, input.length())
+	val startSymbol = sppf.getStartNode(parser.name.value, 0, input.length)
 	    
 	val endUserTime: Long = getUserTime
 	val endSystemTime = getCpuTime

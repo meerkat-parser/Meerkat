@@ -3,34 +3,44 @@ package org.meerkat.sppf
 import org.meerkat.tree.Tree
 import org.meerkat.tree.Tree._
 import org.meerkat.tree._
-
 import scala.collection.breakOut
+import org.meerkat.util.Input
 
 
 object SPPFVisitor {
   
-  def preOrder(node: SPPFNode)(f: SPPFNode => Unit): Unit = { f(node); node.children.foreach {x => preOrder(x)(f)} }
+  def visit[T](node: SPPFNode, nonterminal: (RuleType, Seq[T]) => T, terminal: String => T, amb: Set[T] => T)(implicit input: Input): T = {
+     
+   def ambiguity(node: NonPackedNode): T = 
+     amb((for (p <- node.children) yield nonterminal(p.ruleType, for (c <- p.flatChildren) yield visit(c, nonterminal, terminal, amb))) (breakOut) )
 
-  def postOrder(node: SPPFNode)(f: SPPFNode => Unit): Unit = { node.children.foreach {x => postOrder(x)(f)}; f(node) }
-   
-  def buildTree(node: SPPFNode): Tree = node match {
+   node match {
     
-    case t: TerminalNode    => if (t.leftExtent == t.rightExtent) epsilon 
-                               else Terminal(t.name)
+     case t: TerminalNode     => terminal(input.substring(t.leftExtent, t.rightExtent))
     
-    case n: NonterminalNode => {
-      if (n isAmbiguous)
-        Amb( (for (p <- n.children) yield Appl(p.ruleType, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
-      else
-    	  flatten(Appl(n.first.ruleType, n.flatChildren.map { x => buildTree(x) } toList))        
-      }
+     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n)
+                                 else nonterminal (n.first.ruleType, n.flatChildren.map (n => visit(n, nonterminal, terminal, amb)))
+      
+     case i: IntermediateNode => if (! i.isAmbiguous) throw new RuntimeException(s"$i should be ambiguous") 
+                                 else ambiguity(i)
+                                 
+     case _                   => throw new RuntimeException("Should not reach here!")
+   }
     
-    case i: IntermediateNode => {
-      if (! i.isAmbiguous) throw new RuntimeException(s"$i should be ambiguous")
-      Amb( (for (p <- i.children) yield Appl(p.ruleType, for (c <- p.flatChildren) yield buildTree(c))) (breakOut) )
-    }
-    
-    case _                  => throw new RuntimeException("Should not reach here!")
+  }
+  
+  def concat(node: SPPFNode)(implicit input: Input): String = {
+    def terminal(s: String): String = s
+    def nonterminal(t: RuleType, children: Seq[String]): String = children mkString(",")
+    def amb(children: Set[String]): String = throw new RuntimeException()
+    visit(node, nonterminal, terminal, amb)
+  }
+  
+  def buildTree(node: SPPFNode)(implicit input: Input): Tree = {
+    def terminal(s: String): Tree = Terminal(s)
+    def nonterminal(t: RuleType, children: Seq[Tree]): Tree = Appl(t, children)
+    def amb(children: Set[Tree]): Tree = Amb(children)
+    visit(node, nonterminal, terminal, amb)
   }
   
   
