@@ -215,7 +215,7 @@ object AbstractOperatorParsers {
     }
     
     def filter[A](p: AbstractOperatorSequence[A], l: Int, group: Group): Prec => AbstractParser[A] = {
-      println(s"Sequence with level: $l, group: $group")
+      println(s"Sequence with level: $l, group: $group, assoc: ${p.assoc}")
       if (l == -1) return prec => p(prec, prec)
       val cond: Prec => Boolean = if (!group.subgroup) { 
                                     if (p.infix)       prec => group.max >= prec._1 && group.max >= prec._2
