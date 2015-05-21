@@ -36,12 +36,12 @@ object AbstractOperatorParsers {
   type Head = AbstractOperatorParser[Any]
   
   trait SequenceBuilder[S <: AbstractOperatorSequence[_]] extends (Head => S)
-  trait AlternationBuilder[A <: AbstractOperatorParser[_]] extends ((Head, Group) => (Group => A, Group))
+  trait AlternationBuilder[A <: AbstractOperatorParser[_]] extends ((Head, Group) => (Group => A, Group, Option[Group]))
   
   def builderSeq[S <: AbstractOperatorSequence[_]](f: Head => S) 
     = new SequenceBuilder[S] { def apply(head: Head) = f(head) }
   
-  def builderAlt[A <: AbstractOperatorParser[_]](f: (Head, Group) => (Group => A, Group))
+  def builderAlt[A <: AbstractOperatorParser[_]](f: (Head, Group) => (Group => A, Group, Option[Group]))
     = new AlternationBuilder[A] { def apply(head: Head, group: Group) = f(head, group) }
   
   trait CanBuildSequence[A,B] {
@@ -122,43 +122,44 @@ object AbstractOperatorParsers {
              (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f2,g2) = p2(head,group1); val (f1,g1) = p1(head,g2)
-        ({ group2 => val q1 = f1(group2); val q2 = f2(group2)
-             alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, g1)
+        val (f2,opened2,closed2) = p2(head,group1); val (f1,opened1,closed1) = p1(head,opened2)
+        val closed = closed2.orElse(closed1)
+        ({ group2 => val q1 = f1(group2); val q2 = f2(closed.getOrElse(group2))
+             alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, opened1, closed)
       }
     }
     
     def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f1,g1) = p1(head,group1)
+        val (f1,opened1,closed1) = p1(head,group1)
         ({ group2 => val q1 = f1(group2)
-             alternation { prec => AbstractParser.alt(q1(prec), p2(prec)) } }, g1)
+             alternation { prec => AbstractParser.alt(q1(prec), p2(prec)) } }, opened1, closed1)
       }
     }
     def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractOperatorParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f2,g2) = p2(head,group1)
+        val (f2,opened2,closed2) = p2(head,group1)
         ({ group2 => val q2 = f2(group2)
-             alternation { prec => AbstractParser.alt(p1(prec), q2(prec)) } }, g2)
+             alternation { prec => AbstractParser.alt(p1(prec), q2(prec)) } }, opened2, closed2)
       }
     }
     
     def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f1,g1) = p1(head,group1)
+        val (f1,opened1,closed1) = p1(head,group1)
         ({ group2 => val q1 = f1(group2)
-             alternation { prec => AbstractParser.alt(q1(prec), p2) } }, g1)
+             alternation { prec => AbstractParser.alt(q1(prec), p2) } }, opened1, closed1)
       }
     }
     def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f2,g2) = p2(head,group1)
+        val (f2,opened2,closed2) = p2(head,group1)
         ({ group2 => val q2 = f2(group2)
-             alternation { prec => AbstractParser.alt(p1, q2(prec)) } }, g2)
+             alternation { prec => AbstractParser.alt(p1, q2(prec)) } }, opened2, closed2)
       }
     }
     
@@ -183,7 +184,7 @@ object AbstractOperatorParsers {
         val (l,g) = if (q.infix || q.prefix || q.postfix) 
                       group1.level(q.assoc, if (q.prefix) -1 else if (q.postfix) 1 else 0)
                     else (-1,group1)
-        ({ group2 => alternation(filter(q,l,group2)) }, g) 
+        ({ group2 => alternation(filter(q,l,group2)) }, g, None) 
       }
     }
     
@@ -194,14 +195,17 @@ object AbstractOperatorParsers {
              (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
-        val (f2,g2) = p2(head,group1)
+        val (f2,opened2,closed2) = p2(head,group1)
         if (group1 subgroup) {
-          val (f1,g1) = p1(head,g2)
-          ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), f2(group2)(prec)) } }, g1)
+          val (f1,opened1,closed1) = p1(head,opened2)
+          val closed = closed2.orElse(closed1)
+          ({ group2 => val q1 = f1(group2); val q2 = f2(closed.getOrElse(group2))
+               alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, opened1, closed)
         } else {
-          val (f1,g1) = p1(head,g2.group)
-          ({ group2 => val q1 = f1(group2); val q2 = f2(g2.close)
-               alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, g1)
+          val (f1,opened1,closed1) = p1(head,opened2.group)
+          val closed = Option(opened2.close)
+          ({ group2 => val q1 = f1(group2); val q2 = f2(closed.getOrElse(group2))
+               alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, opened1, closed)
         }
       }
     }
@@ -209,8 +213,16 @@ object AbstractOperatorParsers {
     def left[A,S <: AbstractOperatorParser[A]](p: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,A]): AlternationBuilder[S] = {
       import builder._
       builderAlt { (head,group1) =>
-        val (f,sg) = p(head, Subgroup(Assoc.LEFT,group1)); val max = sg.max 
-        ({ group2 => f(sg.close.asInstanceOf[Subgroup].update(group2))}, group1.update(max)) 
+        val (f,opened,closed) = p(head, Subgroup(Assoc.LEFT,group1)); val max = opened.max 
+        ({ group2 => f(opened.close.asInstanceOf[Subgroup].update(group2))}, group1.update(max), closed) 
+      }
+    }
+    
+    def right[A,S <: AbstractOperatorParser[A]](p: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,A]): AlternationBuilder[S] = {
+      import builder._
+      builderAlt { (head,group1) =>
+        val (f,opened,closed) = p(head, Subgroup(Assoc.RIGHT,group1)); val max = opened.max 
+        ({ group2 => f(opened.close.asInstanceOf[Subgroup].update(group2))}, group1.update(max), closed) 
       }
     }
     
@@ -286,14 +298,17 @@ object AbstractOperatorParsers {
               }
           }
         
+          val min = group.parent.min; val max = group.parent.max; val undef = group.parent.undef
+        
           if (group.below.prefix && group.below.postfix)
-            return prec => if (cond(prec) && extra(prec)) p((l,prec._2), (prec._1,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l,if (min<=prec._2 && prec._2<=max) undef else prec._2), 
+                                                            (if (min<=prec._1 && prec._1<=max) undef else prec._1,l)) else FAIL
           else if (group.below.prefix)
-            return prec => if (cond(prec) && extra(prec)) p((l,l), (prec._1,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l,undef), (if (min<=prec._1 && prec._1<=max) undef else prec._1,l)) else FAIL
           else if (group.below.postfix)
-            return prec => if (cond(prec) && extra(prec)) p((l,prec._2), (l,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l,if (min<=prec._2 && prec._2<=max) undef else prec._2), (undef,l)) else FAIL
           else 
-            return prec => if (cond(prec) && extra(prec)) p((l,l), (l,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l,undef), (undef,l)) else FAIL
         
         } else {
           if (!group.subgroup || (group.subgroup && group.min == group.max)) {
@@ -341,12 +356,22 @@ object AbstractOperatorParsers {
     def subgroup = false
     def parent = this
     
-    def group = new Group(assoc, max, max, -1, Unary(), new Unary(here.prefix || below.prefix, here.postfix || below.postfix))
+    def group =
+      if (min == max || max - min == 1)
+        new Group(assoc, max, max, -1, Unary(), new Unary(here.prefix || below.prefix, here.postfix || below.postfix))
+      else
+        new Group(assoc, max + 1, max + 1, -1, Unary(), new Unary(here.prefix || below.prefix, here.postfix || below.postfix))
     
     def update(max: Int) = new Group(assoc, min, max, undef, here, below)   
     def update(max: Int, undef: Int, here: Unary) = new Group(assoc, min, max, undef, here, below)
     
-    def close = if (min == max) this else new Group(assoc, min, max - 1, undef, here, below)
+    def close = if (min == max) this 
+                else if (max - min == 1) new Group(assoc, min, max - 1, undef, here, below)
+                else {
+                  // A group with different levels
+                  if (undef != -1) new Group(assoc, min, max - 1, undef, here, below)
+                  else new Group(assoc, min, max, max, here, below)
+                }
     
     /**
      *  @param unary (-1 to indicate prefix, 1 to indicate postfix)

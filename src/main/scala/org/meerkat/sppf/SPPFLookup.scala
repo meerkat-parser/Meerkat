@@ -66,7 +66,10 @@ class DefaultSPPFLookup(input: Input) extends SPPFLookup {
     if (node.addPackedNode(packedNode, leftChild, rightChild)) countPackedNodes += 1
     val ambiguousAfter = node.isAmbiguous
     
-    if (!ambiguousBefore && ambiguousAfter) countAmbiguousNodes += 1 
+    if (!ambiguousBefore && ambiguousAfter) {
+      println(head.toString() + "(" + leftExtent + ", " + rightExtent + ")")
+      countAmbiguousNodes += 1 
+    }
     
     return node
   }

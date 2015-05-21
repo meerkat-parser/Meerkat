@@ -181,10 +181,15 @@ object OperatorParsers {
     builderAlt(AbstractOperatorParser.left[T,A](p)(obj2))
   }
   
+  def right(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._
+    type T = NonPackedNode; type A = OperatorAlternation
+    builderAlt(AbstractOperatorParser.right[T,A](p)(obj2))
+  }
+  
   def op_nt(name: String)(p: => OperatorAlternationBuilder) 
     = new OperatorNonterminal { import Parsers._
           val table: java.util.Map[Prec, Parsers.Nonterminal] = new HashMap()
-          lazy val parser: OperatorAlternation = { val (f,g) = p(this,Group()); f(g) }
+          lazy val parser: OperatorAlternation = { val (f,opened,closed) = p(this,Group()); f(opened.close) }
       
           def apply(prec: Prec) 
             = if (table.containsKey(prec)) table.get(prec) 
