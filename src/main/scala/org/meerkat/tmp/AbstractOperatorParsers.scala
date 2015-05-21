@@ -123,7 +123,8 @@ object AbstractOperatorParsers {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,g2) = p2(head,group1); val (f1,g1) = p1(head,g2)
-        ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), f2(group2)(prec)) } }, g1)
+        ({ group2 => val q1 = f1(group2); val q2 = f2(group2)
+             alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, g1)
       }
     }
     
@@ -131,14 +132,16 @@ object AbstractOperatorParsers {
       import builder._
       builderAlt { (head, group1) =>
         val (f1,g1) = p1(head,group1)
-        ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), p2(prec)) } }, g1)
+        ({ group2 => val q1 = f1(group2)
+             alternation { prec => AbstractParser.alt(q1(prec), p2(prec)) } }, g1)
       }
     }
     def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractOperatorParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,g2) = p2(head,group1)
-        ({ group2 => alternation { prec => AbstractParser.alt(p1(prec), f2(group2)(prec)) } }, g2)
+        ({ group2 => val q2 = f2(group2)
+             alternation { prec => AbstractParser.alt(p1(prec), q2(prec)) } }, g2)
       }
     }
     
@@ -146,14 +149,16 @@ object AbstractOperatorParsers {
       import builder._
       builderAlt { (head, group1) =>
         val (f1,g1) = p1(head,group1)
-        ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), p2) } }, g1)
+        ({ group2 => val q1 = f1(group2)
+             alternation { prec => AbstractParser.alt(q1(prec), p2) } }, g1)
       }
     }
     def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,g2) = p2(head,group1)
-        ({ group2 => alternation { prec => AbstractParser.alt(p1, f2(group2)(prec)) } }, g2)
+        ({ group2 => val q2 = f2(group2)
+             alternation { prec => AbstractParser.alt(p1, q2(prec)) } }, g2)
       }
     }
     
@@ -195,7 +200,8 @@ object AbstractOperatorParsers {
           ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), f2(group2)(prec)) } }, g1)
         } else {
           val (f1,g1) = p1(head,g2.group)
-          ({ group2 => alternation { prec => AbstractParser.alt(f1(group2)(prec), f2(g2.close)(prec)) } }, g1)
+          ({ group2 => val q1 = f1(group2); val q2 = f2(g2.close)
+               alternation { prec => AbstractParser.alt(q1(prec), q2(prec)) } }, g1)
         }
       }
     }
@@ -209,6 +215,7 @@ object AbstractOperatorParsers {
     }
     
     def filter[A](p: AbstractOperatorSequence[A], l: Int, group: Group): Prec => AbstractParser[A] = {
+      println(s"Sequence with level: $l, group: $group")
       if (l == -1) return prec => p(prec, prec)
       val cond: Prec => Boolean = if (!group.subgroup) { 
                                     if (p.infix)       prec => group.max >= prec._1 && group.max >= prec._2
@@ -324,7 +331,7 @@ object AbstractOperatorParsers {
     
   }
   
-  class Unary(val prefix: Boolean, val postfix: Boolean)
+  class Unary(val prefix: Boolean, val postfix: Boolean) { override def toString = s"unary($prefix, $postfix)" }
   
   object Unary { def apply() = new Unary(false, false) }
   
@@ -358,6 +365,8 @@ object AbstractOperatorParsers {
     
     def climb(level: Int) = if (min == max) true
                             else false
+                            
+    override def toString = s"Group($assoc, $min, $max, $undef, $here, $below)"
     
   }
   
@@ -388,6 +397,8 @@ object AbstractOperatorParsers {
         true
       else false
     }
+    
+    override def toString = s"Subgroup($assoc,$min,$max,$undef,$here,$below,$parent)"
     
   } 
   
