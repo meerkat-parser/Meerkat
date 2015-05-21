@@ -24,7 +24,7 @@ trait Slot {
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
-  def flatChildren: ListBuffer[SPPFNode]
+  def flatChildren: Seq[SPPFNode]
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -69,7 +69,7 @@ trait NonPackedNode extends SPPFNode {
   
   def isIntermediateNode: Boolean = this.isInstanceOf[IntermediateNode]
   
-  override def flatChildren: ListBuffer[SPPFNode] = flatChildren(this)
+  override def flatChildren: Seq[SPPFNode] = flatChildren(this)
   
   private def flatChildren(node: NonPackedNode): ListBuffer[SPPFNode] = {
    if (isAmbiguous) {
