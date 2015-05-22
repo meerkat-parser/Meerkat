@@ -44,24 +44,22 @@ object OperatorParsers {
       
       
       def left(p: OperatorSequence): OperatorSequence 
-        = new OperatorSequence {
-            def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
-            
-            override def infix = p.infix
-            override def prefix = p.prefix
-            override def postfix = p.postfix            
-            override def assoc: Assoc.Assoc = Assoc.LEFT
-          }
+        = if (p.infix) 
+            new OperatorSequence {
+              def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
+              override def infix = p.infix
+              override def assoc: Assoc.Assoc = Assoc.LEFT
+            }
+        else p
       
       def right(p: OperatorSequence): OperatorSequence 
-        = new OperatorSequence {
-            def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
-            
-            override def infix = p.infix
-            override def prefix = p.prefix
-            override def postfix = p.postfix            
-            override def assoc: Assoc.Assoc = Assoc.RIGHT
-          }
+        = if (p.infix)
+            new OperatorSequence {
+              def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
+              override def infix = p.infix
+              override def assoc: Assoc.Assoc = Assoc.RIGHT
+            }
+          else p
       
       def non_assoc(p: OperatorSequence): OperatorSequence 
         = new OperatorSequence {

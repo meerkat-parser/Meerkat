@@ -229,86 +229,88 @@ object AbstractOperatorParsers {
     def filter[A](p: AbstractOperatorSequence[A], l: Int, group: Group): Prec => AbstractParser[A] = {
       println(s"Sequence with level: $l, group: $group, assoc: ${p.assoc}")
       if (l == -1) return prec => p(prec, prec)
-      val cond: Prec => Boolean = if (!group.subgroup) { 
-                                    if (p.infix)       prec => group.max >= prec._1 && group.max >= prec._2
-                                    else if (p.prefix) prec => group.max >= prec._1
-                                    else               prec => group.max >= prec._2
-                                  } else {
-                                    if (p.infix)       prec => group.parent.max >= prec._1 && group.parent.max >= prec._2
-                                    else if (p.prefix) prec => group.parent.max >= prec._1
-                                    else               prec => group.parent.max >= prec._2
-                                  }
+      
+      // Main condition
+      val cond: Prec => Boolean = if (p.infix)       prec => group.parent.max >= prec._1 && group.parent.max >= prec._2
+                                  else if (p.prefix) prec => group.parent.max >= prec._1
+                                  else               prec => group.parent.max >= prec._2
+                                  
       if (!group.climb(l)) {
+        // Extra condition when climbing is not possible
+        var l1 = 0; var r2 = 0
         val extra: Prec => Boolean = 
           if (!group.subgroup) {
-            if (l == group.undef) prec => true
+            if (l == group.undef) { l1 = group.undef; r2 = group.undef; prec => true }
             else if (p.infix) {
               p.assoc match {
-                case Assoc.LEFT => prec => prec._2 != l
-                case Assoc.RIGHT => prec => prec._1 != l
-                case Assoc.NON_ASSOC => prec => prec._1 != l && prec._2 != l
+                case Assoc.LEFT => { l1 = group.undef; r2 = l; prec => prec._2 != l }
+                case Assoc.RIGHT => { l1 = l; r2 = group.undef; prec => prec._1 != l }
+                case Assoc.NON_ASSOC => { l1 = l; r2 = l; prec => prec._1 != l && prec._2 != l }
               }  
             } else if (p.prefix) {
               p.assoc match {
-                case Assoc.NON_ASSOC => prec => prec._2 != l
+                case Assoc.NON_ASSOC => { r2 = l; prec => prec._2 != l }
               }
             } else {
               p.assoc match {
-                case Assoc.NON_ASSOC => prec => prec._1 != l
+                case Assoc.NON_ASSOC => { l1 = l; prec => prec._1 != l }
               }
             }
           } else {
-            val sg = group.asInstanceOf[Subgroup] 
             if (p.infix)
-              sg.assoc match {
-                case Assoc.LEFT =>  if (l == sg.undef) prec => !(sg.min <= prec._2 && prec._2 <= sg.max)
-                                    else p.assoc match {
-                                      case Assoc.RIGHT => prec => prec._1 != l && (prec._2 == l || !(sg.min <= prec._2 && prec._2 <= sg.max))
-                                      case Assoc.NON_ASSOC => prec => prec._1 != l && !(sg.min <= prec._2 && prec._2 <= sg.max)
+              group.assoc match {
+                case Assoc.LEFT =>  if (l == group.undef) { 
+                                      l1 = group.parent.undef; r2 = group.undef; prec => !(group.min <= prec._2 && prec._2 <= group.max)
+                                    } else p.assoc match {
+                                      case Assoc.RIGHT => { l1 = l; r2 = l; prec => prec._1 != l && (prec._2 == l || !(group.min <= prec._2 && prec._2 <= group.max)) }
+                                      case Assoc.NON_ASSOC => { l1 = l; r2 = l; prec => prec._1 != l && !(group.min <= prec._2 && prec._2 <= group.max) }
                                       case _ => throw new RuntimeException("Ups, this should not have happened!")
                                     }
-                case Assoc.RIGHT => if (l == sg.undef) prec => !(sg.min <= prec._1 && prec._1 <= sg.max)
-                                    else p.assoc match {
-                                      case Assoc.LEFT => prec => prec._2 != l && (prec._1 == l || !(sg.min <= prec._1 && prec._1 <= sg.max))
-                                      case Assoc.NON_ASSOC => prec => prec._2 != l && !(sg.min <= prec._1 && prec._1 <= sg.max)
+                case Assoc.RIGHT => if (l == group.undef) {
+                                      l1 = group.undef; r2 = group.parent.undef; prec => !(group.min <= prec._1 && prec._1 <= group.max)
+                                    } else p.assoc match {
+                                      case Assoc.LEFT => { l1 = l; r2 = l; prec => prec._2 != l && (prec._1 == l || !(group.min <= prec._1 && prec._1 <= group.max)) }
+                                      case Assoc.NON_ASSOC => { l1 = l; r2 = l; prec => prec._2 != l && !(group.min <= prec._1 && prec._1 <= group.max) }
                                       case _ => throw new RuntimeException("Ups, this should not have happened!")
                                     }
-                case Assoc.NON_ASSOC => if (l == sg.undef) prec => !(sg.min <= prec._1 && prec._1 <= sg.max) && !(sg.min <= prec._2 && prec._2 <= sg.max)
-                                        else p.assoc match {
-                                          case Assoc.LEFT => prec => (prec._1 == l || !(sg.min <= prec._1 && prec._1 <= sg.max)) && !(sg.min <= prec._2 && prec._2 <= sg.max)
-                                          case Assoc.RIGHT => prec => !(sg.min <= prec._1 && prec._1 <= sg.max) && (prec._2 == l || !(sg.min <= prec._2 && prec._2 <= sg.max))
+                case Assoc.NON_ASSOC => if (l == group.undef) {
+                                          l1 = group.undef; r2 = group.undef
+                                          prec => !(group.min <= prec._1 && prec._1 <= group.max) && !(group.min <= prec._2 && prec._2 <= group.max)
+                                        } else p.assoc match {
+                                          case Assoc.LEFT => { l1 = l; r2 = group.undef; prec => (prec._1 == l || !(group.min <= prec._1 && prec._1 <= group.max)) && !(group.min <= prec._2 && prec._2 <= group.max) }
+                                          case Assoc.RIGHT => { l1 = group.undef; r2 = l; prec => !(group.min <= prec._1 && prec._1 <= group.max) && (prec._2 == l || !(group.min <= prec._2 && prec._2 <= group.max)) }
                                           case _ => throw new RuntimeException("Ups, this should not have happened!")
                                         }
               }
             else if (p.prefix)
-              sg.assoc match {
-                case Assoc.LEFT => if (l == sg.undef) prec => true
-                                   else prec => prec._2 != l // NON_ASSOC case
-                case Assoc.RIGHT => if (l == sg.undef) prec => !(sg.min <= prec._1 && prec._1 <= sg.max)
-                                    else prec => prec._2 != l && !(sg.min <= prec._1 && prec._1 <= sg.max) // NON_ASSOC case
-                case Assoc.NON_ASSOC => prec => !(sg.min <= prec._1 && prec._1 <= sg.max) && !(sg.min <= prec._2 && prec._2 <= sg.max)
+              group.assoc match {
+                case Assoc.LEFT => if (l == group.undef) { r2 = group.undef; prec => true }
+                                   else { r2 = l; prec => prec._2 != l } // NON_ASSOC case
+                case Assoc.RIGHT => if (l == group.undef) { r2 = group.parent.undef; prec => !(group.min <= prec._1 && prec._1 <= group.max) }
+                                    else { r2 = l; prec => prec._2 != l && !(group.min <= prec._1 && prec._1 <= group.max) } // NON_ASSOC case
+                case Assoc.NON_ASSOC => { r2 = l; prec => !(group.min <= prec._1 && prec._1 <= group.max) && !(group.min <= prec._2 && prec._2 <= group.max) }
               }
             else
-              sg.assoc match {
-                case Assoc.LEFT => if (l == sg.undef) prec => !(sg.min <= prec._2 && prec._2 <= sg.max)
-                                   else prec => prec._1 != l && !(sg.min <= prec._2 && prec._2 <= sg.max) // NON_ASSOC case
-                case Assoc.RIGHT => if (l == sg.undef) prec => true
-                                    else prec => prec._1 != l // NON_ASSOC case
-                case Assoc.NON_ASSOC => prec => !(sg.min <= prec._1 && prec._1 <= sg.max) && !(sg.min <= prec._2 && prec._2 <= sg.max)
+              group.assoc match {
+                case Assoc.LEFT => if (l == group.undef) { l1 = group.parent.undef; prec => !(group.min <= prec._2 && prec._2 <= group.max) }
+                                   else { l1 = l; prec => prec._1 != l && !(group.min <= prec._2 && prec._2 <= group.max) } // NON_ASSOC case
+                case Assoc.RIGHT => if (l == group.undef) { l1 = group.undef; prec => true }
+                                    else { l1 = l; prec => prec._1 != l } // NON_ASSOC case
+                case Assoc.NON_ASSOC => { l1 = l; prec => !(group.min <= prec._1 && prec._1 <= group.max) && !(group.min <= prec._2 && prec._2 <= group.max) }
               }
           }
         
           val min = group.parent.min; val max = group.parent.max; val undef = group.parent.undef
+          def choose(prec: Int) = if (min <= prec && prec <= max) undef else prec
         
           if (group.below.prefix && group.below.postfix)
-            return prec => if (cond(prec) && extra(prec)) p((l,if (min<=prec._2 && prec._2<=max) undef else prec._2), 
-                                                            (if (min<=prec._1 && prec._1<=max) undef else prec._1,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l1,choose(prec._2)),(choose(prec._1),r2)) else FAIL
           else if (group.below.prefix)
-            return prec => if (cond(prec) && extra(prec)) p((l,undef), (if (min<=prec._1 && prec._1<=max) undef else prec._1,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l1,undef), (choose(prec._1),r2)) else FAIL
           else if (group.below.postfix)
-            return prec => if (cond(prec) && extra(prec)) p((l,if (min<=prec._2 && prec._2<=max) undef else prec._2), (undef,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l1,choose(prec._2)), (undef,r2)) else FAIL
           else 
-            return prec => if (cond(prec) && extra(prec)) p((l,undef), (undef,l)) else FAIL
+            return prec => if (cond(prec) && extra(prec)) p((l1,undef), (undef,r2)) else FAIL
         
         } else {
           if (!group.subgroup || (group.subgroup && group.min == group.max)) {

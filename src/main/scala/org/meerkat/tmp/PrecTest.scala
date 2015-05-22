@@ -68,6 +68,6 @@ object Test6 {
                  |   "a" )
   
   def main(args: Array[String]): Unit = {
-    Parsers.parse("a+a-a*a", E)
+    Parsers.parse("a+a-a*a", E) // E(0,7) E(0,5) E(2,7)
   }
 }
