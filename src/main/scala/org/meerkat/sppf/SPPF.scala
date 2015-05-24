@@ -24,7 +24,6 @@ trait Slot {
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
-  def flatChildren: Seq[SPPFNode]
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -68,24 +67,7 @@ trait NonPackedNode extends SPPFNode {
   def hasChildren: Boolean = first != null || rest != null
   
   def isIntermediateNode: Boolean = this.isInstanceOf[IntermediateNode]
-  
-  override def flatChildren: Seq[SPPFNode] = flatChildren(this)
-  
-  private def flatChildren(node: NonPackedNode): ListBuffer[SPPFNode] = {
-   if (isAmbiguous) {
-     ListBuffer(node)
-   } else {
-     val l = ListBuffer[SPPFNode]()
-     if (node.hasChildren && node.first.leftChild.isIntermediateNode) 
-       l ++= flatChildren(node.first.leftChild) 
-     else 
-       l += node.first.leftChild
-       
-     if (node.first hasRightChild) l += node.first.rightChild
-     l
-   } 
-  }
-	
+  	
 	override def toString  = name + "," + leftExtent + "," + rightExtent
 }
 
@@ -114,21 +96,6 @@ case class PackedNode(slot: Slot, parent: NonPackedNode) extends SPPFNode {
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
   def hasRightChild: Boolean  = rightChild != null
-  
-  override def flatChildren = {
-    val l = ListBuffer[SPPFNode]()
-    if (leftChild isIntermediateNode)
-      l ++= leftChild.flatChildren
-    else 
-      l += leftChild
-
-    if (hasRightChild)
-      if (rightChild isIntermediateNode)
-        l ++= rightChild.flatChildren
-      else 
-        l += rightChild
-    l      
-  }
   
 	override def toString = slot + "," + pivot + ", parent=(" + parent + ")"
 
