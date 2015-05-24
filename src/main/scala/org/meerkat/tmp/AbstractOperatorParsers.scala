@@ -37,13 +37,7 @@ object AbstractOperatorParsers {
   
   trait SequenceBuilder[S <: AbstractOperatorSequence[_]] extends (Head => S)
   trait AlternationBuilder[A <: AbstractOperatorParser[_]] extends ((Head, Group) => (Group => A, Group, Option[Group]))
-  
-  def builderSeq[S <: AbstractOperatorSequence[_]](f: Head => S) 
-    = new SequenceBuilder[S] { def apply(head: Head) = f(head) }
-  
-  def builderAlt[A <: AbstractOperatorParser[_]](f: (Head, Group) => (Group => A, Group, Option[Group]))
-    = new AlternationBuilder[A] { def apply(head: Head, group: Group) = f(head, group) }
-  
+    
   trait CanBuildSequence[A,B] {
     implicit val obj: AbstractCPSParsers.CanBuildSequence[A,B]
     implicit val m1: Memoizable[A];
@@ -51,13 +45,14 @@ object AbstractOperatorParsers {
     
     type OperatorSequence <: AbstractOperatorSequence[obj.R]
     
+    def sequence(f: (Prec, Prec) => obj.Sequence): OperatorSequence
     def infix(f: (Prec, Prec) => obj.Sequence): OperatorSequence
     def postfix(f: (Prec, Prec) => obj.Sequence): OperatorSequence
     def prefix(f: (Prec, Prec) => obj.Sequence): OperatorSequence
     
-    def sequence(f: (Prec, Prec) => obj.Sequence): OperatorSequence
+    type OperatorSequenceBuilder <: SequenceBuilder[OperatorSequence]
+    def builderSeq(f: Head => OperatorSequence): OperatorSequenceBuilder
     
-    def left(p: OperatorSequence): OperatorSequence
   }
   
    trait CanBuildAlternation[A, B >: A] {
@@ -68,11 +63,14 @@ object AbstractOperatorParsers {
     
     type OperatorAlternation <: AbstractOperatorParser[B]
     def alternation(f: Prec => AbstractParser[B]): OperatorAlternation
+    
+    type OperatorAlternationBuilder <: AlternationBuilder[OperatorAlternation]
+    def builderAlt(f: (Head, Group) => (Group => OperatorAlternation, Group, Option[Group])): OperatorAlternationBuilder
   }
   
   object AbstractOperatorParser {
     
-    def seq[A,B](p1: AbstractOperatorParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): SequenceBuilder[builder.OperatorSequence] = {
+    def seq[A,B](p1: AbstractOperatorParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): builder.OperatorSequenceBuilder = {
       import builder._
       builderSeq { head =>
         val left = p1 == head; val right = p2 == head
@@ -83,7 +81,7 @@ object AbstractOperatorParsers {
        }
     }
     
-    def seq[A,B,S <: AbstractOperatorSequence[A]](p1: SequenceBuilder[S], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): SequenceBuilder[builder.OperatorSequence] = {
+    def seq[A,B,S <: AbstractOperatorSequence[A]](p1: SequenceBuilder[S], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): builder.OperatorSequenceBuilder = {
       import builder._
       builderSeq { head => val q1 = p1(head)
         val left = q1.infix || q1.postfix; val right = p2 == head
@@ -94,7 +92,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def seq[A,B,S <: AbstractOperatorSequence[A]](p1: SequenceBuilder[S], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A,B]): SequenceBuilder[builder.OperatorSequence] = {
+    def seq[A,B,S <: AbstractOperatorSequence[A]](p1: SequenceBuilder[S], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A,B]): builder.OperatorSequenceBuilder = {
       import builder._
       builderSeq { head => val q1 = p1(head)
         if (q1.infix || q1.postfix) postfix { (prec1, prec2) => AbstractParser.seq(q1(prec1,$), p2) }
@@ -102,7 +100,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def seq[A,B](p1: AbstractOperatorParser[A], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A,B]): SequenceBuilder[builder.OperatorSequence] = {
+    def seq[A,B](p1: AbstractOperatorParser[A], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A,B]): builder.OperatorSequenceBuilder = {
       import builder._
       builderSeq { head =>
         if (p1 == head) postfix { (prec1, prec2) => AbstractParser.seq(p1(prec1), p2) }
@@ -110,7 +108,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def seq[A,B](p1: AbstractParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): SequenceBuilder[builder.OperatorSequence] = {
+    def seq[A,B](p1: AbstractParser[A], p2: AbstractOperatorParser[B])(implicit builder: CanBuildSequence[A,B]): builder.OperatorSequenceBuilder = {
       import builder._
       builderSeq { head =>
         if (p2 == head) prefix { (prec1, prec2) => AbstractParser.seq(p1, p2(prec2)) }
@@ -119,7 +117,7 @@ object AbstractOperatorParsers {
     }
     
     def alt[A,B >: A,S1 <: AbstractOperatorParser[A], S2 <: AbstractOperatorParser[B]]
-             (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+             (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,opened2,closed2) = p2(head,group1); val (f1,opened1,closed1) = p1(head,opened2)
@@ -129,7 +127,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+    def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractOperatorParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f1,opened1,closed1) = p1(head,group1)
@@ -137,7 +135,7 @@ object AbstractOperatorParsers {
              alternation { prec => AbstractParser.alt(q1(prec), p2(prec)) } }, opened1, closed1)
       }
     }
-    def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractOperatorParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+    def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractOperatorParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,opened2,closed2) = p2(head,group1)
@@ -146,7 +144,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+    def alt[A,B >: A,S <: AbstractOperatorParser[A]](p1: AlternationBuilder[S], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f1,opened1,closed1) = p1(head,group1)
@@ -154,7 +152,7 @@ object AbstractOperatorParsers {
              alternation { prec => AbstractParser.alt(q1(prec), p2) } }, opened1, closed1)
       }
     }
-    def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+    def alt[A,B >: A,S <: AbstractOperatorParser[B]](p1: AbstractParser[A], p2: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,opened2,closed2) = p2(head,group1)
@@ -177,7 +175,7 @@ object AbstractOperatorParsers {
       alternation { prec => AbstractParser.alt(p1, p2(prec)) }
     }
     
-    def alt[A,S <: AbstractOperatorSequence[A]](p: SequenceBuilder[S])(implicit builder: CanBuildAlternation[A,A]): AlternationBuilder[builder.OperatorAlternation] = {
+    def alt[A,S <: AbstractOperatorSequence[A]](p: SequenceBuilder[S])(implicit builder: CanBuildAlternation[A,A]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val q = p(head)
@@ -192,7 +190,7 @@ object AbstractOperatorParsers {
      * If |> is used inside an associativity group, it is ignored, i.e., is equivalent to use of |.
      */
     def greater[A,B >: A,S1 <: AbstractOperatorParser[A], S2 <: AbstractOperatorParser[B]]
-             (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): AlternationBuilder[builder.OperatorAlternation] = {
+             (p1: AlternationBuilder[S1], p2: AlternationBuilder[S2])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val (f2,opened2,closed2) = p2(head,group1)
@@ -210,19 +208,11 @@ object AbstractOperatorParsers {
       }
     }
     
-    def left[A,S <: AbstractOperatorParser[A]](p: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,A]): AlternationBuilder[S] = {
+    def assoc[A,S <: AbstractOperatorParser[A]](p: AlternationBuilder[S], a: Assoc.Assoc)(implicit builder: CanBuildAlternation[A,A]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head,group1) =>
-        val (f,opened,closed) = p(head, Subgroup(Assoc.LEFT,group1)); val max = opened.max 
-        ({ group2 => f(opened.close.asInstanceOf[Subgroup].update(group2))}, group1.update(max), closed) 
-      }
-    }
-    
-    def right[A,S <: AbstractOperatorParser[A]](p: AlternationBuilder[S])(implicit builder: CanBuildAlternation[A,A]): AlternationBuilder[S] = {
-      import builder._
-      builderAlt { (head,group1) =>
-        val (f,opened,closed) = p(head, Subgroup(Assoc.RIGHT,group1)); val max = opened.max 
-        ({ group2 => f(opened.close.asInstanceOf[Subgroup].update(group2))}, group1.update(max), closed) 
+        val (f,opened,closed) = p(head, Subgroup(a,group1)); val max = opened.max 
+        ({ group2 => alternation(f(opened.close.asInstanceOf[Subgroup].update(group2))) }, group1.update(max), closed) 
       }
     }
     
