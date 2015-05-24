@@ -130,4 +130,21 @@ object Parsers {
     }
   }
   
+  object SyntaxBuilder {
+    import scala.language.experimental.macros
+    import scala.reflect.macros.blackbox.Context
+    
+    implicit def toSyntax(p: => AbstractParser[NonPackedNode]): Unit => AbstractParser[NonPackedNode]
+      = { _ => p }
+    
+    def ::(p: Unit => AbstractParser[NonPackedNode]): Nonterminal = macro makeNonterminalWithName
+      
+    def mkSyntax(name: String, p: Unit => AbstractParser[NonPackedNode]): Nonterminal = nt(name)(p())
+    
+    import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
+
+    def makeNonterminalWithName(c: Context)(p: c.Expr[Unit => AbstractParser[NonPackedNode]]): c.Expr[Nonterminal] 
+      = makeCallWithName (c, "SyntaxBuilder.mkSyntax")
+  }
+  
 }

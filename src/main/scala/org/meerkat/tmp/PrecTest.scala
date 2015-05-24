@@ -44,10 +44,10 @@ object Test4 {
 object Test5 {
   val E: OperatorNonterminal 
     = op_nt("E")(  "(" ~ E ~ ")" 
-                 |> right(  E ~ "*" ~ E 
-                          | E ~ "/" ~ E )
-                 |  /*left(*/  E ~ "+" ~ E 
-                         | E ~ "-" ~ E//)
+                 |> right( E ~ "*" ~ E 
+                         | E ~ "/" ~ E )
+                 |>  left( E ~ "+" ~ E 
+                         | E ~ "-" ~ E)
                  |>  "-" ~ E
                  |   "a" )
   
@@ -70,4 +70,15 @@ object Test6 {
   def main(args: Array[String]): Unit = {
     Parsers.parse("a+a-a*a", E) // E(0,7) E(0,5) E(2,7)
   }
+  
+/*
+E(2,2)(2, 7)
+E(2,2)(0, 7)
+E(2,2)(0, 5)
+E(3,2)(0, 5)
+E(3,2)(0, 7)
+E(0,0)(0, 7)
+E(0,2)(2, 7)
+E(0,0)(0, 5)
+*/
 }
