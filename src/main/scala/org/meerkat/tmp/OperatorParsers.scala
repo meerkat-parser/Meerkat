@@ -84,31 +84,31 @@ object OperatorParsers {
   
   }
   
-  trait OperatorSequenceBuilder extends SequenceBuilder[OperatorSequence] { import OperatorImplicits._
-    type T = NonPackedNode; type S = OperatorSequence; type A = OperatorAlternation
+  trait OperatorSequenceBuilder extends SequenceBuilder[OperatorSequence] { import OperatorImplicits._; 
+    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt; import AbstractOperatorParser.greater
     
-    def ~ (p: OperatorNonterminal) = AbstractOperatorParser.seq[T,T,S](this, p)(obj1)
-    def ~ (p: Symbol) = AbstractOperatorParser.seq[T,T,S](this, p)(obj1)
+    def ~ (p: OperatorNonterminal) = seq(this, p)(obj1)
+    def ~ (p: Symbol) = seq(this, p)(obj1)
     
-    def | (p: OperatorAlternationBuilder) = AbstractOperatorParser.alt[T,T,A,A](AbstractOperatorParser.alt[T,S](this)(obj2), p)(obj2)
-    def | (p: OperatorSequenceBuilder) = AbstractOperatorParser.alt[T,T,A,A](AbstractOperatorParser.alt[T,S](this)(obj2), AbstractOperatorParser.alt[T,S](p)(obj2))(obj2)
-    def | (p: OperatorNonterminal) = AbstractOperatorParser.alt[T,T,A](AbstractOperatorParser.alt[T,S](this)(obj2), p)(obj2)
-    def | (p: Symbol) = AbstractOperatorParser.alt[T,T,A](AbstractOperatorParser.alt[T,S](this)(obj2), p)(obj2)
+    def | (p: OperatorAlternationBuilder) = alt(alt(this)(obj2), p)(obj2)
+    def | (p: OperatorSequenceBuilder) = alt(alt(this)(obj2), alt(p)(obj2))(obj2)
+    def | (p: OperatorNonterminal) = alt(alt(this)(obj2), p)(obj2)
+    def | (p: Symbol) = alt(alt(this)(obj2), p)(obj2)
     
-    def |> (p: OperatorAlternationBuilder) = AbstractOperatorParser.greater[T,T,A,A](AbstractOperatorParser.alt[T,S](this)(obj2), p)(obj2)
-    def |> (p: OperatorSequenceBuilder) = AbstractOperatorParser.greater[T,T,A,A](AbstractOperatorParser.alt[T,S](this)(obj2), AbstractOperatorParser.alt[T,S](p)(obj2))(obj2)
+    def |> (p: OperatorAlternationBuilder) = greater(alt(this)(obj2), p)(obj2)
+    def |> (p: OperatorSequenceBuilder) = greater(alt(this)(obj2), alt(p)(obj2))(obj2)
   }
     
   trait OperatorAlternationBuilder extends AlternationBuilder[OperatorAlternation] { import OperatorImplicits._
-    type T = NonPackedNode; type S = OperatorSequence; type A = OperatorAlternation
+    import AbstractOperatorParser.alt; import AbstractOperatorParser.greater
     
-    def | (p: OperatorAlternationBuilder) = AbstractOperatorParser.alt[T,T,A,A](this, p)(obj2)
-    def | (p: OperatorSequenceBuilder) = AbstractOperatorParser.alt[T,T,A,A](this, AbstractOperatorParser.alt[T,S](p)(obj2))(obj2)
-    def | (p: OperatorNonterminal) = AbstractOperatorParser.alt[T,T,A](this, p)(obj2)
-    def | (p: Symbol) = AbstractOperatorParser.alt[T,T,A](this, p)(obj2)
+    def | (p: OperatorAlternationBuilder) = alt(this, p)(obj2)
+    def | (p: OperatorSequenceBuilder) = alt(this, alt(p)(obj2))(obj2)
+    def | (p: OperatorNonterminal) = alt(this, p)(obj2)
+    def | (p: Symbol) = alt(this, p)(obj2)
     
-    def |> (p: OperatorAlternationBuilder) = AbstractOperatorParser.greater[T,T,A,A](this, p)(obj2)
-    def |> (p: OperatorSequenceBuilder) = AbstractOperatorParser.greater[T,T,A,A](this, AbstractOperatorParser.alt[T,S](p)(obj2))(obj2)
+    def |> (p: OperatorAlternationBuilder) = greater(this, p)(obj2)
+    def |> (p: OperatorSequenceBuilder) = greater(this, alt(p)(obj2))(obj2)
     
   }
   
@@ -117,43 +117,41 @@ object OperatorParsers {
   trait OperatorAlternation extends AbstractOperatorParser[NonPackedNode] { override def alternation = true }
   
   trait OperatorNonterminal extends AbstractOperatorParser[NonPackedNode] { import OperatorImplicits._
-    type T = NonPackedNode; type S = OperatorSequence; type A = OperatorAlternation
+    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt
     
     override def nonterminal = true
     
-    def ~ (p: OperatorNonterminal) = AbstractOperatorParser.seq(this, p)(obj1)
-    def ~ (p: Symbol) = AbstractOperatorParser.seq(this, p)(obj1)
+    def ~ (p: OperatorNonterminal) = seq(this, p)(obj1)
+    def ~ (p: Symbol) = seq(this, p)(obj1)
     
-    def | (p: OperatorAlternationBuilder) = AbstractOperatorParser.alt(this, p)(obj2)
-    def | (p: OperatorSequenceBuilder) = AbstractOperatorParser.alt[T,T,A](this, AbstractOperatorParser.alt[T,S](p)(obj2))(obj2)
-    def | (p: OperatorNonterminal) = AbstractOperatorParser.alt(this, p)(obj2)
-    def | (p: Symbol) = AbstractOperatorParser.alt(this, p)(obj2)
+    def | (p: OperatorAlternationBuilder) = alt(this, p)(obj2)
+    def | (p: OperatorSequenceBuilder) = alt(this, alt(p)(obj2))(obj2)
+    def | (p: OperatorNonterminal) = alt(this, p)(obj2)
+    def | (p: Symbol) = alt(this, p)(obj2)
   }
   
-  implicit class ParsersSeqOps(p: Symbol) { import OperatorImplicits._
-    def ~ (q: OperatorNonterminal): OperatorSequenceBuilder = AbstractOperatorParser.seq(p, q)(obj1) 
+  implicit class ParsersSeqOps(p: Symbol) { import OperatorImplicits._; import AbstractOperatorParser.seq
+    def ~ (q: OperatorNonterminal) = seq(p, q)(obj1) 
   }
   
   implicit class ParsersAltOps(p: AbstractCPSParsers.AbstractParser[NonPackedNode]) { import OperatorImplicits._
-    type T = NonPackedNode; type S = OperatorSequence; type A = OperatorAlternation
+    import AbstractOperatorParser.alt
     
-    def | (q: OperatorAlternationBuilder) = AbstractOperatorParser.alt(p, q)(obj2)
-    def | (q: OperatorSequenceBuilder) = AbstractOperatorParser.alt[T,T,A](p, AbstractOperatorParser.alt[T,S](q)(obj2))(obj2)
-    def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
+    def | (q: OperatorAlternationBuilder) = alt(p, q)(obj2)
+    def | (q: OperatorSequenceBuilder) = alt(p, alt(q)(obj2))(obj2)
+    def | (q: OperatorNonterminal) = alt(p, q)(obj2)
   }
   
-  implicit class StringSeqOps(term: String) { import OperatorImplicits._
-    def ~ (q: OperatorNonterminal) = AbstractOperatorParser.seq(term, q)(obj1) 
+  implicit class StringSeqOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser.seq
+    def ~ (q: OperatorNonterminal) = seq(term, q)(obj1) 
   }
   
-  implicit class StringAltOps(term: String) { import OperatorImplicits._
-    type T = NonPackedNode; type S = OperatorSequence; type A = OperatorAlternation
-    
+  implicit class StringAltOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser.alt
     val p: AbstractCPSParsers.AbstractParser[NonPackedNode] = term
     
-    def | (q: OperatorAlternationBuilder) = AbstractOperatorParser.alt(p, q)(obj2)
-    def | (q: OperatorSequenceBuilder) = AbstractOperatorParser.alt[T,T,A](p, AbstractOperatorParser.alt[T,S](q)(obj2))(obj2)
-    def | (q: OperatorNonterminal) = AbstractOperatorParser.alt(p, q)(obj2)
+    def | (q: OperatorAlternationBuilder) = alt(p, q)(obj2)
+    def | (q: OperatorSequenceBuilder) = alt(p, alt(q)(obj2))(obj2)
+    def | (q: OperatorNonterminal) = alt(p, q)(obj2)
   }
   
   def left(p: OperatorSequenceBuilder): OperatorSequenceBuilder = { import OperatorImplicits._
@@ -169,13 +167,11 @@ object OperatorParsers {
   }
   
   def left(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._
-    type T = NonPackedNode; type A = OperatorAlternation
-    AbstractOperatorParser.assoc[T,A](p, Assoc.LEFT)(obj2)
+    AbstractOperatorParser.assoc(p, Assoc.LEFT)(obj2)
   }
   
   def right(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._
-    type T = NonPackedNode; type A = OperatorAlternation
-    AbstractOperatorParser.assoc[T,A](p, Assoc.RIGHT)(obj2)
+    AbstractOperatorParser.assoc(p, Assoc.RIGHT)(obj2)
   }
   
   def op_nt(name: String)(p: => OperatorAlternationBuilder) 
