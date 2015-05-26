@@ -9,15 +9,26 @@ import org.meerkat.util.Input
 
 object SPPFVisitor {
   
-  def visit(node: NonPackedNode, amb: NonPackedNode => Any, nt: PackedNode => Any, merge: PackedNode => Any)(implicit input: Input): Any = {
+  def visit(node: NonPackedNode, 
+            amb: Set[Any] => Any,
+            tn : String => Any,
+            nt2: (RuleType, (Any, Any)) => Any, 
+            nt1: (RuleType, Any) => Any)(implicit input: Input): Any = {
+    
+   def ambiguity(n: NonPackedNode): Any =  amb( (for (p <- n.children) yield nonterminal(p)) (breakOut))
+   
+   def nonterminal(p: PackedNode): Any = if (p.hasRightChild) 
+                                           nt2(p.ruleType, (visit(p.leftChild, amb, tn, nt2, nt1), visit(p.rightChild, amb, tn, nt2, nt1)))
+                                         else 
+                                           nt1(p.ruleType, visit(p.leftChild, amb, tn, nt2, nt1))
     
    node match {
     
-     case t: TerminalNode     => input.substring(t.leftExtent, t.rightExtent)
+     case t: TerminalNode     => tn(input.substring(t.leftExtent, t.rightExtent))
     
-     case n: NonterminalNode  => if (n isAmbiguous) amb(n) else nt(n.first)
+     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) amb(i) else merge(i.first) 
+     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild, amb, tn, nt2, nt1), visit(i.first.rightChild, amb, tn, nt2, nt1)))  
                                  
      case p: PackedNode       => throw new RuntimeException("Should not end up here!")
    }
@@ -41,20 +52,28 @@ object SPPFVisitor {
   
       //def ambiguity(n: NonPackedNode): Any =  amb(for (p <- n.children) yield merge(p)) 
       
+//        def merge(p: PackedNode): List[Tree] = if (p.hasRightChild)
+//                                               List(buildTree(p.leftChild), buildTree(p.rightChild))
+//                                             else
+//                                               List(buildTree(p.leftChild))
+//                                               
+//      def amb(n: NonPackedNode): Tree =  Amb((for (p <- n.children) yield Appl(p.ruleType, merge(p))) (breakOut))                                         
+//      
+//      def nt(p: PackedNode): Tree = Appl(p.ruleType, merge(p))
+  
 
   def buildTree(node: NonPackedNode)(implicit input: Input): Tree = {
-    
-      def merge(p: PackedNode): List[Tree] = if (p.hasRightChild)
-                                               List(buildTree(p.leftChild), buildTree(p.rightChild))
-                                             else
-                                               List(buildTree(p.leftChild))
-                                               
-      def amb(n: NonPackedNode): Tree =  Amb((for (p <- n.children) yield Appl(p.ruleType, merge(p))) (breakOut))                                         
-      
-      def nt(p: PackedNode): Tree = Appl(p.ruleType, merge(p))
-    
-      visit(node, amb, nt, merge).asInstanceOf[Tree]
+    def amb(s: Set[Any]): Tree = Amb(s.asInstanceOf[Set[Tree]]) 
+    def t(s: String): Tree = Terminal(s)
+    def nt2(r: RuleType, t: (Any, Any)) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
+    def nt1(r: RuleType, t: Any) = Appl(r, List(t.asInstanceOf[Tree]))
+    visit(node, amb, t, nt2, nt1).asInstanceOf[Tree]
   }
+  
+  def flatten(t: (Any, Any)): Seq[Any] = t match {
+    case (t: (_, _), y) => flatten(t) :+ y
+    case (x, y) => List(x, y)
+  } 
   
   
   def flatten(t: Tree): Tree = t match {
