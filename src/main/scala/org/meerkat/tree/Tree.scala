@@ -34,13 +34,10 @@ case class Amb(ts: Set[Tree]) extends Tree
 case class Epsilon() extends Tree
 
 trait RuleType {
-  
-  type T
-  
   def head: Nonterminal
   def body: Symbol
   
-  def action: Seq[T] => T = ???
+  def action: Any => Any = ???
   
   override def toString = head + " ::= " + body
 } 
