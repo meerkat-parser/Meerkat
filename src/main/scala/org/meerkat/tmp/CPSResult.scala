@@ -21,7 +21,7 @@ trait CPSResult[+T] extends ((T => Unit) => Unit) with MonadPlus[T, CPSResult] {
   def filter(pred: T => Boolean) = result[T](k => this(t => if(pred(t)) k(t)))
   
   // Optimization
-  def _map[U](f: T => U) = result[U](k => this(k compose f))
+  def smap[U](f: T => U) = result[U](k => this(k compose f))
 }
 
 object CPSResult {

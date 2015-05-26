@@ -4,6 +4,7 @@ import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import scala.reflect.ClassTag
 import org.meerkat.sppf.Slot
+import org.meerkat.tree.RuleType
 
 trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def map[U](f: T => U)(implicit m: Memoizable[T]): M[U]
@@ -12,121 +13,172 @@ trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def filter(pred: T => Boolean): M[T]
   
   // Specialization only for optimization purposes
-  def _map[U](f: T => U): M[U]
+  def smap[U](f: T => U): M[U]
 }
 
 trait AbstractParsers {
   
   type Result[+T] <: MonadPlus[T, Result]
   
-  protected type Parser[T] = (Input, Int, SPPFLookup) => Result[T]
+  trait AbstractParser[+T] extends ((Input, Int, SPPFLookup) => Result[T]) { def symbol: org.meerkat.tree.Symbol }
   
-  trait AbstractParser[+T] extends Parser[T] with Slot {
-    
-    def ruleType = ???
-    
-    def name: String = ""
-    override def toString: String = name
-    
-    
-    def head: Option[AbstractParser[Any]] = None
-    def pass(head: AbstractParser[Any]): Unit = {}
-    
-    def isSequence = false
-    def isAlternation = false
-    
-    def isSymbol = false
-    def isNonterminal = false
-    def isTerminal = false
-  }
+  type AbstractSequence[+T] = AbstractParser[T] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   
-  trait CanBuildSequence[A, B] {    
-    type R
+  type AbstractAlternation[+T] = AbstractParser[T] { def symbol: org.meerkat.tree.Alt }
+  
+  type AbstractSymbol[+T] = AbstractParser[T] { def name: String }
+  
+  type AbstractNonterminal[+T] = AbstractSymbol[T] { def symbol: org.meerkat.tree.Nonterminal }
+  
+  type Head = AbstractNonterminal[Any]
+  
+  type AbstractSequenceBuilder[+T] = Slot => AbstractSequence[T]
+  type AbstractAlternationBuilder[+T] = Head => AbstractAlternation[T]
+  
+  trait CanBuildSequence[A,B] {    
+    type T
     
-    type Sequence <: AbstractParser[R]
-    def sequence(f: (Input, Int, SPPFLookup) => Result[R]): Sequence
+    type Sequence <: AbstractSequence[T]
+    def sequence(p: AbstractSequence[T]): Sequence
     
     def index(a: A): Int
-    def intermediate(a: A, b: B, p: AbstractParser[R], sppfLookup: SPPFLookup): R    
+    def intermediate(a: A, b: B, p: Slot, sppfLookup: SPPFLookup): T
+    
+    type SequenceBuilder <: Slot => Sequence
+    def builderSeq(f: Slot => Sequence): SequenceBuilder
   }
   
   trait CanBuildAlternation[B] {
-    type Alternation <: AbstractParser[B]
-    def alternation(f: AbstractParser[Any] => ((Input, Int, SPPFLookup) => Result[B])): Alternation
     
-    def result(e: B, p: AbstractParser[B], nt: AbstractParser[Any], sppfLookup: SPPFLookup): B
+    type Alternation <: AbstractAlternation[B]
+    def alternation(f: AbstractParser[B]): Alternation
+    
+    def result(e: B, p: Slot, nt: Head, sppfLookup: SPPFLookup): B
+    
+    type AlternationBuilder <: Head => Alternation
+    def builderAlt(f: Head => Alternation): AlternationBuilder
+  }
+  
+  trait CanBuildNonterminal[A] {
+    type Nonterminal <: AbstractNonterminal[A]
+    
+    def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
   }
   
   object AbstractParser {
     
-    def parser[T](p: Parser[T]): AbstractParser[T] 
-      = new AbstractParser[T] { def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup) }   
+    def seq[A: Memoizable, B: Memoizable](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B]): builder.SequenceBuilder
+      = builder builderSeq { slot => val q1 = p1(slot); sequence(slot, q1.size + 1, q1, p2) }
     
-    /**
-     * @param p1 isn't a result of alternation
-     * @param p2 is neither a result of alternation nor a result of sequence
-     */
-    def seq[A: Memoizable, B: Memoizable](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A, B]): builder.Sequence = {
-      lazy val q: builder.Sequence = builder sequence { 
-        (input, i, sppfLookup) => p1(input, i, sppfLookup) flatMap { x1 => p2(input, builder index x1, sppfLookup)._map { x2 => builder intermediate (x1, x2, q, sppfLookup) } } 
-      }
-      q
-    }
-  
-    /**
-     * @param p2 can be a result of alternation
-     */
-    def alt[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.Alternation = {
-      builder2 alternation { head => 
-        val q1 = if (p1 isAlternation) p1 else alt(p1); q1 pass head
-        val q2 = if (p2.isSymbol || p2.isSequence) alt(p2) else p2; q2 pass head
-        (input, i, sppfLookup) => q1(input, i, sppfLookup) orElse q2(input, i, sppfLookup) 
-      } 
+    def seq[A: Memoizable, B: Memoizable](p1: AbstractSymbol[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B]): builder.SequenceBuilder
+      = builder builderSeq { slot => sequence(slot, 2, p1, p2) }
+    
+    protected def sequence[A: Memoizable, B: Memoizable](slot: Slot, len: Int, p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: CanBuildSequence[A,B]): builder.Sequence = {
+      import builder._
+      builder sequence (new AbstractParser[T] with Slot {
+                          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
+                            = p1(input, i, sppfLookup) flatMap { x1 => p2(input, index(x1), sppfLookup).smap { x2 => intermediate(x1, x2, this, sppfLookup) } }
+                          def symbol = org.meerkat.tree.Sequence(p1.symbol, p2.symbol)
+                          def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, len)
+                          def size = len
+                          override def toString = s"[${ruleType.toString()},$size]" // s"p${this.hashCode()}"
+                        })
     }
     
-    /**
-     * @param p isn't a result of alternation
-     */
-    def alt[B: Memoizable](p: AbstractParser[B])(implicit builder: CanBuildAlternation[B]): AbstractParser[B] = {
-      lazy val q: AbstractParser[B] = builder alternation { head =>
-        (input, i, sppfLookup) => p(input, i, sppfLookup).map { x => builder result (x, q, head, sppfLookup) }
-      }
-      q
-    }
+    def altAlt[A, B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractAlternationBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(p1(head), p2(head)) }
     
+    def altAltSeq[A, B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractSequenceBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(p1(head), alt(head, p2)) }
+    
+    def altSeqAlt[A, B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractAlternationBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), p2(head)) }
+    
+    def altAltSym[A, B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractSymbol[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(p1(head), alt(head, p2)) }
+    
+    def altSymAlt[A, B >: A](p1: AbstractSymbol[A], p2: AbstractAlternationBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), p2(head)) }
+    
+    def altSeq[A, B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractSequenceBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), alt(head, p2)) }
+    
+    def altSymSeq[A, B >: A](p1: AbstractSymbol[A], p2: AbstractSequenceBuilder[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), alt(head, p2)) }
+    
+    def altSeqSym[A, B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), alt(head, p2)) }
+    
+    def altSym[A, B >: A](p1: AbstractSymbol[A], p2: AbstractSymbol[B])(implicit builder1: CanBuildAlternation[A], builder2: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder2.AlternationBuilder
+      = builder2 builderAlt { head => alternation(alt(head, p1), alt(head, p2)) }
+    
+    def alt[B: Memoizable](head: Head, p: AbstractSequenceBuilder[B])(implicit builder: CanBuildAlternation[B]): AbstractParser[B]
+      = new AbstractParser[B] with Slot { 
+          val q = p(this)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
+          def symbol = q.symbol
+          def ruleType = org.meerkat.tree.Rule(head.symbol, this.symbol)
+          override def toString = s"p${this.hashCode()}"
+        }
+    
+    def alt[B: Memoizable](head: Head, p: AbstractSymbol[B])(implicit builder: CanBuildAlternation[B]): AbstractParser[B]
+      = new AbstractParser[B] with Slot { 
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
+          def symbol = p.symbol
+          def ruleType = org.meerkat.tree.Rule(head.symbol, this.symbol)
+          override def toString = s"p${this.hashCode()}"
+        }
+    
+    protected def alternation[A, B >: A](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[B], m1: Memoizable[A], m2: Memoizable[B]): builder.Alternation
+      = builder alternation new AbstractParser[B] {
+                            def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p1(input,i,sppfLookup) orElse p2(input,i,sppfLookup)
+                            def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
+                          }
   }
   
 }
-
+ 
 object AbstractCPSParsers extends AbstractParsers {
     
   type Result[+T] = CPSResult[T]
   
-  trait CanBuildNonterminal[A] {
-    type Nonterminal <: AbstractParser[A]
-    
-    def nonterminal(name: String, p: AbstractParser[Any] => (Input, Int, SPPFLookup) => Result[A]): Nonterminal
-  }
-  
   import AbstractParser._
   
-  def memoize[A: Memoizable](p: => AbstractParser[A], name: String)(implicit ntb: CanBuildNonterminal[A], altb: CanBuildAlternation[A], obj: ClassTag[Result[A]]): ntb.Nonterminal = {
+  protected def memoize[A: Memoizable](p: => AbstractParser[A])(implicit obj: ClassTag[Result[A]]): AbstractParser[A] = {
+    lazy val q: AbstractParser[A] = p
     var table: Array[Result[A]] = null
     
-    ntb.nonterminal(name, head => {
-      lazy val parser: AbstractParser[A] = { var q = p; if (!q.isAlternation) q = alt(q); q pass head; q }
-        
-      (input, i, sppfLookup) => {
+    new AbstractParser[A] {
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
         if (table == null) table = new Array(input.length + 1)
-              
         val result = table(i)
         if (result == null) {
-          table(i) = CPSResult.memo(parser(input, i, sppfLookup)); table(i)
-        } else {
+          table(i) = CPSResult.memo(q(input,i,sppfLookup))
+          table(i)
+        } else
           result
-        }
       }
-    })
+      
+      def symbol = q.symbol
+    }
+  }
+  
+  def nonterminalSym[A: Memoizable](name: String, p: AbstractSymbol[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
+    import builder1._
+    lazy val q: Nonterminal = builder1 nonterminal (name, memoize(alt(q, p)))
+    q
+  }
+  
+  def nonterminalSeq[A: Memoizable](name: String, p: AbstractSequenceBuilder[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
+    import builder1._
+    lazy val q: Nonterminal = builder1 nonterminal (name, memoize(alt(q, p)))
+    q
+  }
+  
+  def nonterminalAlt[A: Memoizable](name: String, p: => AbstractAlternationBuilder[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
+    import builder1._
+    lazy val q: Nonterminal = builder1 nonterminal (name, memoize(p(q)))
+    q
   }
   
 }
