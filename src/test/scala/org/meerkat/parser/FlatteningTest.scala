@@ -61,12 +61,21 @@ object FlatteningTest {
 
     val input: Input = "aaaaa"
     val r = new MeerkatParsers {} . parse(S, input)
-    visualize(r.right.get.sppf)
     val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
     visualize(x)
   }
   
   def test4() {
+    val A: MeerkatParser = "A" ::= "a"
+    val S: MeerkatParser = "S" ::= A.++
+
+    val input: Input = "aaaaa"
+    val r = new MeerkatParsers {} . parse(S, input)
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
+    visualize(x)
+  }
+  
+  def test5() {
     val A: MeerkatParser = "A" ::= "a"
     val B: MeerkatParser = "B" ::= "b"
     val S: MeerkatParser = "S" ::= "a" ~~ (A | B)
@@ -80,8 +89,42 @@ object FlatteningTest {
   }
 
   
+  def test6() {
+    val A: MeerkatParser = "A" ::= "a"
+    val B: MeerkatParser = "B" ::= "b"
+    val S: MeerkatParser = "S" ::= A.** ~~ B.++
+
+    val input: Input = "aaabbb"
+    val r = new MeerkatParsers {} . parse(S, input)
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
+    visualize(x)
+  }
+  
+  def test7() {
+    val A: MeerkatParser = "A" ::= "a"
+    val S: MeerkatParser = "S" ::= A.** ~~ A.**
+
+    val input: Input = "aaa"
+    val r = new MeerkatParsers {} . parse(S, input)
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
+    visualize(x)
+  }
+  
+    val E: MeerkatParser = "E" ::= ( E ~~ "+" ~~ E
+                                 | E ~~ "*" ~~ E
+                                 | "a"
+                                 )
+ 
+  def test8() {
+    val input: Input = "a+a*a+a"
+    val r = new MeerkatParsers {} . parse(E, input)
+    val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
+    visualize(x)
+  }
+  
+  
   def main(args: Array[String]): Unit = {
-    test3()
+    test8()
   }
   
 }
