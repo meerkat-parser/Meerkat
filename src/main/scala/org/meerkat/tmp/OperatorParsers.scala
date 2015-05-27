@@ -68,65 +68,57 @@ object OperatorParsers {
     }
   
   }
-//  
-//  trait OperatorSequenceBuilder extends SequenceBuilder[OperatorSequence] { import OperatorImplicits._; 
-//    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt; import AbstractOperatorParser.greater
-//    
-//    def ~ (p: OperatorNonterminal) = seq(this, p)(obj1)
-//    def ~ (p: Symbol) = seq(this, p)(obj1)
-//    
-//    def | (p: OperatorAlternationBuilder) = alt(alt(this)(obj2), p)(obj2)
-//    def | (p: OperatorSequenceBuilder) = alt(alt(this)(obj2), alt(p)(obj2))(obj2)
-//    def | (p: OperatorNonterminal) = alt(alt(this)(obj2), p)(obj2)
-//    def | (p: Symbol) = alt(alt(this)(obj2), p)(obj2)
-//    
-//    def |> (p: OperatorAlternationBuilder) = greater(alt(this)(obj2), p)(obj2)
-//    def |> (p: OperatorSequenceBuilder) = greater(alt(this)(obj2), alt(p)(obj2))(obj2)
-//  }
-//    
-//  trait OperatorAlternationBuilder extends AlternationBuilder[OperatorAlternation] { import OperatorImplicits._
-//    import AbstractOperatorParser.alt; import AbstractOperatorParser.greater
-//    
-//    def | (p: OperatorAlternationBuilder) = alt(this, p)(obj2)
-//    def | (p: OperatorSequenceBuilder) = alt(this, alt(p)(obj2))(obj2)
-//    def | (p: OperatorNonterminal) = alt(this, p)(obj2)
-//    def | (p: Symbol) = alt(this, p)(obj2)
-//    
-//    def |> (p: OperatorAlternationBuilder) = greater(this, p)(obj2)
-//    def |> (p: OperatorSequenceBuilder) = greater(this, alt(p)(obj2))(obj2)
-//    
-//  }
-//  
+
   trait OperatorSequence extends ((Prec, Prec) => Parsers.SequenceBuilder) {
-    def infix: Boolean
-    def prefix: Boolean
-    def postfix: Boolean
+    def infix: Boolean; def prefix: Boolean; def postfix: Boolean
     def assoc: Assoc.Assoc
   }
   
   trait OperatorAlternation extends (Prec => Parsers.AlternationBuilder)
   
-  trait OperatorNonterminal extends (Prec => Parsers.Nonterminal)
+  trait OperatorNonterminal extends (Prec => Parsers.Nonterminal) { import OperatorImplicits._; import AbstractOperatorParser._
+    def ~ (p: OperatorNonterminal) = seqNt(this, p)
+    def ~ (p: Symbol) = seqNtSym(this, p)
+    
+    def | (p: OperatorAlternationBuilder) = altOpSymOpAlt(this, p)
+    def | (p: OperatorSequenceBuilder) = altOpSymOpSeq(this, p)
+    def | (p: OperatorNonterminal) = altOpSym(this, p)
+    
+    def | (p: AlternationBuilder) = altOpSymOpAlt(this, altAltOpAlt(p))
+    def | (p: SequenceBuilder) = altOpSymOpSeq(this, altSeqOpSeq(p))
+    def | (p: Symbol) = altOpSym(this, altSymOpSym(p))
+        
+  }
   
-  trait OperatorSequenceBuilder extends (Head => OperatorSequence)
+  trait OperatorSequenceBuilder extends (Head => OperatorSequence) { import OperatorImplicits._; import AbstractOperatorParser._
+    def ~ (p: OperatorNonterminal) = seqOpSeqNt(this, p)
+    def ~ (p: Symbol) = seqOpSeqSym(this, p)
+    
+    def | (p: OperatorAlternationBuilder) = altOpSeqOpAlt(this, p)
+    def | (p: OperatorSequenceBuilder) = altOpSeq(this, p)
+    def | (p: OperatorNonterminal) = altOpSeqOpSym(this, p)
+    
+    def | (p: AlternationBuilder) = altOpSeqOpAlt(this, altAltOpAlt(p))
+    def | (p: SequenceBuilder) = altOpSeq(this, altSeqOpSeq(p))
+    def | (p: Symbol) = altOpSeqOpSym(this, altSymOpSym(p))
+    
+    def |> (p: OperatorAlternationBuilder) = greaterOpSeqOpAlt(this, p)
+    def |> (p: OperatorSequenceBuilder) = greaterOpSeq(this, p)
+  }
   
-  trait OperatorAlternationBuilder extends ((Head, Group) => (Group => OperatorAlternation, Group, Option[Group]))
+  trait OperatorAlternationBuilder extends ((Head, Group) => (Group => OperatorAlternation, Group, Option[Group])) { import OperatorImplicits._; import AbstractOperatorParser._
+    def | (p: OperatorAlternationBuilder) = altOpAlt(this, p)
+    def | (p: OperatorSequenceBuilder) = altOpAltOpSeq(this, p)
+    def | (p: OperatorNonterminal) = altOpAltOpSym(this, p)
+    
+    def | (p: AlternationBuilder) = altOpAlt(this, altAltOpAlt(p))
+    def | (p: SequenceBuilder) = altOpAltOpSeq(this, altSeqOpSeq(p))
+    def | (p: Symbol) = altOpAltOpSym(this, altSymOpSym(p))
+    
+    def |> (p: OperatorAlternationBuilder) = greaterOpAlt(this, p)
+    def |> (p: OperatorSequenceBuilder) = greaterOpAltOpSeq(this, p)
+  }
   
-//  trait OperatorNonterminal extends (Prec => Parsers.Nonterminal) { import OperatorImplicits._
-//    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt
-//    
-//    def nonterminal = true
-//    def alternation = false
-//    
-//    def ~ (p: OperatorNonterminal) = seq(this, p)(obj1)
-//    def ~ (p: Symbol) = seq(this, p)(obj1)
-//    
-//    def | (p: OperatorAlternationBuilder) = alt(this, p)(obj2)
-//    def | (p: OperatorSequenceBuilder) = alt(this, alt(p)(obj2))(obj2)
-//    def | (p: OperatorNonterminal) = alt(this, p)(obj2)
-//    def | (p: Symbol) = alt(this, p)(obj2)
-//  }
-//  
 //  implicit class ParsersSeqOps(p: Symbol) { import OperatorImplicits._; import AbstractOperatorParser.seq
 //    def ~ (q: OperatorNonterminal) = seq(p, q)(obj1) 
 //  }

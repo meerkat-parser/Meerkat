@@ -189,7 +189,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def altOpSeqOpSeq[A,B >: A](p1: AbstractOperatorSequenceBuilder[A], p2: AbstractOperatorSequenceBuilder[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
+    def altOpSeq[A,B >: A](p1: AbstractOperatorSequenceBuilder[A], p2: AbstractOperatorSequenceBuilder[B])(implicit builder: CanBuildAlternation[A,B]): builder.OperatorAlternationBuilder = {
       import builder._
       builderAlt { (head, group1) =>
         val s1 = p1(head); val s2 = p2(head)
