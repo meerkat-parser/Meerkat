@@ -8,6 +8,9 @@ import org.meerkat.util.Input
 
 
 object SPPFVisitor {
+   
+  case class StarList(s: Symbol, l: List[Any])
+  case class PlusList(s: Symbol, l: List[Any])
   
   def visit(node: NonPackedNode, 
             amb: Set[Any] => Any,
@@ -15,29 +18,35 @@ object SPPFVisitor {
             nt2: (RuleType, (Any, Any)) => Any, 
             nt1: (RuleType, Any) => Any)(implicit input: Input): Any = {
     
-   def ambiguity(n: NonPackedNode): Any =  amb( (for (p <- n.children) yield nonterminal(p)) (breakOut))
+   def ambiguity(n: NonPackedNode): Any =  amb((for (p <- n.children) yield nonterminal(p)) (breakOut))
    
-   def shouldFlatten(p: PackedNode) = p.ruleType.head match {
-       case Star(s) => !p.leftChild.isAmbiguous && p.leftChild.first != null && p.leftChild.first.ruleType.head == Star(s)
-       case Plus(s) => !p.leftChild.isAmbiguous && p.leftChild.first != null && p.leftChild.first.ruleType.head == Plus(s)
-       case _       => false
+   def flatten2(p: PackedNode, l: Any, r: Any) = p.ruleType.head match {
+     case Star(s) => l match {
+       case StarList(s, xs) => StarList(s, xs :+ r) 
+       case x: Any  => StarList(p.ruleType.head, List(l, r))
+     }
+     case Plus(s) => l match {
+       case PlusList(s, xs) => PlusList(s, xs :+ r)
+       case x:  Any      => PlusList(p.ruleType.head, List(x))
+     }
+     case _  => nt2(p.ruleType, (l, r))
    }
       
+   def flatten1(p: PackedNode, c: Any) = p.ruleType.head match {
+     case Star(s) => StarList(s, List(c))
+     case Plus(s) => PlusList(s, List(c))
+     case _ => nt1(p.ruleType, c)
+   }
+   
    def nonterminal(p: PackedNode): Any = {
      if (p.hasRightChild) {
        val left  = visit(p.leftChild, amb, tn, nt2, nt1)
        val right = visit(p.rightChild, amb, tn, nt2, nt1)
-       if(shouldFlatten(p)) 
-         (left, right) 
-       else 
-         nt2(p.ruleType, (left, right)) 
+       flatten2(p, left, right)
      }
      else {
        val child = visit(p.leftChild, amb, tn, nt2, nt1)
-       if (shouldFlatten(p)) 
-         child 
-       else 
-         nt1(p.ruleType, child)
+       flatten1(p, child)
      }
    }
    
@@ -61,10 +70,16 @@ object SPPFVisitor {
     visit(node, amb, t, nt2, nt1).asInstanceOf[Tree]
   }
   
+  def convert(t: Any): Tree = t match {
+    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
+    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
+    case _               => t.asInstanceOf[Tree]
+  }
+  
   def flatten(t: Any): Seq[Any] = t match {
-    case (t: (_, _), y) => flatten(t) :+ y
-    case (x, y) => List(x, y)
-    case x      => List(x)
+    case (t: (_, _), y) => flatten(t) :+ convert(y)
+    case (x, y) => List(convert(x), convert(y))
+    case x      => List(convert(x))
   } 
   
 }

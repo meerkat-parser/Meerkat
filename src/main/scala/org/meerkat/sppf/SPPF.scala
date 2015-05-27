@@ -24,6 +24,7 @@ trait Slot {
 trait SPPFNode {
 	type T <: SPPFNode
   def children: Seq[T]
+  def size: Int
 }
 
 trait NonPackedNode extends SPPFNode {
@@ -66,6 +67,13 @@ trait NonPackedNode extends SPPFNode {
   
   def hasChildren: Boolean = first != null || rest != null
   
+  def size = {
+   var s = 0
+   if (first != null) s += 1
+   if (rest != null) s += rest.size
+   s
+  }
+  
   def isIntermediateNode: Boolean = this.isInstanceOf[IntermediateNode]
   	
 	override def toString  = name + "," + leftExtent + "," + rightExtent
@@ -94,6 +102,8 @@ case class PackedNode(slot: Slot, parent: NonPackedNode) extends SPPFNode {
   def ruleType: RuleType = slot.ruleType
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
+  
+  def size = if (hasRightChild) 2 else 1 
   
   def hasRightChild: Boolean  = rightChild != null
   

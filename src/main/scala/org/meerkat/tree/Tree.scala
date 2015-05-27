@@ -46,6 +46,12 @@ case class Rule(head: Nonterminal, body: Symbol) extends RuleType
 
 case class PartialRule(head: Nonterminal, body: Symbol, i: Int) extends RuleType
 
+case class RegularRule(head: Nonterminal) extends RuleType {
+  def body = Sequence()
+  
+  override def toString = head.name
+}
+
 object PartialRule {
   def apply(head: Nonterminal, body: Symbol): PartialRule = PartialRule(head, body, 0)
 }

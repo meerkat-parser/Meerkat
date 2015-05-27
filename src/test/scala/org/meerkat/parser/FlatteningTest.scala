@@ -59,11 +59,11 @@ object FlatteningTest {
     val A: MeerkatParser = "A" ::= "a"
     val S: MeerkatParser = "S" ::= A.**
 
-    val input: Input = "a"
+    val input: Input = "aaaaa"
     val r = new MeerkatParsers {} . parse(S, input)
     visualize(r.right.get.sppf)
     val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)   
-//    visualize(x)
+    visualize(x)
   }
   
   def test4() {
