@@ -65,6 +65,15 @@ trait AbstractParsers {
     def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
   }
   
+  trait CanBuildEBNF[A] {
+    type T
+    type Regular <: AbstractNonterminal[T]   
+    type Group <: AbstractNonterminal[A]
+    
+    def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular
+    def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Group
+  }
+    
   object AbstractParser {
     
     def seq[A: Memoizable, B: Memoizable](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B]): builder.SequenceBuilder
@@ -175,9 +184,15 @@ object AbstractCPSParsers extends AbstractParsers {
     q
   }
   
-  def nonterminalAlt[A: Memoizable](name: String, p: => AbstractAlternationBuilder[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
+  def nonterminalAlt[A: Memoizable](name: String, p: => AbstractAlternationBuilder[A])(implicit builder1: CanBuildNonterminal[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
     import builder1._
     lazy val q: Nonterminal = builder1 nonterminal (name, memoize(p(q)))
+    q
+  }
+  
+  def regular[A: Memoizable](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildEBNF[A], obj: ClassTag[Result[A]]): builder.Regular = {
+    import builder._
+    lazy val q: Regular = builder.regular(symbol, memoize(p(q)))
     q
   }
   

@@ -15,4 +15,10 @@ object Test {
 //    parse("a*a+a", E)
 //  }
   
+  val A: Nonterminal = ntSym("A", "a")
+  val B: Nonterminal = ntSeq("B", A.* ~ "b")
+  
+  def main(args: Array[String]): Unit = {
+    parse("aaab", B)
+  }
 }

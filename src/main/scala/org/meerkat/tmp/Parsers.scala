@@ -64,6 +64,22 @@ object Parsers {
         }
   }
   
+  implicit object obj5 extends CanBuildEBNF[NonPackedNode] {
+    type T = NonPackedNode
+    type Regular = Nonterminal  
+    type Group = Nonterminal
+    
+    def regular(sym: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Regular 
+      = new Nonterminal {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          def symbol = sym
+          def name = symbol.toString()
+          override def toString = name
+        }
+
+    def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Group = ???
+  }
+  
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
@@ -71,6 +87,12 @@ object Parsers {
   trait Nonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal }
   
   trait Terminal extends Symbol { def symbol: org.meerkat.tree.Terminal }
+  
+  val epsilon = new Terminal { 
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
+    def symbol = org.meerkat.tree.Terminal(name)
+    def name = "epsilon"
+  }
   
   trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._
     def ~ (p: Symbol): SequenceBuilder = seq(this, p)
@@ -94,6 +116,23 @@ object Parsers {
     def | (p: AlternationBuilder): AlternationBuilder = altSymAlt(this, p)
     def | (p: SequenceBuilder): AlternationBuilder = altSymSeq(this, p)
     def | (p: Symbol): AlternationBuilder = altSym(this, p)
+    
+    var opt: Option[Nonterminal] = None
+    def ?(): Nonterminal = opt.getOrElse({ 
+      val p = regular(org.meerkat.tree.Opt(this.symbol), this | epsilon); opt = Option(p); p })
+    
+    
+    var star: Option[Nonterminal] = None
+    def *(): Nonterminal = star.getOrElse({
+      val p = regular(org.meerkat.tree.Star(this.symbol), star.get ~ this | epsilon); star = Option(p); p })
+    
+    var plus: Option[Nonterminal] = None
+    def +(): Nonterminal = plus.getOrElse({
+      val p = regular(org.meerkat.tree.Plus(this.symbol), plus.get ~ this | this); plus = Option(p); p })
+    
+    def \(): Nonterminal = ???
+    def !>>(): Nonterminal = ???
+    def !<<(): Nonterminal = ???
   }
   
   def ntAlt(name: String, p: => AlternationBuilder): Nonterminal = nonterminalAlt(name, p)
