@@ -1,48 +1,33 @@
-//package org.meerkat.tmp
-//
-//import org.meerkat.sppf.NonPackedNode
-//import org.meerkat.sppf.SPPFLookup
-//import org.meerkat.util.Input
-//import java.util.HashMap
-//import org.meerkat.sppf.DefaultSPPFLookup
-//import org.meerkat.util.Visualization
-//
-//object OperatorParsers {
-//  
-//  import AbstractOperatorParsers._
-//  import Parsers._
-//  
-//  object OperatorImplicits {
-//  
-//    implicit object obj1 extends CanBuildSequence[NonPackedNode, NonPackedNode] {
-//      implicit val obj = Parsers.obj1
-//      implicit val m1 = Parsers.obj3
-//      implicit val m2 = Parsers.obj3
-//      
-//      type OperatorSequence = OperatorParsers.OperatorSequence
-//      
-//      def sequence(p: (Prec, Prec) => obj.Sequence): OperatorSequence 
-//        = new OperatorSequence { def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2) }
-//      
-//      def infix(p: (Prec, Prec) => obj.Sequence): OperatorSequence 
-//        = new OperatorSequence {
-//            def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
-//            override def infix = true
-//          }
-//      
-//      def prefix(p: (Prec, Prec) => obj.Sequence): OperatorSequence 
-//        = new OperatorSequence {
-//    	      def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
-//    			  override def prefix = true
-//          }
-//      
-//      def postfix(p: (Prec, Prec) => obj.Sequence): OperatorSequence 
-//        = new OperatorSequence {
-//            def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
-//            override def postfix = true
-//          }
-//      
-//      
+package org.meerkat.tmp
+
+import org.meerkat.sppf.NonPackedNode
+import org.meerkat.sppf.SPPFLookup
+import org.meerkat.util.Input
+import java.util.HashMap
+import org.meerkat.sppf.DefaultSPPFLookup
+import org.meerkat.util.Visualization
+
+object OperatorParsers {
+  
+  import AbstractOperatorParsers._
+  import Parsers._
+  
+  object OperatorImplicits {
+  
+    implicit object obj1 extends CanBuildSequence[NonPackedNode, NonPackedNode] {
+      implicit val obj = Parsers.obj1
+      implicit val m1 = Parsers.obj3
+      implicit val m2 = Parsers.obj3
+      
+      type OperatorSequence = OperatorParsers.OperatorSequence
+      
+      def sequence(p: AbstractOperatorSequence): OperatorSequence 
+        = new OperatorSequence { 
+            def apply(prec1: Prec, prec2: Prec) = p(prec1, prec2)
+            def infix = p.infix; def prefix = p.prefix; def postfix = p.postfix
+            def assoc = p.assoc
+          }
+      
 //      def assoc(p: OperatorSequence, a: Assoc.Assoc): OperatorSequence 
 //        = if (p.infix) 
 //            new OperatorSequence {
@@ -62,27 +47,27 @@
 //            override def assoc: Assoc.Assoc = Assoc.NON_ASSOC
 //          }
 //      
-//      type OperatorSequenceBuilder = OperatorParsers.OperatorSequenceBuilder
-//      def builderSeq(f: Head => OperatorSequence): OperatorSequenceBuilder
-//        = new OperatorSequenceBuilder { def apply(head: Head) = f(head) }
-//    }
-//    
-//    implicit object obj2 extends CanBuildAlternation[NonPackedNode, NonPackedNode] {
-//      implicit val obj1 = Parsers.obj2
-//      implicit val obj2 = Parsers.obj2
-//      implicit val m1 = Parsers.obj3
-//      implicit val m2 = Parsers.obj3
-//      
-//      type OperatorAlternation = OperatorParsers.OperatorAlternation     
-//      def alternation(p: Prec => AbstractCPSParsers.AbstractParser[NonPackedNode]): OperatorAlternation 
-//        = new OperatorAlternation { def apply(prec: Prec) = p(prec) }
-//      
-//      type OperatorAlternationBuilder = OperatorParsers.OperatorAlternationBuilder
-//      def builderAlt(f: (Head, Group) => (Group => OperatorAlternation, Group, Option[Group])): OperatorAlternationBuilder
-//        = new OperatorAlternationBuilder { def apply(head: Head, group: Group) = f(head, group) }
-//    }
-//  
-//  }
+      type OperatorSequenceBuilder = OperatorParsers.OperatorSequenceBuilder
+      def builderSeq(f: Head => OperatorSequence): OperatorSequenceBuilder
+        = new OperatorSequenceBuilder { def apply(head: Head) = f(head) }
+    }
+    
+    implicit object obj2 extends CanBuildAlternation[NonPackedNode, NonPackedNode] {
+      implicit val obj1 = Parsers.obj2
+      implicit val obj2 = Parsers.obj2
+      implicit val m1 = Parsers.obj3
+      implicit val m2 = Parsers.obj3
+      
+      type OperatorAlternation = OperatorParsers.OperatorAlternation     
+      def alternation(f: Prec => obj2.AlternationBuilder): OperatorAlternation 
+        = new OperatorAlternation { def apply(prec: Prec) = f(prec) }
+      
+      type OperatorAlternationBuilder = OperatorParsers.OperatorAlternationBuilder
+      def builderAlt(f: (Head, Group) => (Group => OperatorAlternation, Group, Option[Group])): OperatorAlternationBuilder
+        = new OperatorAlternationBuilder { def apply(head: Head, group: Group) = f(head, group) }
+    }
+  
+  }
 //  
 //  trait OperatorSequenceBuilder extends SequenceBuilder[OperatorSequence] { import OperatorImplicits._; 
 //    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt; import AbstractOperatorParser.greater
@@ -112,19 +97,21 @@
 //    
 //  }
 //  
-//  trait OperatorSequence extends ((Prec, Prec) => Parsers.Sequence) {
-//    def infix = false
-//    def prefix = false
-//    def postfix = false
-//    
-//    def assoc = Assoc.UNDEFINED
-//  }
-//  
-//  trait OperatorAlternation extends (Prec => Parsers.Alternation) { 
-//    def alternation = true
-//    def nonterminal = false
-//  }
-//  
+  trait OperatorSequence extends ((Prec, Prec) => Parsers.SequenceBuilder) {
+    def infix: Boolean
+    def prefix: Boolean
+    def postfix: Boolean
+    def assoc: Assoc.Assoc
+  }
+  
+  trait OperatorAlternation extends (Prec => Parsers.AlternationBuilder)
+  
+  trait OperatorNonterminal extends (Prec => Parsers.Nonterminal)
+  
+  trait OperatorSequenceBuilder extends (Head => OperatorSequence)
+  
+  trait OperatorAlternationBuilder extends ((Head, Group) => (Group => OperatorAlternation, Group, Option[Group]))
+  
 //  trait OperatorNonterminal extends (Prec => Parsers.Nonterminal) { import OperatorImplicits._
 //    import AbstractOperatorParser.seq; import AbstractOperatorParser.alt
 //    
@@ -224,5 +211,5 @@
 //                         println("Done!")
 //    }
 //  }
-//  
-//}
+  
+}
