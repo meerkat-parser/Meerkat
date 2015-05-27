@@ -71,6 +71,15 @@ object AbstractOperatorParsers {
     type OperatorAlternationBuilder <: ((Head, Group) => (Group => OperatorAlternation, Group, Option[Group]))
     def builderAlt(f: ((Head, Group) => (Group => OperatorAlternation, Group, Option[Group]))): OperatorAlternationBuilder
   }
+   
+  trait CanBuildNonterminal[A] {
+    implicit val obj1: AbstractCPSParsers.CanBuildNonterminal[A]
+    implicit val obj2: AbstractCPSParsers.CanBuildAlternation[A]
+    
+    type OperatorNonterminal <: Prec => obj1.Nonterminal
+    
+    def nonterminal(name: String, f: Prec => obj1.Nonterminal): OperatorNonterminal
+  }
   
   object AbstractOperatorParser {
     
@@ -342,6 +351,27 @@ object AbstractOperatorParsers {
             ({ group2 => alternation(f(opened.close.asInstanceOf[Subgroup].update(group2))) }, group1.update(max), closed) 
           }
       }
+    }
+    
+    def nonterminalSym[A: Memoizable](name: String, p: AbstractOperatorSymbol[A])(implicit builder: CanBuildNonterminal[A]): builder.OperatorNonterminal = {
+      import builder._
+      lazy val q: OperatorNonterminal = nonterminal(name, prec => AbstractCPSParsers.nonterminalSym (s"$name(${prec._1},${prec._2})", p(prec)) )
+      q
+    }
+  
+    def nonterminalSeq[A: Memoizable](name: String, p: => AbstractOperatorSequenceBuilder[A])(implicit builder: CanBuildNonterminal[A]): builder.OperatorNonterminal = {
+      import builder._
+      lazy val q: OperatorNonterminal = nonterminal(name, prec => AbstractCPSParsers.nonterminalSeq (s"$name(${prec._1},${prec._2})", p(q)(prec,prec)) )
+      q
+    }
+  
+    def nonterminalAlt[A: Memoizable](name: String, p: => AbstractOperatorAlternationBuilder[A])(implicit builder: CanBuildNonterminal[A]): builder.OperatorNonterminal = {
+      import builder._
+      lazy val q: OperatorNonterminal = nonterminal(name, {
+        lazy val parser = { val (f,opened,closed) = p(q,Group()); f(opened.close) }
+        prec => AbstractCPSParsers.nonterminalAlt (s"$name(${prec._1},${prec._2})", parser(prec)) 
+      })
+      q
     }
     
     def filter[A](p: AbstractOperatorSequence[A], l: Int, group: Group): Prec => AbstractSequenceBuilder[A] = {

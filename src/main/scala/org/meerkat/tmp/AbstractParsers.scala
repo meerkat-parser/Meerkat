@@ -169,7 +169,7 @@ object AbstractCPSParsers extends AbstractParsers {
     q
   }
   
-  def nonterminalSeq[A: Memoizable](name: String, p: AbstractSequenceBuilder[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
+  def nonterminalSeq[A: Memoizable](name: String, p: => AbstractSequenceBuilder[A])(implicit builder1: CanBuildNonterminal[A], builder2: CanBuildAlternation[A], obj: ClassTag[Result[A]]): builder1.Nonterminal = {
     import builder1._
     lazy val q: Nonterminal = builder1 nonterminal (name, memoize(alt(q, p)))
     q
