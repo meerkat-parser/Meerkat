@@ -53,15 +53,6 @@ object SPPFVisitor {
     
   }
   
-  
-  def concat(node: NonPackedNode)(implicit input: Input): String = {
-    def t(s: String): String = s
-    def nt2(r: RuleType, children: (Any, Any)): String = flatten(children) mkString(",")
-    def nt1(r: RuleType, t: Any): String = t.toString
-    def amb(children: Set[Any]): String = throw new RuntimeException()
-    visit(node, amb, t, nt2, nt1).asInstanceOf[String]
-  }  
-
   def buildTree(node: NonPackedNode)(implicit input: Input): Tree = {
     def amb(s: Set[Any]): Tree = Amb(s.asInstanceOf[Set[Tree]]) 
     def t(s: String): Tree = Terminal(s)
@@ -75,17 +66,5 @@ object SPPFVisitor {
     case (x, y) => List(x, y)
     case x      => List(x)
   } 
-  
-  
-  def flatten(t: Tree): Tree = t match {
-      
-      case Appl(r@Rule(Star(s), _), List(epsilon)) => Appl(r, List())
-      
-      case Appl(r@Rule(Star(s), _), Appl(Rule(Star(c), _), first) :: rest) => if (s == c) Appl(r, first ++ rest) else t
-      
-      case Appl(r@Rule(Plus(s), _), Appl(Rule(Plus(c), _), first) :: rest) => if (s == c) Appl(r, first ++ rest) else t
-      
-      case a @ _          => a
-  }
   
 }

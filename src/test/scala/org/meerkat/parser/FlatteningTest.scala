@@ -36,7 +36,6 @@ object FlatteningTest {
 //    r.fold(a => println("Parse Error"), b => visualize(b.sppf))
     val x = SPPFVisitor.buildTree(r.right.get.sppf)(input)
     visualize(x)
-    println(SPPFVisitor.concat(r.right.get.sppf)(input))
 //    println(SPPFVisitor.concat(r.right.get.sppf)(input))    
   }
 
