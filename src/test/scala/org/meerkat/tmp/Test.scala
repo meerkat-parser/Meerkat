@@ -16,7 +16,7 @@ object Test {
 //  }
   
   val A: Nonterminal = ntSym("A", "a")
-  val B: Nonterminal = ntSeq("B", A.* ~ "b")
+  val B: Nonterminal = ntSeq("B", A.+ ~ "b")
   
   def main(args: Array[String]): Unit = {
     parse("aaab", B)

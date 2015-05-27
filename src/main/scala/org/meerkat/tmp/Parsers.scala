@@ -120,8 +120,7 @@ object Parsers {
     var opt: Option[Nonterminal] = None
     def ?(): Nonterminal = opt.getOrElse({ 
       val p = regular(org.meerkat.tree.Opt(this.symbol), this | epsilon); opt = Option(p); p })
-    
-    
+      
     var star: Option[Nonterminal] = None
     def *(): Nonterminal = star.getOrElse({
       val p = regular(org.meerkat.tree.Star(this.symbol), star.get ~ this | epsilon); star = Option(p); p })
