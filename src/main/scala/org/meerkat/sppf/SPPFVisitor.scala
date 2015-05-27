@@ -9,8 +9,9 @@ import org.meerkat.util.Input
 
 object SPPFVisitor {
    
-  case class StarList(s: Symbol, l: List[Any])
-  case class PlusList(s: Symbol, l: List[Any])
+  trait EBNFList
+  case class StarList(s: Symbol, l: List[Any]) extends EBNFList
+  case class PlusList(s: Symbol, l: List[Any]) extends EBNFList
   
   def visit(node: NonPackedNode, 
             amb: Set[Any] => Any,
@@ -22,7 +23,7 @@ object SPPFVisitor {
    
    def flatten2(p: PackedNode, l: Any, r: Any) = p.ruleType.head match {
      case Star(s) => l match {
-       case StarList(s, xs) => StarList(s, xs :+ r) 
+       case StarList(s, xs) => StarList(s, xs :+ r)
        case x: Any  => StarList(p.ruleType.head, List(l, r))
      }
      case Plus(s) => l match {
@@ -32,10 +33,12 @@ object SPPFVisitor {
      case _  => nt2(p.ruleType, (l, r))
    }
       
-   def flatten1(p: PackedNode, c: Any) = p.ruleType.head match {
-     case Star(s) => StarList(s, List(c))
-     case Plus(s) => PlusList(s, List(c))
-     case _ => nt1(p.ruleType, c)
+   def flatten1(p: PackedNode, c: Any) = {
+     p.ruleType.head match {
+       case Star(s) => c match { case Nil => StarList(s, List()); case _ =>  StarList(s, List(c)) } 
+       case Plus(s) => c match { case Nil => PlusList(s, List()); case _ => PlusList(s, List(c)) }
+       case _ => nt1(p.ruleType, c)
+     }
    }
    
    def nonterminal(p: PackedNode): Any = {
@@ -51,7 +54,8 @@ object SPPFVisitor {
    }
    
    node match {
-     case t: TerminalNode     => tn(input.substring(t.leftExtent, t.rightExtent))
+     case t: TerminalNode     => if (t.leftExtent == t.rightExtent) Nil 
+                                 else tn(input.substring(t.leftExtent, t.rightExtent))
     
      case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first)
                                    

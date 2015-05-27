@@ -7,13 +7,6 @@ import org.meerkat.sppf.NonterminalNode
 trait Tree {
   import Tree._  
   val id = inc
-
-  override def equals(o: Any) = o match {
-    case t: Tree => id == t.id
-    case _       => false
-  }
-  
-  override def hashCode = id
 }
 
 object Tree {
