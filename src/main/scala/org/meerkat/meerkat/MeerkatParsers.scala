@@ -204,7 +204,8 @@ trait MeerkatParser extends Parser with Slot {
   var plus: Option[MeerkatParser] = None
   def +(implicit l: Layout): MeerkatParser = {
     plus.getOrElse({
-      val p: MeerkatParser = this.name.value + "+" ::= plus.get ~ this | this
+//      val p: MeerkatParser = this.name.value + "+" ::= plus.get ~ this | this
+      val p = regular(org.meerkat.tree.Plus(this.symbol), plus.get ~~ this | this)
       plus = Option(p)
       p
     })
@@ -216,7 +217,8 @@ trait MeerkatParser extends Parser with Slot {
   var plus_no_layout: Option[MeerkatParser] = None
   def ++(): MeerkatParser = {
     plus_no_layout.getOrElse({
-      val p: MeerkatParser = this.name.value + "++" ::= plus_no_layout.get ~~ this | this
+//      val p: MeerkatParser = this.name.value + "++" ::= plus_no_layout.get ~~ this | this
+      val p = regular(org.meerkat.tree.Plus(this.symbol), plus_no_layout.get ~~ this | this)
       plus_no_layout = Option(p)
       p
     })
