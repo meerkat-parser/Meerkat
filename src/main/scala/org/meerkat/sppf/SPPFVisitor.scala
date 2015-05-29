@@ -5,21 +5,34 @@ import org.meerkat.tree.Tree._
 import org.meerkat.tree._
 import scala.collection.breakOut
 import org.meerkat.util.Input
+import scala.collection.mutable.HashMap
 
 
-object SPPFVisitor {
-   
-  trait EBNFList
-  case class StarList(s: Symbol, l: List[Any]) extends EBNFList
-  case class PlusList(s: Symbol, l: List[Any]) extends EBNFList
+
+trait SPPFVisitor {
+  def visit(node: NonPackedNode)(implicit input: Input): Any
+}
+
+trait Memoization extends SPPFVisitor {
   
-  def visit(node: NonPackedNode, 
-            amb: Set[Any] => Any,
-            tn : String => Any,
-            nt2: (RuleType, (Any, Any)) => Any, 
-            nt1: (RuleType, Any) => Any)(implicit input: Input): Any = {
-    
-   def ambiguity(n: NonPackedNode): Any =  amb((for (p <- n.children) yield nonterminal(p)) (breakOut))
+  val cache = new HashMap[NonPackedNode, Any]
+  
+  override abstract def visit(node: NonPackedNode)(implicit input: Input): Any =
+    cache.getOrElseUpdate(node, super.visit(node))
+}
+
+trait EBNFList
+case class StarList(s: Symbol, l: List[Any]) extends EBNFList
+case class PlusList(s: Symbol, l: List[Any]) extends EBNFList
+
+
+class SemanticActionExecutor(amb: Set[Any] => Any,
+                             tn : String => Any,
+                             nt2: (RuleType, (Any, Any)) => Any, 
+                             nt1: (RuleType, Any) => Any) extends SPPFVisitor {
+ 
+   def ambiguity(n: NonPackedNode)(implicit input: Input): Any =  
+     amb((for (p <- n.children) yield nonterminal(p)) (breakOut))
    
    def flatten2(p: PackedNode, l: Any, r: Any) = p.ruleType.head match {
      case Star(s) => l match {
@@ -41,48 +54,42 @@ object SPPFVisitor {
      }
    }
    
-   def nonterminal(p: PackedNode): Any = {
+   def nonterminal(p: PackedNode)(implicit input: Input): Any = {
      if (p.hasRightChild) {
-       val left  = visit(p.leftChild, amb, tn, nt2, nt1)
-       val right = visit(p.rightChild, amb, tn, nt2, nt1)
+       val left  = visit(p.leftChild)
+       val right = visit(p.rightChild)
        flatten2(p, left, right)
      }
      else {
-       val child = visit(p.leftChild, amb, tn, nt2, nt1)
+       val child = visit(p.leftChild)
        flatten1(p, child)
      }
    }
-   
-   node match {
+  
+  def visit(node: NonPackedNode)(implicit input: Input): Any = node match {
      case t: TerminalNode     => if (t.leftExtent == t.rightExtent) Nil 
                                  else tn(input.substring(t.leftExtent, t.rightExtent))
     
      case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild, amb, tn, nt2, nt1), visit(i.first.rightChild, amb, tn, nt2, nt1)))  
-                                 
-     case p: PackedNode       => throw new RuntimeException("Should not end up here!")
-   }
-    
-  }
+     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild), visit(i.first.rightChild)))  
+  } 
   
-  def buildTree(node: NonPackedNode)(implicit input: Input): Tree = {
-    def amb(s: Set[Any]): Tree = Amb(s.asInstanceOf[Set[Tree]]) 
-    def t(s: String): Tree = Terminal(s)
-    def nt2(r: RuleType, t: (Any, Any)) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
-    def nt1(r: RuleType, t: Any) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
-    visit(node, amb, t, nt2, nt1).asInstanceOf[Tree]
-  }
+} 
+
+object SemanticAction {
+  def amb(s: Set[Any]) = throw new RuntimeException 
+  def t(s: String) = s
+  def nt2(r: RuleType, t: (Any, Any)) = r.action(t)
+  def nt1(r: RuleType, t: Any) = r.action(t)
   
-  def execute(node: NonPackedNode)(implicit input: Input): Any = {
-    def amb(s: Set[Any]): Any = throw new RuntimeException("Ambiguous!")
-    def t(s: String) = s
-    def nt2(r: RuleType, t: (Any, Any)) = r.action(t)
-    def nt1(r: RuleType, t: Any) = r.action(t)
-    visit(node, amb, t, nt2, nt1)
-  }
-  
-  def convert(t: Any): Tree = t match {
+  def execute(node: NonPackedNode)(implicit input: Input) =
+    new SemanticActionExecutor(amb, t, nt2, nt1).visit(node)
+}
+
+object TreeBuilder {
+
+   def convert(t: Any): Tree = t match {
     case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
     case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
     case _               => t.asInstanceOf[Tree]
@@ -94,4 +101,27 @@ object SPPFVisitor {
     case x      => List(convert(x))
   } 
   
+  def amb(s: Set[Any]): Tree = Amb(s.asInstanceOf[Set[Tree]]) 
+  def t(s: String): Tree = Terminal(s)
+  def nt2(r: RuleType, t: (Any, Any)) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
+  def nt1(r: RuleType, t: Any) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
+
+  
+  def newBuilder: SPPFVisitor = {
+    new SemanticActionExecutor(amb, t, nt2, nt1)
+  }
+  
+  def newMemoBuilder: SPPFVisitor = {
+    new SemanticActionExecutor(amb, t, nt2, nt1) with Memoization
+  }
+  
+  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
+    if (memoized)
+      newMemoBuilder.visit(node).asInstanceOf[Tree]
+    else 
+      newBuilder.visit(node).asInstanceOf[Tree]
+  }
+  
 }
+  
+  
