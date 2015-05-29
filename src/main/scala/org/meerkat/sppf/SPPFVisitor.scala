@@ -74,6 +74,14 @@ object SPPFVisitor {
     visit(node, amb, t, nt2, nt1).asInstanceOf[Tree]
   }
   
+  def execute(node: NonPackedNode)(implicit input: Input): Any = {
+    def amb(s: Set[Any]): Any = throw new RuntimeException("Ambiguous!")
+    def t(s: String) = s
+    def nt2(r: RuleType, t: (Any, Any)) = r.action(t)
+    def nt1(r: RuleType, t: Any) = r.action(t)
+    visit(node, amb, t, nt2, nt1)
+  }
+  
   def convert(t: Any): Tree = t match {
     case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
     case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
