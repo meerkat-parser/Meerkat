@@ -35,7 +35,6 @@ object Parsers {
       = new Sequence { 
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
-          def update(f: Any => Any) = p update f
         }
       
       def index(a: T): Int = a.rightExtent
@@ -104,11 +103,7 @@ object Parsers {
     def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Group = ???
   }
   
-  trait Sequence extends AbstractParser[NonPackedNode] with Slot { 
-    def size: Int
-    def symbol: org.meerkat.tree.Sequence
-    def update(f: Any => Any): Unit
-  }
+  trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
   
@@ -120,9 +115,7 @@ object Parsers {
     def input = obj5[String].nonterminal(this.name, this) 
   }
   
-  trait Terminal extends Symbol {
-    def symbol: org.meerkat.tree.Terminal
-  }
+  trait Terminal extends Symbol { def symbol: org.meerkat.tree.Terminal }
   
   val epsilon = new Terminal { 
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -130,9 +123,9 @@ object Parsers {
     def name = "epsilon"
   }
   
-  trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._
-    
+  trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._ 
     type Value
+    def action: Option[Any => Any] = None
     
     def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val obj = obj1(tuple); seq(this, p) }
     
@@ -140,34 +133,63 @@ object Parsers {
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
     def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSeqSym(this, p)
     
-    def ^^[V](f: Value => V) = new SequenceBuilder { 
-      def apply(slot: Slot) = { 
-        val p = SequenceBuilder.this(slot)
-        p update { x => f(x.asInstanceOf[SequenceBuilder.this.Value]) }; p 
-      }
+    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSeq(this, q)
+    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSeqSym(this, q)
+    
+    def ^^[V](f: Value => V) = new SequenceBuilderWithAction {
       type Value = V
+      def apply(slot: Slot) = SequenceBuilder.this(slot)
+      def action = Option({ x => f(x.asInstanceOf[SequenceBuilder.this.Value]) })
     }
+    
+    def ^^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SequenceBuilderWithAction {
+      type Value = V
+      def apply(slot: Slot) = SequenceBuilder.this(slot)
+      def action = Option({ x => f(x.asInstanceOf[String]) })
+    }
+    
   }
   
   trait AlternationBuilder extends (Head => Alternation) { import AbstractParser._
-    
     type Value
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altAlt(this, p)
     def | (p: SequenceBuilder)(implicit isSubtype: this.Value <:< p.Value) = altAltSeq(this, p)
     def | (p: Symbol)(implicit isSubtype: this.Value <:< p.Value) = altAltSym(this, p)
+    
+    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altAltSeq(this, q)
+    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altAltSym(this, q)
   }
   
   trait Symbol extends AbstractParser[NonPackedNode] { import AbstractParser._
     
     type Value  
-    def name: String 
+    def name: String
+    def action: Option[Any => Any] = None
     
     def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val obj = obj1(tuple); seq(this, p) }
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
     def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSym(this, p)
+    
+    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSymSeq(this, q)
+    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSym(this, q)
+    
+    
+    def ^^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[String]) })
+    }
+    
+    def ^^[V](f: Value => V) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[Symbol.this.Value]) })
+    }
     
     def epsilon[A] = new Terminal { 
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -194,7 +216,26 @@ object Parsers {
     def !>>(): Nonterminal = ???
     def !<<(): Nonterminal = ???
   }
-   
+  
+  trait SequenceBuilderWithAction extends (Slot => Sequence) { import AbstractParser._
+    type Value
+    def action: Option[Any => Any]
+    
+    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSeqAlt(this, p)
+    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
+    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSeqSym(this, p)
+  }
+  
+  trait SymbolWithAction extends AbstractParser[NonPackedNode] { import AbstractParser._
+    type Value  
+    def name: String
+    def action: Option[Any => Any]
+  
+    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
+    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
+    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSym(this, p)
+  }
+  
   def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
   def ntSym(name: String, p: Symbol) = nonterminalSym(name, p)
