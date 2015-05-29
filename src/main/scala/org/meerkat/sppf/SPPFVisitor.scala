@@ -9,14 +9,14 @@ import scala.collection.mutable.HashMap
 
 trait SPPFVisitor {
   type T
-  def visit(node: NonPackedNode)(implicit input: Input): T
+  def visit(node: SPPFNode)(implicit input: Input): T
 }
 
 trait Memoization extends SPPFVisitor {
   
-  val cache = new HashMap[NonPackedNode, T]
+  val cache = new HashMap[SPPFNode, T]
   
-  override abstract def visit(node: NonPackedNode)(implicit input: Input): T =
+  override abstract def visit(node: SPPFNode)(implicit input: Input): T =
     cache.getOrElseUpdate(node, super.visit(node))
 }
 
@@ -67,16 +67,64 @@ class SemanticActionExecutor(amb: Set[Any] => Any,
      }
    }
   
-  def visit(node: NonPackedNode)(implicit input: Input): Any = node match {
+  def visit(node: SPPFNode)(implicit input: Input): Any = node match {
      case t: TerminalNode     => if (t.leftExtent == t.rightExtent) Nil 
                                  else tn(input.substring(t.leftExtent, t.rightExtent))
     
      case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild), visit(i.first.rightChild)))  
+     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild), visit(i.first.rightChild)))
+     
+     case p: PackedNode       => throw new RuntimeException("Should not traverse a packed node!")
   } 
+}
+
+class SPPFToDot extends SPPFVisitor {
+  type T = Unit
   
-} 
+  def get: String = sb.toString
+  
+  import org.meerkat.util.visualization._
+  import org.meerkat.util.visualization.Shape._
+  import org.meerkat.util.visualization.Style._
+  
+  val sb = new StringBuilder
+  
+  def visit(node: SPPFNode)(implicit input: Input): T = 
+    node match {
+      case n@NonterminalNode(slot, leftExtent, rightExtent) => 
+        sb ++= getShape(n.toString(), s"($slot, $leftExtent, $rightExtent)", Rectangle, Rounded)
+        for(t <- n.children) visit(t)
+        for(t <- n.children) addEdge(n.toString, t.toString, sb)
+                    
+      case n@IntermediateNode(slot, leftExtent, rightExtent) =>
+        sb ++= getShape(n.toString(), s"$slot, $leftExtent, $rightExtent", Rectangle)
+        for(t <- n.children) visit(t)
+        for(t <- n.children) addEdge(n.toString, t.toString, sb)
+                    
+      case n@TerminalNode(char, leftExtent, rightExtent) =>
+        sb ++= getShape(n.toString, char.toString, Rectangle, Rounded)
+        sb ++= s""""${escape(n.toString)}"[shape=box, style=rounded, height=0.1, width=0.1, color=black, fontcolor=black, label="(${escape(char)}, $leftExtent, $rightExtent)", fontsize=10];\n"""
+        
+      case n@PackedNode(slot, parent) =>
+//      sb ++= getShape(n.toString, s"($slot, ${n.pivot})", Diamond)
+        sb ++= getShape(n.toString, "", Diamond)
+        for(t <- n.children) {
+          visit(t)
+          addEdge(n.toString, t, sb)
+        }
+    }
+}
+
+object SemanticAction {
+  def amb(s: Set[Any]) = throw new RuntimeException 
+  def t(s: String) = s
+  def nt2(r: RuleType, t: (Any, Any)) = r.action(t)
+  def nt1(r: RuleType, t: Any) = r.action(t)
+  
+  def execute(node: NonPackedNode)(implicit input: Input) =
+    new SemanticActionExecutor(amb, t, nt2, nt1).visit(node)
+}
 
 object TreeBuilder {
 

@@ -30,7 +30,7 @@ trait RuleType {
   def head: Nonterminal
   def body: Symbol
   
-  def action: Any => Any = ???
+  var action: Any => Any = { x => x } 
   
   override def toString = head + " ::= " + body
 } 
