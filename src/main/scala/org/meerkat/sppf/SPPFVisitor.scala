@@ -7,17 +7,16 @@ import scala.collection.breakOut
 import org.meerkat.util.Input
 import scala.collection.mutable.HashMap
 
-
-
 trait SPPFVisitor {
-  def visit(node: NonPackedNode)(implicit input: Input): Any
+  type T
+  def visit(node: NonPackedNode)(implicit input: Input): T
 }
 
 trait Memoization extends SPPFVisitor {
   
-  val cache = new HashMap[NonPackedNode, Any]
+  val cache = new HashMap[NonPackedNode, T]
   
-  override abstract def visit(node: NonPackedNode)(implicit input: Input): Any =
+  override abstract def visit(node: NonPackedNode)(implicit input: Input): T =
     cache.getOrElseUpdate(node, super.visit(node))
 }
 
@@ -31,6 +30,8 @@ class SemanticActionExecutor(amb: Set[Any] => Any,
                              nt2: (RuleType, (Any, Any)) => Any, 
                              nt1: (RuleType, Any) => Any) extends SPPFVisitor {
  
+   type T = Any
+  
    def ambiguity(n: NonPackedNode)(implicit input: Input): Any =  
      amb((for (p <- n.children) yield nonterminal(p)) (breakOut))
    
@@ -105,12 +106,11 @@ object TreeBuilder {
     new SemanticActionExecutor(amb, t, nt2, nt1) with Memoization
   }
   
-  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
+  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree =
     if (memoized)
       newMemoBuilder.visit(node).asInstanceOf[Tree]
     else 
       newBuilder.visit(node).asInstanceOf[Tree]
-  }
   
 }
   

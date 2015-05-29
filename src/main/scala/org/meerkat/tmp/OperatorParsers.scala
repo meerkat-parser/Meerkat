@@ -5,7 +5,6 @@ import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import java.util.HashMap
 import org.meerkat.sppf.DefaultSPPFLookup
-import org.meerkat.util.Visualization
 
 object OperatorParsers {
   
@@ -220,7 +219,7 @@ object OperatorParsers {
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...") 
-                         Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
+//                         Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
                          println("Done!")
     }
   }

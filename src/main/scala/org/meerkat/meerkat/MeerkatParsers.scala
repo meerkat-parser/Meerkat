@@ -17,7 +17,6 @@ import org.meerkat.util.JavaTokens._
 import scala.collection.JavaConversions._
 import Result._
 import Rule._
-import org.meerkat.util.Visualization._
 import MeerkatDDParser._
 import Configuration._
 import com.sun.media.sound.SoftReverb.AllPass
@@ -529,7 +528,7 @@ trait MeerkatParsers {
         				println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                         if(testOpt == NO_TESTING) {
                           println("Visualizing...") 
-                          visualize(node)
+//                          visualize(node)
                           println("Done!")
                         }
     }
