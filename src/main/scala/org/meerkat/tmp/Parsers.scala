@@ -5,7 +5,7 @@ import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import scala.reflect.ClassTag
 import org.meerkat.sppf.DefaultSPPFLookup
-import org.meerkat.util.Visualization
+import org.meerkat.util.visualization._
 import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
 import org.meerkat.sppf.SPPFVisitor
@@ -231,7 +231,6 @@ object Parsers {
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...")
-                         import Visualization._
                          val x = SemanticAction.execute(node)(input)
                          println(s"WOW: $x")
                          // Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
