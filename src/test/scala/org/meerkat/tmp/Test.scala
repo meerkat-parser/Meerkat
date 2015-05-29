@@ -23,16 +23,16 @@ object Test {
 //    parse("aaab", B)
 //  }
   
-  val A: SemanticNonterminal[String] = ntSym("A","a".input)
-  val B: SemanticNonterminal[String] = ntSym("B","b".input)
+//  val A: SemanticNonterminal[String] = ntSym("A","a".input)
+//  val B: SemanticNonterminal[String] = ntSym("B","b".input)
   
-  val S: SemanticNonterminal[String]  = ntAlt("S", A ~ B ^^ { case (s1,s2) => s"$s2 has been parsed after $s1" } | "b".input)
+//  val S: SemanticNonterminal[String]  = ntAlt("S", A ~ B ^^ { case (s1,s2) => s"$s2 has been parsed after $s1" } | "b".input)
   
 //  val E: SemanticNonterminal[(String,String)]  = ntAlt("E", A ~ B | "a".input ~ "b".input)
   
-  def main(args: Array[String]): Unit = {
-    parse("ab", S)
-  }
+//  def main(args: Array[String]): Unit = {
+//    parse("ab", S)
+//  }
   
 //  trait LIST[T] {
 //    def add(elem: T): LIST[T]

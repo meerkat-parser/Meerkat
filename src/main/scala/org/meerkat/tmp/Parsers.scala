@@ -9,6 +9,7 @@ import org.meerkat.util.Visualization
 import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
 import org.meerkat.sppf.SPPFVisitor
+import org.meerkat.sppf.SemanticAction
 
 object Parsers {
   
@@ -23,30 +24,35 @@ object Parsers {
   implicit def f3[A: ![NoValue]#f,B <: NoValue] = new &[A,NoValue] { type R = A }
   implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new &[A,B] { type R = (A,B) }
   
-  implicit def obj1[ValA,ValB](implicit values: &[ValA,ValB]) 
-    = new CanBuildSequence[NonPackedNode,NonPackedNode,ValA,ValB] {
+  implicit def obj1[ValA,ValB](implicit values: ValA & ValB) = new CanBuildSequence[NonPackedNode,NonPackedNode,ValA,ValB] {
     
-      type T = NonPackedNode
-      type Val = values.R
+    implicit val m1 = obj4; implicit val m2 = obj4
+    
+    type T = NonPackedNode; type V = values.R
       
-      type Sequence = Parsers.Sequence
-      def sequence(p: AbstractSequence[NonPackedNode]): Sequence 
-        = new Sequence { 
-            def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-            def symbol = p.symbol
-            def ruleType = p.ruleType
-            def size = p.size
-            def action(f: Any => Any) = p.action(f)
-          }
+    type Sequence = Parsers.Sequence
+    def sequence(p: AbstractSequence[NonPackedNode]): Sequence 
+      = new Sequence { 
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
+          def update(f: Any => Any) = p update f
+        }
       
       def index(a: T): Int = a.rightExtent
       def intermediate(a: T, b: T, p: Slot, sppfLookup: SPPFLookup): T = sppfLookup.getIntermediateNode(p, a, b)
       
-      type SequenceBuilder = Parsers.SequenceBuilder { type Value = Val }
-      def builderSeq(f: Slot => Sequence) = new Parsers.SequenceBuilder { type Value = Val; def apply(slot: Slot) = f(slot) }
+      type SequenceBuilder = Parsers.SequenceBuilder { type Value = V }
+      def builderSeq(f: Slot => Sequence) = new Parsers.SequenceBuilder { type Value = V; def apply(slot: Slot) = f(slot) }
   }
   
-  implicit def obj2[Val] = new CanBuildAlternation[NonPackedNode,Val] {
+  implicit object obj2 extends CanBuildAlternative[NonPackedNode] {
+    implicit val m = obj4
+    def result(e: NonPackedNode, p: Slot, nt: Head, sppfLookup: SPPFLookup): NonPackedNode = sppfLookup.getNonterminalNode(nt, p, e)
+  }
+  
+  implicit def obj3[ValA,ValB] = new CanBuildAlternation[NonPackedNode,NonPackedNode,ValA,ValB] {
+    implicit val m1 = obj4; implicit val m2 = obj4
+    implicit val o1 = obj2; implicit val o2 = obj2
     
     type Alternation = Parsers.Alternation
     def alternation(p: AbstractParser[NonPackedNode]): Alternation
@@ -55,18 +61,18 @@ object Parsers {
           def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Alt]
         }
     
-    def result(e: NonPackedNode, p: Slot, nt: Head, sppfLookup: SPPFLookup): NonPackedNode = sppfLookup.getNonterminalNode(nt, p, e)
-    
-    type AlternationBuilder = Parsers.AlternationBuilder { type Value = Val }
-    def builderAlt(f: Head => Alternation) = new Parsers.AlternationBuilder { type Value = Val; def apply(head: Head) = f(head) }
+    type AlternationBuilder = Parsers.AlternationBuilder { type Value = ValB }
+    def builderAlt(f: Head => Alternation) = new Parsers.AlternationBuilder { type Value = ValB; def apply(head: Head) = f(head) }
   }
   
-  implicit object obj3 extends Memoizable[NonPackedNode] {
+  implicit object obj4 extends Memoizable[NonPackedNode] {
     type U = Int
     def value(t: NonPackedNode): Int = t.rightExtent
   }
   
-  implicit def obj4[Val] = new CanBuildNonterminal[NonPackedNode,Val] {
+  implicit def obj5[Val] = new CanBuildNonterminal[NonPackedNode,Val] {
+    implicit val m = obj4
+    
     type Nonterminal = Parsers.Nonterminal { type Value = Val }
     def nonterminal(nt: String, p: AbstractParser[NonPackedNode]) 
       = new Parsers.Nonterminal {
@@ -78,7 +84,9 @@ object Parsers {
         }
   }
   
-  implicit def obj5[Val] = new CanBuildEBNF[NonPackedNode,Val] {
+  implicit def obj6[Val] = new CanBuildEBNF[NonPackedNode,Val] {
+    implicit val m = obj4
+    
     type T = NonPackedNode
     type Regular = Nonterminal { type Value = List[Val] }
     type Group = Nonterminal { type Value = Val }
@@ -99,7 +107,7 @@ object Parsers {
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { 
     def size: Int
     def symbol: org.meerkat.tree.Sequence
-    def action(f: Any => Any): Unit
+    def update(f: Any => Any): Unit
   }
   
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
@@ -109,18 +117,11 @@ object Parsers {
   
   trait Nonterminal extends Symbol {
     def symbol: org.meerkat.tree.Nonterminal
-    def input = obj4[String].nonterminal(this.name, this) 
+    def input = obj5[String].nonterminal(this.name, this) 
   }
   
   trait Terminal extends Symbol {
     def symbol: org.meerkat.tree.Terminal
-    def input = new Terminal {
-                  def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Terminal.this(input,i,sppfLookup)
-                  def name = Terminal.this.name
-                  def symbol = Terminal.this.symbol
-                  
-                  type Value = String
-                }
   }
   
   val epsilon = new Terminal { 
@@ -142,7 +143,7 @@ object Parsers {
     def ^^[V](f: Value => V) = new SequenceBuilder { 
       def apply(slot: Slot) = { 
         val p = SequenceBuilder.this(slot)
-        p.action { x => f(x.asInstanceOf[SequenceBuilder.this.Value]) }; p 
+        p update { x => f(x.asInstanceOf[SequenceBuilder.this.Value]) }; p 
       }
       type Value = V
     }
@@ -230,7 +231,8 @@ object Parsers {
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...")
-                         val x = SPPFVisitor.execute(node)(input)
+                         import Visualization._
+                         val x = SemanticAction.execute(node)(input)
                          println(s"WOW: $x")
                          // Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
                          println("Done!")
