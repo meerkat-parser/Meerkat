@@ -54,7 +54,8 @@ package object visualization {
   def escape(s: Any): String = s.toString.replaceAll("\"", "\\\\\"").replaceAll("\t", "t").replaceAll("\n", "n").replaceAll("\r", "r")
   
   def toDot(t: Tree, input: Input, memoize: Boolean): String = {
-    val v = if (memoize) new TreeToDot with Memoization else new TreeToDot
+    // TODO: with memoization doesn't work: equals in nodes!!!
+    val v = new TreeToDot
     v.visit(t)(input)
     v.get
   }

@@ -35,19 +35,26 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
    def ambiguity(n: NonPackedNode): Any =  
      amb((for (p <- n.children) yield nonterminal(p, n.leftExtent, n.rightExtent)) (breakOut), n.leftExtent, n.rightExtent)
    
-   def flatten(p: PackedNode, c: Any, leftExtent: Int, rightExtent: Int) = {
+   def flatten(p: PackedNode, v: Any, leftExtent: Int, rightExtent: Int) = 
      p.ruleType.head match {
-       case Star(s) => c match { case Nil => StarList(s, List()); case _ =>  StarList(s, List(c)) } 
-       case Plus(s) => c match { case Nil => PlusList(s, List()); case _ => PlusList(s, List(c)) }
-       case _ => nt(p.ruleType, c, leftExtent, rightExtent)
+       case Star(s) => v match {
+         case ()                   => StarList(s, List())
+         case (StarList(s, xs), r) => StarList(s, xs :+ r)
+         case x: Any               => StarList(p.ruleType.head, List(x))
+       }
+       case Plus(s) => v match {
+         case ()                   => PlusList(s, List())
+         case (PlusList(s, xs), r) => PlusList(s, xs :+ r)
+         case x:  Any              => PlusList(p.ruleType.head, List(x))
+       }
+       case _  => nt(p.ruleType, v, leftExtent, rightExtent)
      }
-   }
    
    def nonterminal(p: PackedNode, leftExtent: Int, rightExtent: Int): Any = 
       flatten(p, visit(p.leftChild), leftExtent, rightExtent)
   
   def visit(node: SPPFNode): Any = node match {
-     case t: TerminalNode     => if (t.leftExtent == t.rightExtent) Nil 
+     case t: TerminalNode     => if (t.leftExtent == t.rightExtent) () 
                                  else tn(t.leftExtent, t.rightExtent)
     
      case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first, n.leftExtent, n.rightExtent)
@@ -98,11 +105,10 @@ object TreeBuilder {
     case _               => t.asInstanceOf[Tree]
   }
   
-  def flatten(t: Any): Seq[Any] = { println(t); t match {
+  def flatten(t: Any): Seq[Any] = t match {
     case (t: (_, _), y) => flatten(t) :+ convert(y)
     case (x, y) => List(convert(x), convert(y))
     case x      => List(convert(x))
-  } 
   }
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = Amb(s.asInstanceOf[Set[Tree]])
