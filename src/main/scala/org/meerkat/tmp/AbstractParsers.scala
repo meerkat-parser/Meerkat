@@ -16,8 +16,6 @@ trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def smap[U](f: T => U): M[U]
 }
 
-case class ~[+A,+B](_1: A, _2: B)
-
 trait AbstractParsers {
   
   type Result[+T] <: MonadPlus[T, Result]
@@ -88,7 +86,7 @@ trait AbstractParsers {
     def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Group
   }
     
-  object AbstractParser { import org.meerkat.tmp.Negation._
+  object AbstractParser {
     
     def seq[A,B](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B,p1.Value,p2.Value]): builder.SequenceBuilder
       = builder builderSeq { slot => val q1 = p1(slot); sequence(slot,q1,p2,q1.size + 1) }
@@ -221,15 +219,5 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
       def symbol = q.symbol
     }
   }
-  
-  import org.meerkat.tmp.Negation._
-  
-  sealed trait NoValue
-  
-  trait &[A,B] { type R }
-  implicit def f1[A <: NoValue,B <: NoValue] = new &[NoValue,NoValue] { type R = NoValue }
-  implicit def f2[A <: NoValue,B: ![NoValue]#f] = new &[NoValue,B] { type R = B }
-  implicit def f3[A: ![NoValue]#f,B <: NoValue] = new &[A,NoValue] { type R = A }
-  implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new &[A,B] { type R = (A,B) }
   
 }

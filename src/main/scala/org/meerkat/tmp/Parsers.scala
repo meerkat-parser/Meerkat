@@ -12,9 +12,9 @@ import org.meerkat.sppf.SPPFVisitor
 import org.meerkat.sppf.SemanticAction
 import org.meerkat.sppf.TreeBuilder
 
-object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
+object Parsers { import AbstractCPSParsers._
   
-  implicit def obj1[ValA,ValB](implicit vals: ValA & ValB) = new CanBuildSequence[NonPackedNode,NonPackedNode,ValA,ValB] {
+  implicit def obj1[ValA,ValB](implicit vals: ValA|~|ValB) = new CanBuildSequence[NonPackedNode,NonPackedNode,ValA,ValB] {
     implicit val m1 = obj4; implicit val m2 = obj4
     
     type T = NonPackedNode; type V = vals.R
@@ -97,7 +97,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
   trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal }
   
   type Nonterminal = AbstractNonterminal with Action[NoValue]
-  type NonterminalWithAction[T] = AbstractNonterminal with Action[T]
+  type &[A <: Nonterminal,T] = AbstractNonterminal with Action[T]
   
   def epsilon[Val] = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -112,7 +112,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     type Value
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSeqAlt(this, p)
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
@@ -121,7 +121,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSeq(this, q)
     def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSeqSym(this, q)
     
-    def ^^[V](f: this.Value => V) = new SequenceBuilderWithAction {
+    def & [V](f: this.Value => V) = new SequenceBuilderWithAction {
       type Value = V
       def apply(slot: Slot) = SequenceBuilder.this(slot)
       def action = Option({ x => f(x.asInstanceOf[SequenceBuilder.this.Value]) })
@@ -151,7 +151,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     def name: String
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
@@ -160,7 +160,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSymSeq(this, q)
     def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSym(this, q)
     
-    def ^^[V](f: this.Value => V) = new SymbolWithAction {
+    def &[V](f: this.Value => V) = new SymbolWithAction {
       type Value = V
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
       def name = Symbol.this.name; def symbol = Symbol.this.symbol
@@ -180,7 +180,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
 //      
     var star: Option[AbstractNonterminal { type Value = List[Symbol.this.Value] }] = None
     def *() = star.getOrElse({
-      implicit val f4 = new &[List[Symbol.this.Value],Symbol.this.Value] { type R = List[Symbol.this.Value] }
+      implicit val f4 = new |~|[List[Symbol.this.Value],Symbol.this.Value] { type R = List[Symbol.this.Value] }
       val p = regular[NonPackedNode,this.Value](org.meerkat.tree.Star(this.symbol), star.get ~ this | epsilon[List[this.Value]])
       star = Option(p); p })
 //    
@@ -237,22 +237,19 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     Trampoline.run
   }
     
-  object NonterminalBuilder {
+  object Syntax {
     import scala.language.experimental.macros
     import scala.reflect.macros.blackbox.Context
     
-    def syn[T](p: AlternationBuilder { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalAltWithName[T]
-    def syn[T](p: SequenceBuilder { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalSeqWithName[T]
-    def syn[T](p: AbstractSymbol[NonPackedNode] { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalSymWithName[T]
+    def syn[T](p: AlternationBuilder { type Value = T }) = macro makeNonterminalAltWithName[T]
+    def syn[T](p: SequenceBuilder { type Value = T }) = macro makeNonterminalSeqWithName[T]
+    def syn[T](p: AbstractSymbol[NonPackedNode] { type Value = T }) = macro makeNonterminalSymWithName[T]
     
     import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
 
-    def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder]): c.Expr[NonterminalWithAction[T]] 
-      = makeCallWithName (c, "Parsers.ntAlt")
-    def makeNonterminalSeqWithName[T](c: Context)(p: c.Expr[SequenceBuilder]): c.Expr[NonterminalWithAction[T]] 
-      = makeCallWithName (c, "Parsers.ntSeq")
-    def makeNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode]]): c.Expr[NonterminalWithAction[T]] 
-      = makeCallWithName (c, "Parsers.ntSym")
+    def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntAlt")
+    def makeNonterminalSeqWithName[T](c: Context)(p: c.Expr[SequenceBuilder]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSeq")
+    def makeNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode]]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSym")
   }
   
     def parse(sentence: String, parser: AbstractNonterminal): Unit = {

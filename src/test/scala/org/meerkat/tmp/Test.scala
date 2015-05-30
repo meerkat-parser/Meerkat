@@ -3,8 +3,7 @@ package org.meerkat.tmp
 object Test {
   
   import Parsers._
-  import org.meerkat.tmp.Negation._
-  import NonterminalBuilder.syn
+  import Syntax._
 //  
 //  val E: Nonterminal = ^ ( E ~ "*" ~ E 
 //                         | E ~ "+" ~ E 
@@ -25,32 +24,32 @@ object Test {
   
   val toStr: String => String = x => x
   
-  val A = syn { "a".^{ toStr(_) } }
-  val B = syn { "b".^{ toStr(_) } }
+  val A = syn { "a" ^ toStr }
+  val B = syn { "b" ^ toStr }
   
 //  val S: SequenceBuilder { type Value = (String,String) } = A ~ B
 //  S.^^ { case (s1,s2) => s1 + s2 }
   
-  val S = syn { ( A ~ B  ^^ { case (s1,s2) => s"$s2++$s1" } 
-                | "c"    .^ { toStr(_) } ) }
+  val S = syn ( A ~ B  & { case (s1,s2) => s"$s2++$s1" } 
+              | "c"    ^ { toStr } )
   
-  val C = syn { "c".^{ toStr(_) } }
+  val C = syn { "c" ^ toStr }
   
-  val LIST: NonterminalWithAction[String]
+  val LIST: Nonterminal & String
   
-    = syn ( LIST ~ C    ^^ { case (s1,s2) => s"$s1;$s2" } 
+    = syn ( LIST ~ C & { case (s1,s2) => s"$s1;$s2" } 
           | C )
           
   val toInt: String => Int = x => x.toInt
-  val E: NonterminalWithAction[Int] 
-    = syn ( E ~ "+" ~ E ^^ { case (x,y) => x + y }
-          | E ~ "*" ~ E ^^ { case (x,y) => x * y }
-          | Num .^ { toInt(_) } )
+  val E: Nonterminal & Int 
+    = syn ( E ~ "+" ~ E & { case (x,y) => x + y }
+          | E ~ "*" ~ E & { case (x,y) => x * y }
+          | Num         ^ { toInt } )
   
   val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
           
-  val SL: NonterminalWithAction[List[String]] = syn { S.* ^^ { x => x.:+("HoHo!!!") }}
-    
+  val SL: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
+      
   def main(args: Array[String]): Unit = {
     parse("ababab", SL)
     // parse("5*3", E)
