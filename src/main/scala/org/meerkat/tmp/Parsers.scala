@@ -10,6 +10,7 @@ import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
 import org.meerkat.sppf.SPPFVisitor
 import org.meerkat.sppf.SemanticAction
+import org.meerkat.sppf.TreeBuilder
 
 object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
   
@@ -89,11 +90,9 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = sym
           def name = symbol.toString
-          override def toString = name
-          
+          override def toString = name   
           type Value = List[Val]
         }
-
     def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Group = ???
   }
   
@@ -141,7 +140,6 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
       def apply(slot: Slot) = SequenceBuilder.this(slot)
       def action = Option({ x => f(x.asInstanceOf[String]) })
     }
-    
   }
   
   trait AlternationBuilder extends (Head => Alternation) { import AbstractParser._
@@ -233,11 +231,8 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
           = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
             else CPSResult.failure
-              
         def symbol = org.meerkat.tree.Terminal(s)
-        def name = s
-        override def toString = name
-        
+        def name = s; override def toString = name
         type Value = NoValue
       }
   
@@ -264,9 +259,9 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...")
-                         // val x = SemanticAction.execute(node)(input)
-                         // println(s"WOW: $x")
-                         visualize(node, "sppf")
+                         val x = SemanticAction.execute(node)(input)
+                         println(s"WOW: $x")
+                         visualize(TreeBuilder.build(node)(input), "sppf")
                          println("Done!")
     }
   }

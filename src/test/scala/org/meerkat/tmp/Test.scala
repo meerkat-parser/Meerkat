@@ -30,7 +30,9 @@ object Test {
 //  val S: SequenceBuilder { type Value = (String,String) } = A ~ B
 //  S.^^ { case (s1,s2) => s1 + s2 }
   
-  val S: NonterminalWithAction[String] = syn { A ~ B ^^ { case (s1,s2) => s"$s2++$s1" } | "c".^{ toStr(_) } }
+  val S: NonterminalWithAction[String] 
+    = syn ( A ~ B  ^^ { case (s1,s2) => s"$s2++$s1" } 
+          | "c"    .^{ toStr(_) } )
   
   val C = ntSym("C", "c".^{ toStr(_) })
   val LIST: NonterminalWithAction[String] = ntAlt("LIST", LIST ~ C ^^ { case (s1,s2) => s"$s1;$s2" } | C)

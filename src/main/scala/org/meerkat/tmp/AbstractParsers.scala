@@ -155,7 +155,7 @@ trait AbstractParsers {
           val q = p(this)
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
           def symbol = q.symbol
-          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); // ruletype.action = p.action.get
+          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action
           def ruleType = ruletype 
           override def toString = s"p${this.hashCode}"
         }
@@ -165,7 +165,7 @@ trait AbstractParsers {
       new AbstractParser[B] with Slot { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
         def symbol = p.symbol
-        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); // ruletype.action = p.action.get
+        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action
         def ruleType = ruletype
         override def toString = s"p${this.hashCode}"
       }
