@@ -4,7 +4,7 @@ object Test {
   
   import Parsers._
   import org.meerkat.tmp.Negation._
-//  import NonterminalBuilder.^
+  import NonterminalBuilder.syn
 //  
 //  val E: Nonterminal = ^ ( E ~ "*" ~ E 
 //                         | E ~ "+" ~ E 
@@ -23,16 +23,21 @@ object Test {
 //    parse("aaab", B)
 //  }
   
-//  val A: SemanticNonterminal[String] = ntSym("A","a".input)
-//  val B: SemanticNonterminal[String] = ntSym("B","b".input)
+  val toStr: String => String = x => x 
+  val A: NonterminalWithAction[String] = ntSym("A","a".^{ toStr(_) })
+  val B: NonterminalWithAction[String] = ntSym("B","b".^{ toStr(_) })
   
-//  val S: SemanticNonterminal[String]  = ntAlt("S", A ~ B ^^ { case (s1,s2) => s"$s2 has been parsed after $s1" } | "b".input)
+//  val S: SequenceBuilder { type Value = (String,String) } = A ~ B
+//  S.^^ { case (s1,s2) => s1 + s2 }
   
-//  val E: SemanticNonterminal[(String,String)]  = ntAlt("E", A ~ B | "a".input ~ "b".input)
+  val S: NonterminalWithAction[String] = syn { A ~ B ^^ { case (s1,s2) => s"$s2++$s1" } | "c".^{ toStr(_) } }
   
-//  def main(args: Array[String]): Unit = {
-//    parse("ab", S)
-//  }
+  val C = ntSym("C", "c".^{ toStr(_) })
+  val LIST: NonterminalWithAction[String] = ntAlt("LIST", LIST ~ C ^^ { case (s1,s2) => s"$s1;$s2" } | C)
+    
+  def main(args: Array[String]): Unit = {
+    parse("ccc", LIST)
+  }
   
 //  trait LIST[T] {
 //    def add(elem: T): LIST[T]

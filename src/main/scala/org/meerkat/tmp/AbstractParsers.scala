@@ -88,9 +88,7 @@ trait AbstractParsers {
     def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Group
   }
     
-  object AbstractParser {
-    
-    import org.meerkat.tmp.Negation._
+  object AbstractParser { import org.meerkat.tmp.Negation._
     
     def seq[A,B](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B,p1.Value,p2.Value]): builder.SequenceBuilder
       = builder builderSeq { slot => val q1 = p1(slot); sequence(slot,q1,p2,q1.size + 1) }
@@ -157,7 +155,7 @@ trait AbstractParsers {
           val q = p(this)
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
           def symbol = q.symbol
-          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action.get
+          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); // ruletype.action = p.action.get
           def ruleType = ruletype 
           override def toString = s"p${this.hashCode}"
         }
@@ -167,7 +165,7 @@ trait AbstractParsers {
       new AbstractParser[B] with Slot { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
         def symbol = p.symbol
-        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action.get
+        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); // ruletype.action = p.action.get
         def ruleType = ruletype
         override def toString = s"p${this.hashCode}"
       }
@@ -175,9 +173,9 @@ trait AbstractParsers {
     
     protected def alternation[A,B >: A,ValA,ValB](p1: AbstractParser[A], p2: AbstractParser[B])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.Alternation
       = builder alternation new AbstractParser[B] {
-                            def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p1(input,i,sppfLookup) orElse p2(input,i,sppfLookup)
-                            def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
-                          }
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p1(input,i,sppfLookup) orElse p2(input,i,sppfLookup)
+          def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
+        }
   }
   
 }
@@ -206,19 +204,18 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     lazy val q: Regular = builder.regular(symbol, memoize(p(q))); q
   }
   
+  import CPSResult.memo
+  
   protected def memoize[A: Memoizable](p: => AbstractParser[A])(implicit obj: ClassTag[Result[A]]): AbstractParser[A] = {
     lazy val q: AbstractParser[A] = p
-    var table: Array[Result[A]] = null
+    var results: Array[Result[A]] = null
     
     new AbstractParser[A] {
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
-        if (table == null) table = new Array(input.length + 1)
-        val result = table(i)
-        if (result == null) {
-          table(i) = CPSResult.memo(q(input,i,sppfLookup))
-          table(i)
-        } else
-          result
+        if (results == null) results = new Array(input.length + 1)
+        val result = results(i)
+        if (result == null) { results(i) = memo(q(input,i,sppfLookup)); results(i) } 
+        else result
       }
       
       def symbol = q.symbol
