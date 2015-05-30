@@ -41,10 +41,19 @@ object Test {
     = syn ( LIST ~ C    ^^ { case (s1,s2) => s"$s1;$s2" } 
           | C )
           
+  val toInt: String => Int = x => x.toInt
+  val E: NonterminalWithAction[Int] 
+    = syn ( E ~ "+" ~ E ^^ { case (x,y) => x + y }
+          | E ~ "*" ~ E ^^ { case (x,y) => x * y }
+          | Num .^ { toInt(_) } )
+  
+  val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
+          
   val SL: NonterminalWithAction[List[String]] = syn { S.* ^^ { x => x.:+("HoHo!!!") }}
     
   def main(args: Array[String]): Unit = {
-    parse("ababab", SL)
+    // parse("ababab", SL)
+    parse("5*3", E)
   }
   
 //  trait LIST[T] {
