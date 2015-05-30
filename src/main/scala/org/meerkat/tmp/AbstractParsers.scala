@@ -109,7 +109,7 @@ trait AbstractParsers {
           = p1(input, i, sppfLookup) flatMap { x1 => p2(input, index(x1), sppfLookup).smap { x2 => intermediate(x1, x2, this, sppfLookup) } }
         def size = s; def symbol = org.meerkat.tree.Sequence(p1.symbol, p2.symbol)
                           
-        lazy val compute = { val t = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, s); t.action = action; t }                    
+        lazy val compute = { val t = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, s); t.action = Some(action); t }                    
         def ruleType = compute
                           
         var action: Any => Any = { x => () }
