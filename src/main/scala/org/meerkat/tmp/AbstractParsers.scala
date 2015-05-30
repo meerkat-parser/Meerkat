@@ -24,23 +24,19 @@ trait AbstractParsers {
   
   trait AbstractParser[+T] extends ((Input, Int, SPPFLookup) => Result[T]) { def symbol: org.meerkat.tree.Symbol }
   
-  type AbstractSequence[+T] = AbstractParser[T] with Slot { 
-    def size: Int
-    def symbol: org.meerkat.tree.Sequence
-    def update(f: Any => Any): Unit
-  }
+  type AbstractSequence[+T] = AbstractParser[T] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   
   type AbstractAlternation[+T] = AbstractParser[T] { def symbol: org.meerkat.tree.Alt }
   
-  type AbstractSymbol[+T] = AbstractParser[T] { type Value; def name: String }
+  type AbstractSymbol[+T] = AbstractParser[T] { type Value; def name: String; def action: Option[Any => Any] }
   
   type AbstractNonterminal[+T] = AbstractSymbol[T] { def symbol: org.meerkat.tree.Nonterminal }
   
   type Head = AbstractNonterminal[Any]
   
-  type AbstractSequenceBuilder[+T] = (Slot => AbstractSequence[T]) { type Value }
+  type AbstractSequenceBuilder[+T] = (Slot => AbstractSequence[T]) { type Value; def action: Option[Any => Any] }
   type AbstractAlternationBuilder[+T] = (Head => AbstractAlternation[T]) { type Value }
-  
+    
   trait CanBuildSequence[A,B,ValA,ValB] {
     implicit val m1: Memoizable[A]
     implicit val m2: Memoizable[B]
@@ -108,13 +104,7 @@ trait AbstractParsers {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
           = p1(input, i, sppfLookup) flatMap { x1 => p2(input, index(x1), sppfLookup).smap { x2 => intermediate(x1, x2, this, sppfLookup) } }
         def size = s; def symbol = org.meerkat.tree.Sequence(p1.symbol, p2.symbol)
-                          
-        lazy val compute = { val t = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, s); t.action = Some(action); t }                    
-        def ruleType = compute
-                          
-        var action: Any => Any = { x => () }
-        def update(action: Any => Any) = this.action = action
-                          
+        def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, s)
         override def toString = s"[${ruleType.toString()},$size]"
       })
     }
@@ -167,8 +157,9 @@ trait AbstractParsers {
           val q = p(this)
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
           def symbol = q.symbol
-          def ruleType = org.meerkat.tree.Rule(head.symbol, this.symbol)
-          override def toString = s"p${this.hashCode()}"
+          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action.get
+          def ruleType = ruletype 
+          override def toString = s"p${this.hashCode}"
         }
     }
     
@@ -176,8 +167,9 @@ trait AbstractParsers {
       new AbstractParser[B] with Slot { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
         def symbol = p.symbol
-        def ruleType = org.meerkat.tree.Rule(head.symbol, this.symbol)
-        override def toString = s"p${this.hashCode()}"
+        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action.get
+        def ruleType = ruletype
+        override def toString = s"p${this.hashCode}"
       }
     }
     
