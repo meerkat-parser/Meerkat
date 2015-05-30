@@ -9,14 +9,14 @@ import scala.collection.mutable.HashMap
 
 trait SPPFVisitor {
   type T
-  def visit(node: SPPFNode)(implicit input: Input): T
+  def visit(node: SPPFNode): T
 }
 
 trait Memoization extends SPPFVisitor {
   
   val cache = new HashMap[SPPFNode, T]
   
-  override abstract def visit(node: SPPFNode)(implicit input: Input): T =
+  override abstract def visit(node: SPPFNode): T =
     cache.getOrElseUpdate(node, super.visit(node))
 }
 
@@ -25,58 +25,102 @@ case class StarList(s: Symbol, l: List[Any]) extends EBNFList
 case class PlusList(s: Symbol, l: List[Any]) extends EBNFList
 
 
-class SemanticActionExecutor(amb: Set[Any] => Any,
-                             tn : String => Any,
-                             nt2: (RuleType, (Any, Any)) => Any, 
-                             nt1: (RuleType, Any) => Any) extends SPPFVisitor {
+class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
+                             tn : (Int, Int) => Any,
+                             int: (RuleType, Any, Any) => Any,
+                             nt:  (RuleType, Any, Int, Int) => Any) extends SPPFVisitor {
  
    type T = Any
   
-   def ambiguity(n: NonPackedNode)(implicit input: Input): Any =  
-     amb((for (p <- n.children) yield nonterminal(p)) (breakOut))
+   def ambiguity(n: NonPackedNode): Any =  
+     amb((for (p <- n.children) yield nonterminal(p, n.leftExtent, n.rightExtent)) (breakOut), n.leftExtent, n.rightExtent)
    
-   def flatten2(p: PackedNode, l: Any, r: Any) = p.ruleType.head match {
-     case Star(s) => l match {
-       case StarList(s, xs) => StarList(s, xs :+ r)
-       case x: Any  => StarList(p.ruleType.head, List(l, r))
-     }
-     case Plus(s) => l match {
-       case PlusList(s, xs) => PlusList(s, xs :+ r)
-       case x:  Any      => PlusList(p.ruleType.head, List(x))
-     }
-     case _  => nt2(p.ruleType, (l, r))
-   }
-      
-   def flatten1(p: PackedNode, c: Any) = {
+   def flatten(p: PackedNode, c: Any, leftExtent: Int, rightExtent: Int) = {
      p.ruleType.head match {
        case Star(s) => c match { case Nil => StarList(s, List()); case _ =>  StarList(s, List(c)) } 
        case Plus(s) => c match { case Nil => PlusList(s, List()); case _ => PlusList(s, List(c)) }
-       case _ => nt1(p.ruleType, c)
+       case _ => nt(p.ruleType, c, leftExtent, rightExtent)
      }
    }
    
-   def nonterminal(p: PackedNode)(implicit input: Input): Any = {
-     if (p.hasRightChild) {
-       val left  = visit(p.leftChild)
-       val right = visit(p.rightChild)
-       flatten2(p, left, right)
-     }
-     else {
-       val child = visit(p.leftChild)
-       flatten1(p, child)
-     }
-   }
+   def nonterminal(p: PackedNode, leftExtent: Int, rightExtent: Int): Any = 
+      flatten(p, visit(p.leftChild), leftExtent, rightExtent)
   
-  def visit(node: SPPFNode)(implicit input: Input): Any = node match {
+  def visit(node: SPPFNode): Any = node match {
      case t: TerminalNode     => if (t.leftExtent == t.rightExtent) Nil 
-                                 else tn(input.substring(t.leftExtent, t.rightExtent))
+                                 else tn(t.leftExtent, t.rightExtent)
     
-     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first)
+     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first, n.leftExtent, n.rightExtent)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else ((visit(i.first.leftChild), visit(i.first.rightChild)))
+     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else int(i.first.ruleType, visit(i.first.leftChild), visit(i.first.rightChild))
      
      case p: PackedNode       => throw new RuntimeException("Should not traverse a packed node!")
   } 
+}
+
+object SemanticAction {
+  
+  def filterUnit(left: Any, right: Any) =
+    if (left == () && right == ()) ()
+    else if (left == ()) right
+    else if (right == ()) left
+    else (left, right)
+  
+  def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
+  
+  def t(input: Input)(l: Int, r: Int) = ()
+      
+  def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = 
+    if (t.action.isDefined)
+      if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(v) 
+    else v
+    
+  def int(input: Input)(t: RuleType, left: Any, right: Any) = 
+    if (t.action.isDefined)
+      t.action.get(filterUnit(left, right))
+    else filterUnit(left, right)
+  
+  def execute(node: NonPackedNode)(implicit input: Input) =
+    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node)
+}
+
+object TreeBuilder {
+
+   def convert(t: Any): Tree = t match {
+    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
+    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
+    case _               => t.asInstanceOf[Tree]
+  }
+  
+  def flatten(t: Any): Seq[Any] = { println(t); t match {
+    case (t: (_, _), y) => flatten(t) :+ convert(y)
+    case (x, y) => List(convert(x), convert(y))
+    case x      => List(convert(x))
+  } 
+  }
+  
+  def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = Amb(s.asInstanceOf[Set[Tree]])
+  
+  def t(input: Input)(l: Int, r: Int): Tree = Terminal(input.substring(l, r))
+  
+  def int(input: Input)(t: RuleType, left: Any, right: Any) = (left, right)
+  
+  def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
+
+  
+  def newBuilder(implicit input: Input): SPPFVisitor = {
+    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input))
+  }
+  
+  def newMemoBuilder(implicit input: Input): SPPFVisitor = {
+    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
+  }
+  
+  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree =
+    if (memoized)
+      newMemoBuilder.visit(node).asInstanceOf[Tree]
+    else 
+      newBuilder.visit(node).asInstanceOf[Tree]
 }
 
 class SPPFToDot extends SPPFVisitor {
@@ -90,7 +134,7 @@ class SPPFToDot extends SPPFVisitor {
   
   val sb = new StringBuilder
   
-  def visit(node: SPPFNode)(implicit input: Input): T = 
+  def visit(node: SPPFNode): T = 
     node match {
       case n@NonterminalNode(slot, leftExtent, rightExtent) => 
         sb ++= getShape(n.toString(), s"($slot, $leftExtent, $rightExtent)", Rectangle, Rounded)
@@ -115,51 +159,4 @@ class SPPFToDot extends SPPFVisitor {
         }
     }
 }
-
-object SemanticAction {
-  def amb(s: Set[Any]) = throw new RuntimeException 
-  def t(s: String) = s
-  def nt2(r: RuleType, t: (Any, Any)) = r.action(t)
-  def nt1(r: RuleType, t: Any) = r.action(t)
-  
-  def execute(node: NonPackedNode)(implicit input: Input) =
-    new SemanticActionExecutor(amb, t, nt2, nt1).visit(node)
-}
-
-object TreeBuilder {
-
-   def convert(t: Any): Tree = t match {
-    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
-    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
-    case _               => t.asInstanceOf[Tree]
-  }
-  
-  def flatten(t: Any): Seq[Any] = t match {
-    case (t: (_, _), y) => flatten(t) :+ convert(y)
-    case (x, y) => List(convert(x), convert(y))
-    case x      => List(convert(x))
-  } 
-  
-  def amb(s: Set[Any]): Tree = Amb(s.asInstanceOf[Set[Tree]]) 
-  def t(s: String): Tree = Terminal(s)
-  def nt2(r: RuleType, t: (Any, Any)) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
-  def nt1(r: RuleType, t: Any) = Appl(r, flatten(t).asInstanceOf[Seq[Tree]])
-
-  
-  def newBuilder: SPPFVisitor = {
-    new SemanticActionExecutor(amb, t, nt2, nt1)
-  }
-  
-  def newMemoBuilder: SPPFVisitor = {
-    new SemanticActionExecutor(amb, t, nt2, nt1) with Memoization
-  }
-  
-  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree =
-    if (memoized)
-      newMemoBuilder.visit(node).asInstanceOf[Tree]
-    else 
-      newBuilder.visit(node).asInstanceOf[Tree]
-  
-}
-  
   
