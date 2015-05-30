@@ -52,8 +52,8 @@ object Test {
   val SL: NonterminalWithAction[List[String]] = syn { S.* ^^ { x => x.:+("HoHo!!!") }}
     
   def main(args: Array[String]): Unit = {
-    // parse("ababab", SL)
-    parse("5*3", E)
+    parse("ababab", SL)
+    // parse("5*3", E)
   }
   
 //  trait LIST[T] {
