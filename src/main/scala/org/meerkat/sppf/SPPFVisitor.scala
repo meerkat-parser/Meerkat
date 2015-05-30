@@ -40,12 +40,12 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
        case Star(s) => v match {
          case ()                   => StarList(s, List())
          case (StarList(s, xs), r) => StarList(s, xs :+ r)
-         case x: Any               => StarList(p.ruleType.head, List(x))
+         case x: Any               => StarList(s, List(x))
        }
        case Plus(s) => v match {
          case ()                   => PlusList(s, List())
          case (PlusList(s, xs), r) => PlusList(s, xs :+ r)
-         case x:  Any              => PlusList(p.ruleType.head, List(x))
+         case x:  Any              => PlusList(s, List(x))
        }
        case _  => nt(p.ruleType, v, leftExtent, rightExtent)
      }
@@ -68,16 +68,16 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
 object SemanticAction {
   
   def convert(t: Any): Any = t match {
-    case StarList(s, xs) => xs 
+    case StarList(s, xs) => xs
     case PlusList(s, xs) => xs
     case _               => t 
   }
   
   def filterUnit(left: Any, right: Any) =
     if (left == () && right == ()) ()
-    else if (left == ()) convert(right)
-    else if (right == ()) convert(left)
-    else (convert(left), convert(right))
+    else if (left == ()) right
+    else if (right == ()) left
+    else (left, right)
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
   
