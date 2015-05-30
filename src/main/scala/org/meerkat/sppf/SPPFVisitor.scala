@@ -60,11 +60,17 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
 
 object SemanticAction {
   
+  def convert(t: Any): Any = t match {
+    case StarList(s, xs) => xs 
+    case PlusList(s, xs) => xs
+    case _               => t 
+  }
+  
   def filterUnit(left: Any, right: Any) =
     if (left == () && right == ()) ()
-    else if (left == ()) right
-    else if (right == ()) left
-    else (left, right)
+    else if (left == ()) convert(right)
+    else if (right == ()) convert(left)
+    else (convert(left), convert(right))
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
   
@@ -72,7 +78,7 @@ object SemanticAction {
       
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = 
     if (t.action.isDefined)
-      if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(v) 
+      if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(convert(v)) 
     else v
     
   def int(input: Input)(t: RuleType, left: Any, right: Any) = 
