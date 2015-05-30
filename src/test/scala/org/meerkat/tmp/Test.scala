@@ -23,22 +23,28 @@ object Test {
 //    parse("aaab", B)
 //  }
   
-  val toStr: String => String = x => x 
-  val A: NonterminalWithAction[String] = ntSym("A","a".^{ toStr(_) })
-  val B: NonterminalWithAction[String] = ntSym("B","b".^{ toStr(_) })
+  val toStr: String => String = x => x
+  
+  val A = syn { "a".^{ toStr(_) } }
+  val B = syn { "b".^{ toStr(_) } }
   
 //  val S: SequenceBuilder { type Value = (String,String) } = A ~ B
 //  S.^^ { case (s1,s2) => s1 + s2 }
   
-  val S: NonterminalWithAction[String] 
-    = syn ( A ~ B  ^^ { case (s1,s2) => s"$s2++$s1" } 
-          | "c"    .^{ toStr(_) } )
+  val S = syn { ( A ~ B  ^^ { case (s1,s2) => s"$s2++$s1" } 
+                | "c"    .^ { toStr(_) } ) }
   
-  val C = ntSym("C", "c".^{ toStr(_) })
-  val LIST: NonterminalWithAction[String] = ntAlt("LIST", LIST ~ C ^^ { case (s1,s2) => s"$s1;$s2" } | C)
+  val C = syn { "c".^{ toStr(_) } }
+  
+  val LIST: NonterminalWithAction[String]
+  
+    = syn ( LIST ~ C    ^^ { case (s1,s2) => s"$s1;$s2" } 
+          | C )
+          
+  val SL: NonterminalWithAction[List[String]] = syn { S.* ^^ { x => x.:+("HoHo!!!") }}
     
   def main(args: Array[String]): Unit = {
-    parse("ccc", LIST)
+    parse("ababab", SL)
   }
   
 //  trait LIST[T] {

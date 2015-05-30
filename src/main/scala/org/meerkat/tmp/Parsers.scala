@@ -14,14 +14,6 @@ import org.meerkat.sppf.TreeBuilder
 
 object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
   
-  sealed trait NoValue
-  
-  trait &[A,B] { type R }
-  implicit def f1[A <: NoValue,B <: NoValue] = new &[NoValue,NoValue] { type R = NoValue }
-  implicit def f2[A <: NoValue,B: ![NoValue]#f] = new &[NoValue,B] { type R = B }
-  implicit def f3[A: ![NoValue]#f,B <: NoValue] = new &[A,NoValue] { type R = A }
-  implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new &[A,B] { type R = (A,B) }
-  
   implicit def obj1[ValA,ValB](implicit vals: ValA & ValB) = new CanBuildSequence[NonPackedNode,NonPackedNode,ValA,ValB] {
     implicit val m1 = obj4; implicit val m2 = obj4
     
@@ -120,7 +112,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     type Value
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val obj = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSeqAlt(this, p)
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
@@ -159,7 +151,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     def name: String
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val obj = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value & p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
     def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
@@ -187,7 +179,7 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
 //      val p = regular(org.meerkat.tree.Opt(this.symbol), this | epsilon); opt = Option(p); p })
 //      
     var star: Option[AbstractNonterminal { type Value = List[Symbol.this.Value] }] = None
-    def *(): AbstractNonterminal = star.getOrElse({
+    def *() = star.getOrElse({
       implicit val f4 = new &[List[Symbol.this.Value],Symbol.this.Value] { type R = List[Symbol.this.Value] }
       val p = regular[NonPackedNode,this.Value](org.meerkat.tree.Star(this.symbol), star.get ~ this | epsilon[List[this.Value]])
       star = Option(p); p })
@@ -244,8 +236,26 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
     parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
     Trampoline.run
   }
+    
+  object NonterminalBuilder {
+    import scala.language.experimental.macros
+    import scala.reflect.macros.blackbox.Context
+    
+    def syn[T](p: AlternationBuilder { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalAltWithName[T]
+    def syn[T](p: SequenceBuilder { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalSeqWithName[T]
+    def syn[T](p: AbstractSymbol[NonPackedNode] { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalSymWithName[T]
+    
+    import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
+
+    def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder]): c.Expr[NonterminalWithAction[T]] 
+      = makeCallWithName (c, "Parsers.ntAlt")
+    def makeNonterminalSeqWithName[T](c: Context)(p: c.Expr[SequenceBuilder]): c.Expr[NonterminalWithAction[T]] 
+      = makeCallWithName (c, "Parsers.ntSeq")
+    def makeNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode]]): c.Expr[NonterminalWithAction[T]] 
+      = makeCallWithName (c, "Parsers.ntSym")
+  }
   
-  def parse(sentence: String, parser: AbstractNonterminal): Unit = {
+    def parse(sentence: String, parser: AbstractNonterminal): Unit = {
     val input = new Input(sentence)
     val sppf = new DefaultSPPFLookup(input)
     
@@ -264,25 +274,6 @@ object Parsers { import AbstractCPSParsers._; import org.meerkat.tmp.Negation._
                          visualize(TreeBuilder.build(node)(input), "sppf")
                          println("Done!")
     }
-  }
-  
-  object NonterminalBuilder {
-    import scala.language.experimental.macros
-    import scala.reflect.macros.blackbox.Context
-    
-    def syn[T](p: AlternationBuilder { type Value = T }): NonterminalWithAction[T] = macro makeNonterminalAltWithName[T]
-//    //implicit def seq(p: SequenceBuilder): Nonterminal = macro makeNonterminalSeqWithName
-//      
-//    def mkNtAlt(name: String, p: => AlternationBuilder): Nonterminal = ??? // ntAlt(name, p)
-//    // def mkNtSeq(name: String, p: => SequenceBuilder): Nonterminal = ntSeq(name, p)
-    
-    import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
-
-    def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder]): c.Expr[NonterminalWithAction[T]] 
-      = makeCallWithName (c, "Parsers.ntAlt")
-      
-//    def makeNonterminalSeqWithName(c: Context)(p: c.Expr[SequenceBuilder]): c.Expr[Nonterminal] 
-//      = makeCallWithName (c, "NonterminalBuilder.mkNtSeq")
   }
   
 }

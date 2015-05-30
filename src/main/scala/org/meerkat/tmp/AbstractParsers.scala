@@ -222,4 +222,14 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     }
   }
   
+  import org.meerkat.tmp.Negation._
+  
+  sealed trait NoValue
+  
+  trait &[A,B] { type R }
+  implicit def f1[A <: NoValue,B <: NoValue] = new &[NoValue,NoValue] { type R = NoValue }
+  implicit def f2[A <: NoValue,B: ![NoValue]#f] = new &[NoValue,B] { type R = B }
+  implicit def f3[A: ![NoValue]#f,B <: NoValue] = new &[A,NoValue] { type R = A }
+  implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new &[A,B] { type R = (A,B) }
+  
 }
