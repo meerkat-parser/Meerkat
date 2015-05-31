@@ -96,8 +96,8 @@ object Parsers { import AbstractCPSParsers._
   type Action[T] = { type Value = T }
   trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal }
   
-  type Nonterminal = AbstractNonterminal with Action[NoValue]
-  type &[A <: Nonterminal,T] = AbstractNonterminal with Action[T]
+  type Nonterminal = AbstractNonterminal { type Value = NoValue }
+  type &[A <: Nonterminal,T] = AbstractNonterminal { type Value = T }
   
   def epsilon[Val] = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -114,12 +114,12 @@ object Parsers { import AbstractCPSParsers._
     
     def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
-    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSeqAlt(this, p)
-    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
-    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSeqSym(this, p)
+    def | [U >: this.Value] (p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altSeqSym(this, p)
     
-    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSeq(this, q)
-    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSeqSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSeqSym(this, q)
     
     def & [V](f: this.Value => V) = new SequenceBuilderWithAction {
       type Value = V
@@ -137,12 +137,12 @@ object Parsers { import AbstractCPSParsers._
   trait AlternationBuilder extends (Head => Alternation) { import AbstractParser._
     type Value
     
-    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altAlt(this, p)
-    def | (p: SequenceBuilder)(implicit isSubtype: this.Value <:< p.Value) = altAltSeq(this, p)
-    def | (p: Symbol)(implicit isSubtype: this.Value <:< p.Value) = altAltSym(this, p)
+    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altAltSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altAltSym(this, p)
     
-    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altAltSeq(this, q)
-    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altAltSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altAltSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altAltSym(this, q)
   }
   
   trait Symbol extends AbstractParser[NonPackedNode] { import AbstractParser._
@@ -153,12 +153,12 @@ object Parsers { import AbstractCPSParsers._
     
     def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
-    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
-    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
-    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSym(this, p)
+    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSymSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altSym(this, p)
     
-    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSymSeq(this, q)
-    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSymSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
     
     def &[V](f: this.Value => V) = new SymbolWithAction {
       type Value = V
@@ -197,12 +197,12 @@ object Parsers { import AbstractCPSParsers._
     type Value
     def action: Option[Any => Any]
     
-    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSeqAlt(this, p)
-    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSeq(this, p)
-    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSeqSym(this, p)
+    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altSeqSym(this, p)
     
-    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSeq(this, q)
-    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSeqSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSeqSym(this, q)
   }
   
   trait SymbolWithAction extends AbstractParser[NonPackedNode] { import AbstractParser._
@@ -210,12 +210,12 @@ object Parsers { import AbstractCPSParsers._
     def name: String
     def action: Option[Any => Any]
   
-    def | (p: AlternationBuilder)(implicit sub: this.Value <:< p.Value) = altSymAlt(this, p)
-    def | (p: SequenceBuilder)(implicit sub: this.Value <:< p.Value) = altSymSeq(this, p)
-    def | (p: Symbol)(implicit sub: this.Value <:< p.Value) = altSym(this, p)
+    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSymSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altSym(this, p)
     
-    def | (q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altSymSeq(this, q)
-    def | (q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSymSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
   }
   
   implicit def toTerminal(s: String) 
