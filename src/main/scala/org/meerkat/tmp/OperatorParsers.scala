@@ -85,6 +85,7 @@ object OperatorParsers {
   trait OperatorAlternation[V] extends (Prec => Parsers.AlternationBuilder { type Value = V })
   
   trait AbstractOperatorNonterminal[V] extends (Prec => Parsers.AbstractNonterminal { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+    type Abstract[X] = AbstractOperatorNonterminal[X]
     def name: String
   
     def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqNt(this, p) }
@@ -130,7 +131,6 @@ object OperatorParsers {
   }
   
   type OperatorNonterminal = AbstractOperatorNonterminal[NoValue]
-  type &[A <: OperatorNonterminal,T] = AbstractOperatorNonterminal[T]
   
   trait OperatorSequenceBuilder[V] extends (Head => OperatorSequence[V]) { import OperatorImplicits._; import AbstractOperatorParser._
     def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqOpSeqNt(this, p) }
@@ -242,17 +242,17 @@ object OperatorParsers {
     def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: p.Value|~|U) = { implicit val o = obj1[p.Value,U](tuple); seqSymNt(p, q) } 
   }
   
-  implicit class StringAltOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
-    val p: Symbol { type Value = NoValue } = term
-    
-    def | (q: OperatorAlternationBuilder[NoValue]) = altOpSymOpAlt(altSymOpSym(p), q)
-    def | (q: OperatorSequenceBuilder[NoValue]) = altOpSymOpSeq(altSymOpSym(p), q)
-    def | (q: AbstractOperatorNonterminal[NoValue]) = altOpSym(altSymOpSym(p), q)
-    def | (q: OperatorSequenceBuilderWithAction[NoValue]) = altOpSymOpSeq(altSymOpSym(p), q)
-    def | (q: OperatorNonterminalWithAction[NoValue]) = altOpSym(altSymOpSym(p), q)
-    
-    def ^ [U](f: String => U)(implicit sub: p.Value <:< NoValue) = p ^ f
-  }
+//  implicit class StringAltOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
+//    val p: Symbol { type Value = NoValue } = term
+//    
+//    def | (q: OperatorAlternationBuilder[NoValue]) = altOpSymOpAlt(altSymOpSym(p), q)
+//    def | (q: OperatorSequenceBuilder[NoValue]) = altOpSymOpSeq(altSymOpSym(p), q)
+//    def | (q: AbstractOperatorNonterminal[NoValue]) = altOpSym(altSymOpSym(p), q)
+//    def | (q: OperatorSequenceBuilderWithAction[NoValue]) = altOpSymOpSeq(altSymOpSym(p), q)
+//    def | (q: OperatorNonterminalWithAction[NoValue]) = altOpSym(altSymOpSym(p), q)
+//    
+//    def ^ [U](f: String => U)(implicit sub: p.Value <:< NoValue) = p ^ f
+//  }
   
   def left[V](p: OperatorSequenceBuilder[V]): OperatorSequenceBuilder[V] = { import OperatorImplicits._
     val o = obj1[V,V](new |~|[V,V] { type R = V })
@@ -295,58 +295,6 @@ object OperatorParsers {
   }
   def ntSymWithAction[Val](name: String, p: OperatorNonterminalWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
     nonterminalSym(name, p)
-  }
-  
-  object Syntax {
-    import scala.language.experimental.macros
-    import scala.reflect.macros.blackbox.Context
-    
-    def syn[T](p: OperatorAlternationBuilder[T]) = macro makeOperatorNonterminalAltWithName[T]
-    def syn[T](p: OperatorSequenceBuilder[T]) = macro makeOperatorNonterminalSeqWithName[T]
-    def syn[T](p: AbstractOperatorNonterminal[T]) = macro makeOperatorNonterminalSymWithName[T]
-    def syn[T](p: OperatorSequenceBuilderWithAction[T]) = macro makeOperatorNonterminalSeqWithActionWithName[T]
-    def syn[T](p: OperatorNonterminalWithAction[T]) = macro makeOperatorNonterminalSymWithActionWithName[T]
-    
-    import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
-
-    def makeOperatorNonterminalAltWithName[T](c: Context)(p: c.Expr[OperatorAlternationBuilder[T]]): c.Expr[OperatorNonterminal & T] 
-      = makeCallWithName (c, "OperatorParsers.ntAlt")
-    def makeOperatorNonterminalSeqWithName[T](c: Context)(p: c.Expr[OperatorSequenceBuilder[T]]): c.Expr[OperatorNonterminal & T] 
-      = makeCallWithName (c, "OperatorParsers.ntSeq")
-    def makeOperatorNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractOperatorNonterminal[T]]): c.Expr[OperatorNonterminal & T] 
-      = makeCallWithName (c, "OperatorParsers.ntSym")
-    def makeOperatorNonterminalSeqWithActionWithName[T](c: Context)(p: c.Expr[OperatorSequenceBuilderWithAction[T]]): c.Expr[OperatorNonterminal & T] 
-      = makeCallWithName (c, "OperatorParsers.ntSeqWithAction")
-    def makeOperatorNonterminalSymWithActionWithName[T](c: Context)(p: c.Expr[OperatorNonterminalWithAction[T]]): c.Expr[OperatorNonterminal & T] 
-      = makeCallWithName (c, "OperatorParsers.ntSymWithAction")
-  }
-    
-  def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
-    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
-    Trampoline.run
-  }
-  
-  def parse[Val](sentence: String, parser: AbstractOperatorNonterminal[Val]): Unit = {
-    val input = new Input(sentence)
-    val sppf = new DefaultSPPFLookup(input)
-    
-    val p = parser((0,0))
-    run(input, sppf, p)
-    
-    println(s"Trying to find: ${p.name}(0,${sentence.length()})")
-    val startSymbol = sppf.getStartNode(p, 0, sentence.length())
-    
-    startSymbol match {
-      case None       => println("Parse error")
-      case Some(node) => println("Success: " + node)
-                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-                         println("Visualizing...")
-                         val x = SemanticAction.execute(node)(input)
-                         println(s"WOW: $x")
-                         visualize(TreeBuilder.build(node)(input), "sppf")
-                         // visualize(node, "sppf")
-                         println("Done!")
-    }
   }
   
 }

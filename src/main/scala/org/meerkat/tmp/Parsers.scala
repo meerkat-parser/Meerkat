@@ -5,12 +5,8 @@ import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import scala.reflect.ClassTag
 import org.meerkat.sppf.DefaultSPPFLookup
-import org.meerkat.util.visualization._
 import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
-import org.meerkat.sppf.SPPFVisitor
-import org.meerkat.sppf.SemanticAction
-import org.meerkat.sppf.TreeBuilder
 
 object Parsers { import AbstractCPSParsers._
   
@@ -93,10 +89,10 @@ object Parsers { import AbstractCPSParsers._
   
   trait Terminal extends Symbol { def symbol: org.meerkat.tree.Terminal }
   
-  trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal }
+  trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal; type Abstract[X] = AbstractNonterminal { type Value = X } }
   
   type Nonterminal = AbstractNonterminal { type Value = NoValue }
-  type &[A <: Nonterminal,T] = AbstractNonterminal { type Value = T }
+  type &[A <: { type Abstract[_] },T] = A#Abstract[T]
   
   def epsilon[Val] = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -230,46 +226,5 @@ object Parsers { import AbstractCPSParsers._
   def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
   def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
-  
-  def run(input: Input, sppf: SPPFLookup, parser: AbstractNonterminal): Unit = {
-    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
-    Trampoline.run
-  }
-    
-  object Syntax {
-    import scala.language.experimental.macros
-    import scala.reflect.macros.blackbox.Context
-    
-    def syn[T](p: AlternationBuilder { type Value = T }) = macro makeNonterminalAltWithName[T]
-    def syn[T](p: SequenceBuilder { type Value = T }) = macro makeNonterminalSeqWithName[T]
-    def syn[T](p: AbstractSymbol[NonPackedNode] { type Value = T }) = macro makeNonterminalSymWithName[T]
-    
-    import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
-
-    def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntAlt")
-    def makeNonterminalSeqWithName[T](c: Context)(p: c.Expr[SequenceBuilder]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSeq")
-    def makeNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode]]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSym")
-  }
-  
-    def parse(sentence: String, parser: AbstractNonterminal): Unit = {
-    val input = new Input(sentence)
-    val sppf = new DefaultSPPFLookup(input)
-    
-    run(input, sppf, parser)
-    
-    println(s"Trying to find: ${parser.name}(0,${sentence.length()})")
-    val startSymbol = sppf.getStartNode(parser, 0, sentence.length())
-    
-    startSymbol match {
-      case None       => println("Parse error")
-      case Some(node) => println("Success: " + node)
-                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-                         println("Visualizing...")
-                         val x = SemanticAction.execute(node)(input)
-                         println(s"WOW: $x")
-                         visualize(TreeBuilder.build(node)(input), "sppf")
-                         println("Done!")
-    }
-  }
   
 }
