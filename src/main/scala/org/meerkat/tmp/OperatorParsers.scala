@@ -5,6 +5,7 @@ import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import java.util.HashMap
 import org.meerkat.sppf.DefaultSPPFLookup
+import org.meerkat.util.visualization._
 
 object OperatorParsers {
   
@@ -51,26 +52,25 @@ object OperatorParsers {
       def builderAlt(f: (Head, Group) => (Group => OperatorAlternation, Group, Option[Group])): OperatorAlternationBuilder
         = new OperatorAlternationBuilder { def apply(head: Head, group: Group) = f(head, group) }
     }
-//    
-//    implicit object obj3 extends CanBuildNonterminal[NonPackedNode] {
-//      implicit val obj1 = Parsers.obj4
-//      implicit val obj2 = Parsers.obj2
-//      
-//      type OperatorNonterminal = OperatorParsers.OperatorNonterminal
-//    
-//      def nonterminal(name: String, f: Prec => obj1.Nonterminal): OperatorNonterminal
-//        = new OperatorNonterminal {
-//            val table: java.util.Map[Prec, Parsers.Nonterminal] = new HashMap()
-//            def apply(prec: Prec) = if (table.containsKey(prec)) table.get(prec) 
-//                                    else {
-//                                      val nt = f(prec)
-//                                      table.put(prec, nt)
-//                                      nt
-//                                    }
-//            override def toString = name
-//          }
-//    }
-  
+    
+    implicit def obj3[Val] = new CanBuildNonterminal[NonPackedNode,Val] {
+      implicit val o1 = Parsers.obj5[Val]
+      implicit val o2 = Parsers.obj2
+      
+      type OperatorNonterminal = OperatorParsers.OperatorNonterminal[Val]
+    
+      def nonterminal(name: String, f: Prec => o1.Nonterminal): OperatorNonterminal
+        = new OperatorNonterminal {
+            val table: java.util.Map[Prec, o1.Nonterminal] = new HashMap()
+            def apply(prec: Prec) = if (table.containsKey(prec)) table.get(prec) 
+                                    else {
+                                      val nt = f(prec)
+                                      table.put(prec, nt)
+                                      nt
+                                    }
+            override def toString = name
+          }
+    }  
   }
   
   trait OperatorSequence[V] extends ((Prec, Prec) => Parsers.SequenceBuilder { type Value = V }) {
@@ -80,7 +80,7 @@ object OperatorParsers {
   
   trait OperatorAlternation[V] extends (Prec => Parsers.AlternationBuilder { type Value = V })
   
-  trait OperatorNonterminal[V] extends (Prec => Parsers.Nonterminal { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait OperatorNonterminal[V] extends (Prec => Parsers.AbstractNonterminal { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
     def ~ [U](p: OperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqNt(this, p) }
     def ~ (p: Symbol)(implicit tuple: V|~|p.Value) = { implicit val o = obj1[V,p.Value](tuple); seqNtSym(this, p) }
     
@@ -105,8 +105,8 @@ object OperatorParsers {
     def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSeq(this, altSeqOpSeq(p))
     def | [U >: V](p: Symbol { type Value = U }) = altOpSeqOpSym(this, altSymOpSym(p))
     
-//    def |> (p: OperatorAlternationBuilder) = greaterOpSeqOpAlt(this, p)
-//    def |> (p: OperatorSequenceBuilder) = greaterOpSeq(this, p)
+    def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpSeqOpAlt(this, p)
+    def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpSeq(this, p)
   }
   
   trait OperatorAlternationBuilder[V] extends ((Head, Group) => (Group => OperatorAlternation[V], Group, Option[Group])) { import OperatorImplicits._; import AbstractOperatorParser._
@@ -118,8 +118,8 @@ object OperatorParsers {
     def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpAltOpSeq(this, altSeqOpSeq(p))
     def | [U >: V](p: Symbol { type Value = U }) = altOpAltOpSym(this, altSymOpSym(p))
     
-//    def |> (p: OperatorAlternationBuilder) = greaterOpAlt(this, p)
-//    def |> (p: OperatorSequenceBuilder) = greaterOpAltOpSeq(this, p)
+    def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpAlt(this, p)
+    def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpAltOpSeq(this, p)
   }
   
   implicit class ParsersSeqOps[V](p: Parsers.Symbol { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
@@ -172,54 +172,51 @@ object OperatorParsers {
     o.builderSeq(head => o.assoc(p(head), Assoc.NON_ASSOC))
   }
   
-//  def left(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
-//    assocAlt(obj2)(p, Assoc.LEFT)
-//  }
-//  
-//  def right(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
-//    assocAlt(obj2)(p, Assoc.RIGHT)
-//  }
-//  
-//  def non_assoc(p: OperatorAlternationBuilder): OperatorAlternationBuilder = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
-//    assocAlt(obj2)(p, Assoc.NON_ASSOC)
-//  }
-//  
-//  def ntAlt(name: String, p: => OperatorAlternationBuilder): OperatorNonterminal = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalAlt
-//    implicit val m = Parsers.obj3
-//    nonterminalAlt(name, p)
-//  }
-//  def ntSeq(name: String, p: => OperatorSequenceBuilder): OperatorNonterminal = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSeq
-//    implicit val m = Parsers.obj3
-//    nonterminalSeq(name, p)
-//  }
-//  def ntSym(name: String, p: OperatorNonterminal): OperatorNonterminal = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
-//    implicit val m = Parsers.obj3
-//    nonterminalSym(name, p)
-//  }
-//    
-//  def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
-//    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
-//    Trampoline.run
-//  }
-//  
-//  def parse(sentence: String, parser: OperatorNonterminal): Unit = {
-//    val input = new Input(sentence)
-//    val sppf = new DefaultSPPFLookup(input)
-//    
-//    val p = parser((0,0))
-//    run(input, sppf, p)
-//    
-//    println(s"Trying to find: ${p.name}(0,${sentence.length()})")
-//    val startSymbol = sppf.getStartNode(p, 0, sentence.length())
-//    
-//    startSymbol match {
-//      case None       => println("Parse error")
-//      case Some(node) => println("Success: " + node)
-//                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-//                         println("Visualizing...") 
-//                         Visualization.visualize(Visualization.toDot(startSymbol.get), "sppf")
-//                         println("Done!")
-//    }
-//  }
+  def left[Val](p: OperatorAlternationBuilder[Val]): OperatorAlternationBuilder[Val] = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
+    assocAlt(obj2[Val,Val])(p, Assoc.LEFT)
+  }
+  
+  def right[Val](p: OperatorAlternationBuilder[Val]): OperatorAlternationBuilder[Val] = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
+    assocAlt(obj2[Val,Val])(p, Assoc.RIGHT)
+  }
+  
+  def non_assoc[Val](p: OperatorAlternationBuilder[Val]): OperatorAlternationBuilder[Val] = { import OperatorImplicits._; import AbstractOperatorParser.assocAlt
+    assocAlt(obj2[Val,Val])(p, Assoc.NON_ASSOC)
+  }
+  
+  def ntAlt[Val](name: String, p: => OperatorAlternationBuilder[Val]): OperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalAlt
+    nonterminalAlt(name, p)
+  }
+  def ntSeq[Val](name: String, p: => OperatorSequenceBuilder[Val]): OperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSeq
+    nonterminalSeq(name, p)
+  }
+  def ntSym[Val](name: String, p: OperatorNonterminal[Val]): OperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
+    nonterminalSym(name, p)
+  }
+    
+  def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
+    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
+    Trampoline.run
+  }
+  
+  def parse[Val](sentence: String, parser: OperatorNonterminal[Val]): Unit = {
+    val input = new Input(sentence)
+    val sppf = new DefaultSPPFLookup(input)
+    
+    val p = parser((0,0))
+    run(input, sppf, p)
+    
+    println(s"Trying to find: ${p.name}(0,${sentence.length()})")
+    val startSymbol = sppf.getStartNode(p, 0, sentence.length())
+    
+    startSymbol match {
+      case None       => println("Parse error")
+      case Some(node) => println("Success: " + node)
+                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
+                         println("Visualizing...") 
+                         visualize(node, "sppf")
+                         println("Done!")
+    }
+  }
   
 }

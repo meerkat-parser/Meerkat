@@ -44,15 +44,15 @@ object Test {
   val E: Nonterminal & Int 
     = syn ( E ~ "+" ~ E & { case (x,y) => x + y }
           | E ~ "*" ~ E & { case (x,y) => x * y }
-          | Num         ^ { toInt } )
+          | Num         ^ toInt )
   
   val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
           
   val SL: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
       
   def main(args: Array[String]): Unit = {
-    parse("ababab", SL)
-    // parse("5*3", E)
+    // parse("ababab", SL)
+    parse("5*3", E)
   }
   
 //  trait LIST[T] {
