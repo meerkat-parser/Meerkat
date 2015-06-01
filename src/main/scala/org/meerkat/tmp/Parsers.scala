@@ -93,7 +93,6 @@ object Parsers { import AbstractCPSParsers._
   
   trait Terminal extends Symbol { def symbol: org.meerkat.tree.Terminal }
   
-  type Action[T] = { type Value = T }
   trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal }
   
   type Nonterminal = AbstractNonterminal { type Value = NoValue }

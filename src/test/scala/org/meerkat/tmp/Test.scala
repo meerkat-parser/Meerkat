@@ -55,27 +55,18 @@ object Test {
     parse("5*3", E)
   }
   
-//  trait LIST[T] {
-//    def add(elem: T): LIST[T]
-//  }
-//  
-//  trait Semantic[A, B] {
-//    
-//    type L = LIST[Value]
-//    type Value
-//  }
-//  
-//  
-//  
-//  trait NoValue
-//  implicit def f[A <: NoValue, B <: NoValue] = new Semantic[A, B] { type Value = NoValue }
-//  implicit def g[A, B] = new Semantic[A, B] { type Value = (A, B) }
-//  
-//  def fun[A, B](a: A, b: B)(implicit o: Semantic[A,B]): o.L = ???
-//  
-//  val a1: Int = ???
-//  val a2: Int = ???
-//  var v = fun(a1,a2)
-//  v = v.add((a1,a2))
+object Test {
+  val E: Nonterminal 
+    = syn ( "(" ~ E ~ ")" 
+          | E ~ "*" ~ E 
+          | E ~ "/" ~ E
+          | E ~ "+" ~ E 
+          | E ~ "-" ~ E
+          |  "-" ~ E
+          |   "a" )
   
+  def main(args: Array[String]): Unit = {
+    parse("a+a-a*a", E)
+  }
+}  
 }
