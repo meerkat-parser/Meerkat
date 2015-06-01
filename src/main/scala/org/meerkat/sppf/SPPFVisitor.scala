@@ -23,7 +23,7 @@ trait Memoization extends SPPFVisitor {
 trait EBNFList
 case class StarList(s: Symbol, l: List[Any]) extends EBNFList
 case class PlusList(s: Symbol, l: List[Any]) extends EBNFList
-
+case class OptList(s: Symbol, l: List[Any])  extends EBNFList
 
 class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
                              tn : (Int, Int) => Any,
@@ -47,6 +47,10 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
          case (PlusList(s, xs), r) => PlusList(s, xs :+ r)
          case x:  Any              => PlusList(s, List(x))
        }
+       case Opt(s) => v match {
+         case ()                   => OptList(s, List())
+         case x: Any               => OptList(s, List(x))
+       }
        case _  => nt(p.ruleType, v, leftExtent, rightExtent)
      }
    
@@ -68,9 +72,12 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
 object SemanticAction {
   
   def convert(t: Any): Any = t match {
-    case StarList(s, xs) => xs
-    case PlusList(s, xs) => xs
-    case _               => t 
+    case StarList(s, List()) => ()
+    case StarList(s, xs)     => xs
+    case PlusList(s, xs)     => xs
+    case OptList(s, List())  => ()
+    case OptList(s, xs)      => xs
+    case _                   => t 
   }
   
   def filterUnit(left: Any, right: Any) =
@@ -102,6 +109,7 @@ object TreeBuilder {
    def convert(t: Any): Tree = t match {
     case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
     case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
+    case OptList(s, xs)  => Appl(RegularRule(Opt(s)), xs.asInstanceOf[Seq[Tree]])
     case _               => t.asInstanceOf[Tree]
   }
   

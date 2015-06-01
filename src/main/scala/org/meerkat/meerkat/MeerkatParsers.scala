@@ -157,7 +157,8 @@ trait MeerkatParser extends Parser with Slot {
   var option: Option[MeerkatParser] = None
   def ?(): MeerkatParser = {
     option.getOrElse({
-      val p: MeerkatParser = this.name.value + "?" ::= this | epsilon
+//      val p: MeerkatParser = this.name.value + "?" ::= this | epsilon
+      val p = regular(org.meerkat.tree.Opt(this.symbol), this | epsilon)
       option = Option(p)
       p
     })
