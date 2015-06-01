@@ -16,11 +16,20 @@ object Test {
   
     val S = syn ( A ~ B  & { case (s1,s2) => s"$s2++$s1" } 
                 | "c"    ^ { toStr } )
-              
-    val SL: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
+                   
+    val SStar: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
+    val SPlus: Nonterminal & List[String] = syn { S.+ & { x => x.:+("HoHo!!!") }}
+    
+    val C = syn { "c" }
+    val D = syn { "d" }
+    
+    val P = syn ( C ~ D | "c" )
+    val PStar: Nonterminal = syn { P.* }
+    val PPlus: Nonterminal = syn { P.+ }
   
     def main(args: Array[String]): Unit = {
-      parse("ababab", SL)
+      // parse("ababab", SStar)
+      parse("cdcdcd", PStar)
     }
   }
   
@@ -126,6 +135,10 @@ object Test {
       // parse("a+a-a*a/a", E) // (a+((a-a)*(a/a)))
       parse("a+a-a*a", E)
     }
+  }
+  
+  def main(args: Array[String]): Unit = {
+     Test1.main(args) 
   }
 
 }

@@ -33,6 +33,28 @@ package object tmp {
   implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
   implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = (A,B) }
   
+  trait EBNF[Val] {
+    type OptOrSeq; type Seq; type Group
+    val add: ((OptOrSeq,Val)) => OptOrSeq
+    val unit: Val => OptOrSeq
+    val empty: String => OptOrSeq
+    val group: Val => Group
+  }
+  
+  implicit val ebnf1 = new EBNF[NoValue] { 
+    type OptOrSeq = NoValue; type Group = NoValue
+    val add: ((OptOrSeq,NoValue)) => OptOrSeq = _ => null
+    val unit: NoValue => OptOrSeq = _ => null
+    val empty: String => OptOrSeq = _ => null
+    val group: NoValue => Group = _ => null
+  }
+  implicit def ebnf2[Val: ![NoValue]#f] = new EBNF[Val] { 
+    type OptOrSeq = List[Val]; type Group = Val
+    val add: ((OptOrSeq,Val)) => OptOrSeq = { case (s,x) => s.:+(x) }
+    val unit: Val => OptOrSeq = x => List(x)
+    val empty: String => OptOrSeq = _ => List()
+    val group: Val => Group = x => x
+  }
   
   object Syntax {
     import AbstractCPSParsers._

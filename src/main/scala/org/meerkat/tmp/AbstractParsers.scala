@@ -79,7 +79,7 @@ trait AbstractParsers {
   trait CanBuildEBNF[A,ValA] {
     implicit val m: Memoizable[A]
     
-    type Regular <: AbstractNonterminal[A] { type Value = List[ValA] }   
+    type Regular <: AbstractNonterminal[A] { type Value = ValA }   
     type Group <: AbstractNonterminal[A] { type Value = ValA }
     
     def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular

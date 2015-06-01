@@ -70,7 +70,7 @@ object Parsers { import AbstractCPSParsers._
     implicit val m = obj4
     
     type T = NonPackedNode
-    type Regular = AbstractNonterminal { type Value = List[Val] }
+    type Regular = AbstractNonterminal { type Value = Val }
     type Group = AbstractNonterminal { type Value = Val }
     
     def regular(sym: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Regular 
@@ -79,7 +79,7 @@ object Parsers { import AbstractCPSParsers._
           def symbol = sym
           def name = symbol.toString
           override def toString = name   
-          type Value = List[Val]
+          type Value = Val
         }
     def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Group = ???
   }
@@ -94,14 +94,12 @@ object Parsers { import AbstractCPSParsers._
   type Nonterminal = AbstractNonterminal { type Value = NoValue }
   type &[A <: { type Abstract[_] },T] = A#Abstract[T]
   
-  def epsilon[Val] = new Terminal {
+  val Ø = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
     def symbol = org.meerkat.tree.Terminal(name)
     def name = "epsilon"; override def toString = name
-    type Value = Val
+    type Value = NoValue
   }
-  
-  val Ø = epsilon[NoValue]
   
   trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._ 
     type Value
@@ -169,19 +167,29 @@ object Parsers { import AbstractCPSParsers._
       def action = Option({ x => f(x.asInstanceOf[String]) })
     }
     
-//    var opt: Option[Nonterminal] = None
-//    def ?(): Nonterminal = opt.getOrElse({ 
-//      val p = regular(org.meerkat.tree.Opt(this.symbol), this | epsilon); opt = Option(p); p })
-//      
-    var star: Option[AbstractNonterminal { type Value = List[Symbol.this.Value] }] = None
-    def *() = star.getOrElse({
-      implicit val f4 = new |~|[List[Symbol.this.Value],Symbol.this.Value] { type R = List[Symbol.this.Value] }
-      val p = regular[NonPackedNode,this.Value](org.meerkat.tree.Star(this.symbol), star.get ~ this | epsilon[List[this.Value]])
-      star = Option(p); p })
-//    
-//    var plus: Option[AbstractNonterminal] = None
-//    def +(): AbstractNonterminal = plus.getOrElse({
-//      val p = regular(org.meerkat.tree.Plus(this.symbol), plus.get ~ this | this); plus = Option(p); p })
+    var opt: Option[AbstractNonterminal] = None
+    def ?(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
+      type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
+      opt.asInstanceOf[Option[T]].getOrElse({
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Opt(this.symbol), this & ebnf.unit | Ø ^ ebnf.empty) 
+        opt = Option(p); p })
+    }
+    
+    var star: Option[AbstractNonterminal] = None
+    def *(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
+      type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
+      star.asInstanceOf[Option[T]].getOrElse({
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), star.asInstanceOf[Option[T]].get ~ this & ebnf.add | Ø ^ ebnf.empty)
+        this.star = Option(p); p })
+    }
+          
+    var plus: Option[AbstractNonterminal] = None
+    def +(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
+      type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
+      plus.asInstanceOf[Option[T]].getOrElse({ 
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus.asInstanceOf[Option[T]].get ~ this & ebnf.add | this & ebnf.unit )
+        plus = Option(p); p })
+    }
     
     def \(): AbstractNonterminal = ???
     def !>>(): AbstractNonterminal = ???
