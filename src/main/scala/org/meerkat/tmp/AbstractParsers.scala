@@ -74,6 +74,9 @@ trait AbstractParsers {
     implicit val m: Memoizable[A]
     type Nonterminal <: AbstractNonterminal[A] { type Value = ValA }
     def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
+    
+    type Symbol <: AbstractSymbol[A] { type Value = ValA}
+    def symbol(p: AbstractSymbol[A]): Symbol
   }
   
   trait CanBuildEBNF[A,ValA] {
@@ -175,7 +178,6 @@ trait AbstractParsers {
           def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
         }
   }
-  
 }
  
 object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
@@ -202,6 +204,24 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     lazy val q: Regular = builder.regular(symbol, memoize(p(q))); q
   }
   
+  def preFilter[B](p: AbstractSymbol[B], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
+      builder symbol new AbstractParser[B] {
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
+        def name = prefix + " " + p.name; def symbol = p.symbol; override def toString = name
+        type Value = p.Value
+        def action = None
+      }
+    }
+  
+  def postFilter[B](p: AbstractSymbol[B], pred: (Input,B) => Boolean, postfix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
+      builder symbol new AbstractParser[B] {
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
+        def name = p.name + " " + postfix; def symbol = p.symbol; override def toString = name
+        type Value = p.Value
+        def action = None
+      }
+    }
+  
   import CPSResult.memo
   
   protected def memoize[A: Memoizable](p: => AbstractParser[A])(implicit obj: ClassTag[Result[A]]): AbstractParser[A] = {
@@ -214,8 +234,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
         val result = results(i)
         if (result == null) { results(i) = memo(q(input,i,sppfLookup)); results(i) } 
         else result
-      }
-      
+      }   
       def symbol = q.symbol
     }
   }

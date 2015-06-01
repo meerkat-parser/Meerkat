@@ -64,6 +64,13 @@ object Parsers { import AbstractCPSParsers._
           def name = nt
           override def toString = name
         }
+    
+    type Symbol = Parsers.Symbol { type Value = Val}
+    def symbol(p: AbstractSymbol[NonPackedNode]) = new Parsers.Symbol { 
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
+      def name = p.name; def symbol = p.symbol
+      type Value = Val
+    }
   }
   
   implicit def obj6[Val] = new CanBuildEBNF[NonPackedNode,Val] {
@@ -76,8 +83,7 @@ object Parsers { import AbstractCPSParsers._
     def regular(sym: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Regular 
       = new AbstractNonterminal {
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-          def symbol = sym
-          def name = symbol.toString
+          def name = symbol.toString; def symbol = sym
           override def toString = name   
           type Value = Val
         }
@@ -191,9 +197,9 @@ object Parsers { import AbstractCPSParsers._
         plus = Option(p); p })
     }
     
-    def \(): AbstractNonterminal = ???
-    def !>>(): AbstractNonterminal = ???
-    def !<<(): AbstractNonterminal = ???
+    def \(arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
+    def !>>(arg: String) = postFilter[NonPackedNode](this, (input,t) => !input.startsWith(arg, t.rightExtent), s" !>> $arg")
+    def !<<(arg: String) = preFilter[NonPackedNode](this, (input,i) => !input.substring(0,i).endsWith(arg), s"$arg !<< ")
   }
   
   trait SequenceBuilderWithAction extends (Slot => Sequence) { import AbstractParser._
