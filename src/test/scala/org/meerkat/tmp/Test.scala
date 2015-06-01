@@ -19,6 +19,7 @@ object Test {
                    
     val SStar: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
     val SPlus: Nonterminal & List[String] = syn { S.+ & { x => x.:+("HoHo!!!") }}
+    val SOpt: Nonterminal & List[String] = syn { S.? & { x => x.:+("HoHo!!!") }}
     
     val C = syn { "c" }
     val D = syn { "d" }
@@ -26,6 +27,7 @@ object Test {
     val P = syn ( C ~ D | "c" )
     val PStar: Nonterminal = syn { P.* }
     val PPlus: Nonterminal = syn { P.+ }
+    val POpt: Nonterminal = syn { P.? }
   
     def main(args: Array[String]): Unit = {
       // parse("ababab", SStar)
