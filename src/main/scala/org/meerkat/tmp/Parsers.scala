@@ -7,6 +7,7 @@ import scala.reflect.ClassTag
 import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
+import scala.util.matching.Regex
 
 object Parsers { import AbstractCPSParsers._
   
@@ -93,7 +94,7 @@ object Parsers { import AbstractCPSParsers._
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
   
-  trait Terminal extends Symbol { def symbol: org.meerkat.tree.Terminal }
+  trait Terminal extends Symbol { type Value = NoValue; def symbol: org.meerkat.tree.Terminal }
   
   trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal; type Abstract[X] = AbstractNonterminal { type Value = X } }
   
@@ -104,14 +105,14 @@ object Parsers { import AbstractCPSParsers._
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
     def symbol = org.meerkat.tree.Terminal(name)
     def name = "epsilon"; override def toString = name
-    type Value = NoValue
   }
   
   trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._ 
     type Value
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout = default) = (this ~~ layout.get).~~(p)(tuple)
+    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | [U >: this.Value] (p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
     def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
@@ -150,7 +151,8 @@ object Parsers { import AbstractCPSParsers._
     def name: String
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+    def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout = default) = (this ~~ layout.get).~~(p)(tuple)
+    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)
     def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSymSeq(this, p)
@@ -185,7 +187,7 @@ object Parsers { import AbstractCPSParsers._
     def *(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       star.asInstanceOf[Option[T]].getOrElse({
-        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), star.asInstanceOf[Option[T]].get ~ this & ebnf.add | Ø ^ ebnf.empty)
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), star.asInstanceOf[Option[T]].get ~~ this & ebnf.add | Ø ^ ebnf.empty)
         this.star = Option(p); p })
     }
           
@@ -193,7 +195,7 @@ object Parsers { import AbstractCPSParsers._
     def +(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       plus.asInstanceOf[Option[T]].getOrElse({ 
-        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus.asInstanceOf[Option[T]].get ~ this & ebnf.add | this & ebnf.unit )
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus.asInstanceOf[Option[T]].get ~~ this & ebnf.add | this & ebnf.unit )
         plus = Option(p); p })
     }
     
@@ -227,15 +229,21 @@ object Parsers { import AbstractCPSParsers._
     def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
   }
   
-  implicit def toTerminal(s: String) 
-    = new Terminal { 
-        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
-          = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
-            else CPSResult.failure
-        def symbol = org.meerkat.tree.Terminal(s)
-        def name = s; override def toString = name
-        type Value = NoValue
-      }
+  implicit def toTerminal(s: String) = new Terminal { 
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
+      = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
+        else CPSResult.failure
+    def symbol = org.meerkat.tree.Terminal(s); def name = s; override def toString = name
+  }
+  
+  implicit def toTerminal(r: Regex) = new Terminal {
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = { 
+      val end = input.matchRegex(r, i)
+      if(end != -1) CPSResult.success(sppfLookup.getTerminalNode(r.toString, i, end))
+      else CPSResult.failure 
+    }
+    def name = r.toString; def symbol = org.meerkat.tree.Terminal(name)
+  }
   
   def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)

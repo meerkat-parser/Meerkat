@@ -29,13 +29,14 @@ object Test {
     val PPlus: Nonterminal = syn { P.+ }
     val POpt: Nonterminal = syn { P.? }
     
-    val PChar = syn { P \ "cdd" }
+    val PChar1 = syn { P \ "cdd" }
+    val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
       // parse("ababab", SStar)
       // parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      parse("cd", PChar)
+      parse("cdcdcdcd", PChar2)
     }
   }
   
@@ -61,7 +62,7 @@ object Test {
     val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
     
     def main(args: Array[String]): Unit = {
-      parse("5*3", E)
+      parse("5    * 3", E)
     }
   }       
 
@@ -144,7 +145,7 @@ object Test {
   }
   
   def main(args: Array[String]): Unit = {
-     Test1.main(args) 
+     Test3.main(args) 
   }
 
 }

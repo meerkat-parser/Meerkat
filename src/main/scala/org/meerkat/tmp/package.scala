@@ -56,6 +56,10 @@ package object tmp {
     val group: Val => Group = x => x
   }
   
+  trait Layout { def get: Parsers.Symbol { type Value = NoValue } }
+  def layout(p: Parsers.Symbol { type Value = NoValue }) = new Layout { def get = p }
+  val default = layout(org.meerkat.util.JavaTokens.Layout)
+  
   object Syntax {
     import AbstractCPSParsers._
     import Parsers._
