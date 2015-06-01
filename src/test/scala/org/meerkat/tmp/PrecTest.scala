@@ -11,10 +11,8 @@ object Test2 {
   
   val toStr: String => String = x => x
   
-  val A: Parsers.Terminal { type Value = NoValue } = "9"
-  
   val E: OperatorNonterminal & String 
-    = syn ( E ~ "+" ~ E & { case (x,y) => s"($x) + ($y)" } | A ^ toStr )
+    = syn ( E ~ "+" ~ E & { case (x,y) => s"($x) + ($y)" } | "9" ^ toStr )
     
   def main(args: Array[String]): Unit = {
     parse("9+9", E)
@@ -22,18 +20,21 @@ object Test2 {
 }
 
 object Test3 {
-  val E: OperatorNonterminal
   
-    = syn (  "(" ~ E ~ ")" 
-          |> right { E ~ "^" ~ E } 
+  val toInt: String => Int = x => x.toInt
+  
+  val E: OperatorNonterminal & Int
+  
+    = syn (  "(" ~ E ~ ")"
+          |> right { E ~ "*" ~ E } & { case (x,y) => x*y } 
           |> E ~ "+"
-          |> left { E ~ "+" ~ E }
-          |> "-" ~ E
-          | "a" )
+          |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
+          |> "-" ~ E               & {x => -x }
+          | "3"                    ^ toInt )
   
   def main(args: Array[String]): Unit = {
     // parse("((a))", E)
-    parse("a+-a+a^a+^a+a", E)
+    parse("3+-3+3*3+*3+3", E) // 3+(-(3+(((3*3)+)*3)+3)) == -30
   }
 }
 

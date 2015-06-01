@@ -99,7 +99,8 @@ object OperatorParsers {
     
     def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpSymOpAlt(this, altAltOpAlt(p))
     def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSymOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpSym(this, altSymOpSym(p))        
+    def | [U >: V](p: Symbol { type Value = U }) = altOpSym(this, altSymOpSym(p))    
+    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpSym(this, altSymOpSym(p))
   }
   
   type OperatorNonterminal = AbstractOperatorNonterminal[NoValue]
@@ -130,8 +131,7 @@ object OperatorParsers {
         val p = OperatorSequenceBuilder.this(head)
         new OperatorSequenceWithAction[U] {
           def apply(prec1: Prec, prec2: Prec) = p(prec1,prec2) & f
-          def infix = p.infix; def prefix = p.prefix; def postfix = p.postfix
-          def assoc = p.assoc
+          def infix = p.infix; def prefix = p.prefix; def postfix = p.postfix; def assoc = p.assoc
         }
       }
     }
@@ -165,6 +165,7 @@ object OperatorParsers {
     def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpAlt(this, altAltOpAlt(p))
     def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpAltOpSeq(this, altSeqOpSeq(p))
     def | [U >: V](p: Symbol { type Value = U }) = altOpAltOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpAltOpSym(this, altSymOpSym(p))
     
     def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpAlt(this, p)
     def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpAltOpSeq(this, p)
@@ -213,6 +214,8 @@ object OperatorParsers {
     def | (q: AbstractOperatorNonterminal[NoValue]) = altOpSym(altSymOpSym(p), q)
     
     def | (q: OperatorSequenceBuilderWithAction[NoValue]) = altOpSymOpSeq(altSymOpSym(p), q)
+    
+    def ^ [U](f: String => U)(implicit sub: p.Value <:< NoValue) = p ^ f
   }
   
   def left[V](p: OperatorSequenceBuilder[V]): OperatorSequenceBuilder[V] = { import OperatorImplicits._
