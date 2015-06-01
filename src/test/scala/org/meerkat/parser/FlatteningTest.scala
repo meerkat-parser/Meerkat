@@ -123,10 +123,22 @@ object FlatteningTest {
     val x = TreeBuilder.build(r.right.get.sppf)(input)   
     visualize(x, input)
   }
+    
+  def test9() {
+    val A: MeerkatParser = "A" ::= "a"
+    val B: MeerkatParser = "B" ::= "b"
+    val S: MeerkatParser = "S" ::= A ~~ B.?
+
+    val input: Input = "ab"
+    val r = new MeerkatParsers {} . parse(S, input)
+    visualize(r.right.get.sppf, input)
+    val x = TreeBuilder.build(r.right.get.sppf)(input)   
+    visualize(x, input)
+  }
   
   
   def main(args: Array[String]): Unit = {
-    test1()
+    test9()
   }
   
 }
