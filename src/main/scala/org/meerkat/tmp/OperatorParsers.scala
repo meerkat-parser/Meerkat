@@ -290,6 +290,12 @@ object OperatorParsers {
   def ntSym[Val](name: String, p: AbstractOperatorNonterminal[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
     nonterminalSym(name, p)
   }
+  def ntSeqWithAction[Val](name: String, p: => OperatorSequenceBuilderWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSeq
+    nonterminalSeq(name, p)
+  }
+  def ntSymWithAction[Val](name: String, p: OperatorNonterminalWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
+    nonterminalSym(name, p)
+  }
   
   object Syntax {
     import scala.language.experimental.macros
@@ -298,6 +304,8 @@ object OperatorParsers {
     def syn[T](p: OperatorAlternationBuilder[T]) = macro makeOperatorNonterminalAltWithName[T]
     def syn[T](p: OperatorSequenceBuilder[T]) = macro makeOperatorNonterminalSeqWithName[T]
     def syn[T](p: AbstractOperatorNonterminal[T]) = macro makeOperatorNonterminalSymWithName[T]
+    def syn[T](p: OperatorSequenceBuilderWithAction[T]) = macro makeOperatorNonterminalSeqWithActionWithName[T]
+    def syn[T](p: OperatorNonterminalWithAction[T]) = macro makeOperatorNonterminalSymWithActionWithName[T]
     
     import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
 
@@ -307,6 +315,10 @@ object OperatorParsers {
       = makeCallWithName (c, "OperatorParsers.ntSeq")
     def makeOperatorNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractOperatorNonterminal[T]]): c.Expr[OperatorNonterminal & T] 
       = makeCallWithName (c, "OperatorParsers.ntSym")
+    def makeOperatorNonterminalSeqWithActionWithName[T](c: Context)(p: c.Expr[OperatorSequenceBuilderWithAction[T]]): c.Expr[OperatorNonterminal & T] 
+      = makeCallWithName (c, "OperatorParsers.ntSeqWithAction")
+    def makeOperatorNonterminalSymWithActionWithName[T](c: Context)(p: c.Expr[OperatorNonterminalWithAction[T]]): c.Expr[OperatorNonterminal & T] 
+      = makeCallWithName (c, "OperatorParsers.ntSymWithAction")
   }
     
   def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
