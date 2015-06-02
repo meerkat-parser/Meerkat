@@ -37,12 +37,12 @@ object Test {
     val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
-      // parse("ab,ab,ab", SStarSep)
+      parse("ab,ab,ab", SStarSep)
       // parse("cdcdcd", PStar)
       // parse("ababab", SStar)
       // parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      parse("ab", SOpt)
+      // parse("ab", SOpt)
       // parse("cd cd cd cd", PChar2)
       // parse("c d", PGroup)
 //      parse("a b", SGroup)
@@ -180,7 +180,7 @@ object Test {
     
     lazy val Es = E.+(",")
     val E: OperatorNonterminal & Int 
-      = syn (  Op ~ "(" ~ Es ~ ")"  & { case (op,x) => x.reduceLeft((y,z) => y + z) }
+      = syn (  Op ~ "(" ~ Es ~ ")"   & { case (op,x) => x.reduceLeft((y,z) => y + z) }
             |  left { E ~ "*" ~ E }  & { case (x,y) => x*y }
             |> "-" ~ E               & { x => -x }
             |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
@@ -193,7 +193,7 @@ object Test {
   }
   
   def main(args: Array[String]): Unit = {
-     Test11.main(args) 
+     Test11.main(args)
   }
 
 }
