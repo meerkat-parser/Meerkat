@@ -8,6 +8,8 @@ import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.util.visualization._
 import org.meerkat.sppf.SemanticAction
 import org.meerkat.sppf.TreeBuilder
+import scala.collection.mutable._
+import scala.collection.JavaConversions._
 
 object OperatorParsers {
   
@@ -80,7 +82,7 @@ object OperatorParsers {
   
   trait OperatorAlternation[V] extends (Prec => Parsers.AlternationBuilder { type Value = V })
   
-  trait AbstractOperatorNonterminal[V] extends (Prec => Parsers.AbstractNonterminal { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait AbstractOperatorNonterminal[V] extends (Prec => Parsers.AbstractNonterminal { type Value = V }) with EBNFs[V] { import OperatorImplicits._; import AbstractOperatorParser._
     type Abstract[X] = AbstractOperatorNonterminal[X]
     def name: String
   
@@ -302,4 +304,33 @@ object OperatorParsers {
     nonterminalSym(name, p)
   }
   
+  trait EBNFs[V] { self: AbstractOperatorNonterminal[V] =>
+    var star: Option[AbstractOperatorNonterminal[_]] = None
+    def *(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
+      star.getOrElse({
+        val p = new AbstractOperatorNonterminal[ebnf.OptOrSeq] { def apply(prec: Prec) = self($).*(ebnf,layout); def name = self.name + "*" }
+        star = Option(p); p
+        }).asInstanceOf[AbstractOperatorNonterminal[ebnf.OptOrSeq]]
+    }
+    
+    var star_sep: Map[String,AbstractOperatorNonterminal[_]] = new java.util.HashMap[String,AbstractOperatorNonterminal[_]]()
+    def *(sep: String)(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
+      star_sep.getOrElseUpdate(sep, new AbstractOperatorNonterminal[ebnf.OptOrSeq] { 
+        def apply(prec: Prec) = self($).*(sep)(ebnf,layout); def name = s"{${self.name} $sep}*" }).asInstanceOf[AbstractOperatorNonterminal[ebnf.OptOrSeq]]
+    }
+    
+    var plus: Option[AbstractOperatorNonterminal[_]] = None
+    def +(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
+      plus.getOrElse({
+        val p = new AbstractOperatorNonterminal[ebnf.OptOrSeq] { def apply(prec: Prec) = self($).+(ebnf,layout); def name = self.name + "+" }
+        plus = Option(p); p
+        }).asInstanceOf[AbstractOperatorNonterminal[ebnf.OptOrSeq]]
+    }
+    
+    var plus_sep: Map[String,AbstractOperatorNonterminal[_]] = new java.util.HashMap[String,AbstractOperatorNonterminal[_]]()
+    def +(sep: String)(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
+      plus_sep.getOrElseUpdate(sep, new AbstractOperatorNonterminal[ebnf.OptOrSeq] { 
+        def apply(prec: Prec) = self($).+(sep)(ebnf,layout); def name = s"{${self.name} $sep}+" }).asInstanceOf[AbstractOperatorNonterminal[ebnf.OptOrSeq]]
+    }
+  }
 }
