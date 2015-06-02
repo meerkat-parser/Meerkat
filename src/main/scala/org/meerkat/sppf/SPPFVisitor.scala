@@ -50,8 +50,8 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
          case x:  Any                   => PlusList(s, List(x))
        }
        case Opt(s) => v match {
-         case ()                   => OptList(s, List())
-         case x: Any               => OptList(s, List(x))
+         case ()                   => println("Hi1"); OptList(s, List())
+         case x: Any               => println(s"Hi2 $x"); OptList(s, List(x))
        }
        case _  => nt(p.ruleType, v, leftExtent, rightExtent)
      }
@@ -79,7 +79,7 @@ object SemanticAction {
     case PlusList(s, xs)     => convert(xs)
     case OptList(s, List())  => ()
     case OptList(s, xs)      => convert(xs)
-    case List(x)             => convert(x)
+    case List(List(x))       => convert(List(x))
     case List()              => ()
     case _                   => t 
   }
