@@ -23,6 +23,7 @@ object Parsers { import AbstractCPSParsers._
       = new Sequence { 
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
           def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
+          override def reset = p.reset
         }  
     def index(a: T): Int = a.rightExtent
     def intermediate(a: T, b: T, p: Slot, sppfLookup: SPPFLookup): T = sppfLookup.getIntermediateNode(p, a, b)
@@ -45,6 +46,7 @@ object Parsers { import AbstractCPSParsers._
       = new Alternation {
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Alt]
+          override def reset = p.reset
         }   
     type AlternationBuilder = Parsers.AlternationBuilder { type Value = ValB }
     def builderAlt(f: Head => Alternation) = new Parsers.AlternationBuilder { type Value = ValB; def apply(head: Head) = f(head) }
