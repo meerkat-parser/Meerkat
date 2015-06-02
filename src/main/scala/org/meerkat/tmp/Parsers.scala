@@ -115,19 +115,12 @@ object Parsers { import AbstractCPSParsers._
     def name = "epsilon"; override def toString = name
   }
   
-  trait SequenceBuilder extends (Slot => Sequence) { import AbstractParser._ 
+  trait SequenceBuilder extends (Slot => Sequence) with SequenceBuilderOps { import AbstractParser._ 
     type Value
     def action: Option[Any => Any] = None
     
     def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
-    
-    def | [U >: this.Value] (p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
-    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
-    def | [U >: this.Value](p: Symbol { type Value = U }) = altSeqSym(this, p)
-    
-    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSeq(this, q)
-    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSeqSym(this, q)
     
     def & [V](f: this.Value => V) = new SequenceBuilderWithAction {
       type Value = V
@@ -145,6 +138,23 @@ object Parsers { import AbstractCPSParsers._
       = groupSeq[NonPackedNode,ebnf.Group](this)
   }
   
+  trait SequenceBuilderWithAction extends (Slot => Sequence) with SequenceBuilderOps { import AbstractParser._
+    type Value
+    def action: Option[Any => Any]
+  }
+  
+  trait SequenceBuilderOps extends (Slot => Sequence) { import AbstractParser._
+    type Value
+    def action: Option[Any => Any]
+    
+    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
+    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
+    def | [U >: this.Value](p: Symbol { type Value = U }) = altSeqSym(this, p)
+    
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSeqSym(this, q)
+  }
+  
   trait AlternationBuilder extends (Head => Alternation) { import AbstractParser._
     type Value
     
@@ -159,35 +169,70 @@ object Parsers { import AbstractCPSParsers._
       = groupAlt[NonPackedNode,ebnf.Group](this)
   }
   
-  trait Symbol extends AbstractParser[NonPackedNode] { import AbstractParser._
-    
+  trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with SemanticActions with EBNFs with CharLevelDisambiguation { import AbstractParser._    
     type Value  
     def name: String
     def action: Option[Any => Any] = None
     
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
-    
+    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }    
+  }
+  
+  trait SymbolWithAction extends AbstractParser[NonPackedNode] with SymbolOps { import AbstractParser._
+    type Value  
+    def name: String
+    def action: Option[Any => Any]  
+  }
+  
+  trait SymbolOps extends AbstractParser[NonPackedNode] { import AbstractParser._
+    type Value  
+    def name: String
+    def action: Option[Any => Any]
+  
     def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)
     def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSymSeq(this, p)
     def | [U >: this.Value](p: Symbol { type Value = U }) = altSym(this, p)
     
     def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSymSeq(this, q)
     def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
-    
+  }
+  
+  implicit def toTerminal(s: String) = new Terminal { 
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
+      = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
+        else CPSResult.failure
+    def symbol = org.meerkat.tree.Terminal(s); def name = s; override def toString = name
+  }
+  
+  implicit def toTerminal(r: Regex) = new Terminal {
+    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = { 
+      val end = input.matchRegex(r, i)
+      if(end != -1) CPSResult.success(sppfLookup.getTerminalNode(r.toString, i, end))
+      else CPSResult.failure 
+    }
+    def name = r.toString; def symbol = org.meerkat.tree.Terminal(name)
+  }
+  
+  def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
+  def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
+  def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
+  
+  trait SemanticActions { self: Symbol =>   
     def &[V](f: this.Value => V) = new SymbolWithAction {
       type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
-      def name = Symbol.this.name; def symbol = Symbol.this.symbol
-      def action = Option({ x => f(x.asInstanceOf[Symbol.this.Value]) })
-    }
-    
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
+      def name = self.name; def symbol = self.symbol
+      def action = Option({ x => f(x.asInstanceOf[self.Value]) })
+    }   
     def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
       type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
-      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
+      def name = self.name; def symbol = self.symbol
       def action = Option({ x => f(x.asInstanceOf[String]) })
     }
+  }
+
+  trait EBNFs { self: Symbol =>
     
     var opt: Option[AbstractNonterminal] = None
     def ?(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
@@ -244,55 +289,11 @@ object Parsers { import AbstractCPSParsers._
         regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), plus_sep.get(sep.name).asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
       }).asInstanceOf[T]
     }
-    
+  }
+  
+  trait CharLevelDisambiguation { self: Symbol =>
     def \(arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
     def !>>(arg: String) = postFilter[NonPackedNode](this, (input,t) => !input.startsWith(arg, t.rightExtent), s" !>> $arg")
     def !<<(arg: String) = preFilter[NonPackedNode](this, (input,i) => !input.substring(0,i).endsWith(arg), s"$arg !<< ")
   }
-  
-  trait SequenceBuilderWithAction extends (Slot => Sequence) { import AbstractParser._
-    type Value
-    def action: Option[Any => Any]
-    
-    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
-    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSeq(this, p)
-    def | [U >: this.Value](p: Symbol { type Value = U }) = altSeqSym(this, p)
-    
-    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSeq(this, q)
-    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSeqSym(this, q)
-  }
-  
-  trait SymbolWithAction extends AbstractParser[NonPackedNode] { import AbstractParser._
-    type Value  
-    def name: String
-    def action: Option[Any => Any]
-  
-    def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)
-    def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altSymSeq(this, p)
-    def | [U >: this.Value](p: Symbol { type Value = U }) = altSym(this, p)
-    
-    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altSymSeq(this, q)
-    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
-  }
-  
-  implicit def toTerminal(s: String) = new Terminal { 
-    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
-      = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
-        else CPSResult.failure
-    def symbol = org.meerkat.tree.Terminal(s); def name = s; override def toString = name
-  }
-  
-  implicit def toTerminal(r: Regex) = new Terminal {
-    def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = { 
-      val end = input.matchRegex(r, i)
-      if(end != -1) CPSResult.success(sppfLookup.getTerminalNode(r.toString, i, end))
-      else CPSResult.failure 
-    }
-    def name = r.toString; def symbol = org.meerkat.tree.Terminal(name)
-  }
-  
-  def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
-  def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
-  def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
-  
 }

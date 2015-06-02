@@ -1,11 +1,11 @@
 package org.meerkat.tmp
 
+import org.meerkat.Syntax._
+import Parsers._
+import OperatorParsers._
+import DefaultLayout._
+
 object Test {
-  
-  import Parsers._
-  import OperatorParsers._
-  import Syntax._
-  import DefaultLayout._
   
   val toStr: String => String = x => x
   val toInt: String => Int = x => x.toInt
