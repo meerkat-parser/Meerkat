@@ -27,7 +27,7 @@ case class OptList(s: Symbol, l: List[Any])  extends EBNFList
 
 class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
                              tn : (Int, Int) => Any,
-                             int: (RuleType, Any, Any) => Any,
+                             int: (RuleType, Any) => Any,
                              nt:  (RuleType, Any, Int, Int) => Any) extends SPPFVisitor {
  
    type T = Any
@@ -37,58 +37,80 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
    
    def flatten(p: PackedNode, v: Any, leftExtent: Int, rightExtent: Int) = 
      p.ruleType.head match {
-       case Star(s) => v match {
-         case ()                        => StarList(s, List())
-         case (StarList(s, xs), r)      => StarList(s, xs :+ r)
-         case ((StarList(s, xs), y), r) => StarList(s, xs :+y :+ r)    // To deal with nested intermediate nodes
-         case x: Any                    => StarList(s, List(x))
-       }
-       case Plus(s) => v match {
-         case ()                        => PlusList(s, List())
-         case (PlusList(s, xs), r)      => PlusList(s, xs :+ r)
-         case ((PlusList(s, xs), y), r) => PlusList(s, xs :+y :+ r)
-         case x:  Any                   => PlusList(s, List(x))
-       }
-       case Opt(s) => v match {
-         case ()                        => OptList(s, List())
-         case x: Any                    => OptList(s, List(x))
-       }
-       case _                           => nt(p.ruleType, v, leftExtent, rightExtent)
+       case Star(s) => StarList(s, flattenStar(v))
+       case Plus(s) => PlusList(s, flattenPlus(v))
+       case Opt(s)  => OptList(s, flattenOpt(v))
+       case _       => nt(p.ruleType, v, leftExtent, rightExtent)
      }
+   
+   def flattenStar(v: Any): List[Any] = v match {
+     case ()                          => List()
+     case (StarList(s, xs), r)        => xs :+ r
+     case PlusList(s, xs)             => xs
+     case StarList(s, xs)             => xs
+     case x: Any                      => List(x)
+   }
+   
+   def flattenPlus(v: Any): List[Any] = v match {
+     case ()                          => List()
+     case (PlusList(s, xs), r)        => xs :+ r
+     case PlusList(s, xs)             => xs
+     case x: Any                      => List(x)         
+   }
+   
+   def flattenOpt(v: Any): List[Any] = v match {
+     case ()                          => List()
+     case x: Any                      => List(x)     
+   }
+   
+   def intermediate(p: PackedNode, l: Any, r: Any): Any = (l,r) match {
+     case (StarList(s, xs), ()) => StarList(s, xs)
+     case (StarList(s, xs), r)  => StarList(s, xs :+ r)
+     case (PlusList(s, xs), ()) => PlusList(s, xs)
+     case (PlusList(s, xs), r)  => PlusList(s, xs :+ r)
+     case ((), ())              => ()
+     case (l, ())               => int(p.ruleType, l)
+     case ((), r)               => int(p.ruleType, r)
+     case (l, r)                => int(p.ruleType, (l, r))
+   } 
    
    def nonterminal(p: PackedNode, leftExtent: Int, rightExtent: Int): Any = 
       flatten(p, visit(p.leftChild), leftExtent, rightExtent)
   
   def visit(node: SPPFNode): Any = node match {
+     
      case t: TerminalNode     => if (t.leftExtent == t.rightExtent) () 
                                  else tn(t.leftExtent, t.rightExtent)
     
-     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) else nonterminal(n.first, n.leftExtent, n.rightExtent)
+     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) 
+                                 else nonterminal(n.first, n.leftExtent, n.rightExtent)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) else int(i.first.ruleType, visit(i.first.leftChild), visit(i.first.rightChild))
+     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) 
+                                 else intermediate(i.first, visit(i.first.leftChild), visit(i.first.rightChild))
      
      case p: PackedNode       => throw new RuntimeException("Should not traverse a packed node!")
-  } 
+  }
+
 }
 
 object SemanticAction {
   
   def convert(t: Any): Any = t match {
-    case StarList(s, List()) => ()
+    case StarList(s, List())                 => ()
     case StarList(s, List(x@StarList(t, l))) => convert(x)
-    case StarList(s, xs)     => xs
+    case StarList(s, xs)                     => xs
     case PlusList(s, List(x@PlusList(t, l))) => convert(x)
-    case PlusList(s, xs)     => xs
-    case OptList(s, List())  => ()
-    case OptList(s, xs)      => xs
-    case _                   => t 
+    case PlusList(s, xs)                     => xs
+    case OptList(s, List())                  => ()
+    case OptList(s, xs)                      => xs
+    case _                                   => t 
   }
   
-  def filterUnit(left: Any, right: Any) =
-    if (left == () && right == ()) ()
-    else if (left == ()) right
-    else if (right == ()) left
-    else (left, right)
+//  def filterUnit(left: Any, right: Any) =
+//    if (left == () && right == ()) ()
+//    else if (left == ()) right
+//    else if (right == ()) left
+//    else (left, right)
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
   
@@ -99,10 +121,10 @@ object SemanticAction {
       if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(convert(v)) 
     else convert(v)
     
-  def int(input: Input)(t: RuleType, left: Any, right: Any) = 
+  def int(input: Input)(t: RuleType, v: Any) = 
     if (t.action.isDefined)
-      t.action.get(filterUnit(left, right))
-    else filterUnit(left, right)
+      t.action.get(v)
+    else v
   
   def execute(node: NonPackedNode)(implicit input: Input) =
     new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node)
@@ -118,11 +140,7 @@ object TreeBuilder {
   }
   
   def flatten(t: Any): Seq[Any] = t match {
-    case (t: (_, _), ()) => flatten(t)
     case (t: (_, _), y)  => flatten(t) :+ convert(y)
-    case ((), ())        => List()
-    case ((), y)         => List(convert(y))
-    case (x, ())         => List(convert(x))
     case (x, y)          => List(convert(x), convert(y))
     case ()              => List()
     case x               => List(convert(x))
@@ -132,7 +150,7 @@ object TreeBuilder {
   
   def t(input: Input)(l: Int, r: Int): Tree = Terminal(input.substring(l, r))
   
-  def int(input: Input)(t: RuleType, left: Any, right: Any) = (left, right)
+  def int(input: Input)(t: RuleType, v: Any) = v
   
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
 
