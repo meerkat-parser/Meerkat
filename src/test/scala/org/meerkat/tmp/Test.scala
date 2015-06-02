@@ -42,9 +42,11 @@ object Test {
       // parse("ababab", SStar)
       // parse("cdcdcd", PStar)
       // parse("cd", POpt)
+      parse("ab", SOpt)
       // parse("cd cd cd cd", PChar2)
       // parse("c d", PGroup)
 //      parse("a b", SGroup)
+      // parse("a b", SGroup)
     }
   }
   

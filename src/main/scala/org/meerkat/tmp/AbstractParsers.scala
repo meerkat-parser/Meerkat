@@ -20,7 +20,10 @@ trait AbstractParsers {
   
   type Result[+T] <: MonadPlus[T, Result]
   
-  trait AbstractParser[+T] extends ((Input, Int, SPPFLookup) => Result[T]) { def symbol: org.meerkat.tree.Symbol }
+  trait AbstractParser[+T] extends ((Input, Int, SPPFLookup) => Result[T]) { 
+    def symbol: org.meerkat.tree.Symbol
+    def reset: Unit = {}
+  }
   
   type AbstractSequence[+T] = AbstractParser[T] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   
@@ -100,10 +103,10 @@ trait AbstractParsers {
     protected def sequence[A,B,ValA,ValB](slot: Slot, p1: AbstractParser[A], p2: AbstractParser[B], s: Int)
                                          (implicit builder: CanBuildSequence[A,B,ValA,ValB]): builder.Sequence = { import builder._
       builder sequence (new AbstractParser[T] with Slot {
-        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
-          = p1(input, i, sppfLookup) flatMap { x1 => p2(input, index(x1), sppfLookup).smap { x2 => intermediate(x1, x2, this, sppfLookup) } }
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p1(input,i,sppfLookup) flatMap { x => p2(input,index(x),sppfLookup).smap { intermediate(x,_,this,sppfLookup) } }
         def size = s; def symbol = org.meerkat.tree.Sequence(p1.symbol, p2.symbol)
         def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, s)
+        override def reset = { p1.reset; p2.reset }
         override def toString = s"[${ruleType.toString()},$size]"
       })
     }
@@ -158,6 +161,7 @@ trait AbstractParsers {
           def symbol = q.symbol
           lazy val ruletype = { val rule = org.meerkat.tree.Rule(head.symbol, this.symbol); rule.action = p.action; rule }
           def ruleType = ruletype 
+          override def reset = q.reset
           override def toString = s"p${this.hashCode}"
         }
     }
@@ -168,6 +172,7 @@ trait AbstractParsers {
         def symbol = p.symbol
         lazy val ruletype = { val rule = org.meerkat.tree.Rule(head.symbol, this.symbol); rule.action = p.action; rule }
         def ruleType = ruletype
+        override def reset = p.reset
         override def toString = s"p${this.hashCode}"
       }
     }
@@ -176,6 +181,7 @@ trait AbstractParsers {
       = builder alternation new AbstractParser[B] {
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p1(input,i,sppfLookup) orElse p2(input,i,sppfLookup)
           def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
+          override def reset = { p1.reset; p2.reset }
         }
   }
 }
@@ -225,6 +231,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
                      } 
         type Value = p.Value
         def action = None
+        override def reset = p.reset
       }
     }
   
@@ -239,6 +246,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
                      } 
         type Value = p.Value
         def action = None
+        override def reset = p.reset
       }
     }
   
@@ -247,7 +255,6 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   protected def memoize[A: Memoizable](p: => AbstractParser[A])(implicit obj: ClassTag[Result[A]]): AbstractParser[A] = {
     lazy val q: AbstractParser[A] = p
     var results: Array[Result[A]] = null
-    
     new AbstractParser[A] {
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = {
         if (results == null) results = new Array(input.length + 1)
@@ -256,6 +263,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
         else result
       }   
       def symbol = q.symbol
+      override def reset = { results = null }
     }
   }
   
