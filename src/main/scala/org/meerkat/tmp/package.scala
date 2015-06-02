@@ -33,6 +33,8 @@ package object tmp {
   implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
   implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = (A,B) }
   
+  type &[A <: { type Abstract[_] },T] = A#Abstract[T]
+  
   trait EBNF[Val] {
     type OptOrSeq; type Seq; type Group
     val add: ((OptOrSeq,Val)) => OptOrSeq

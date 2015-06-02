@@ -102,12 +102,10 @@ object Parsers { import AbstractCPSParsers._
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
   
-  trait Terminal extends Symbol { type Value = NoValue; def symbol: org.meerkat.tree.Terminal }
-  
   trait AbstractNonterminal extends Symbol { def symbol: org.meerkat.tree.Nonterminal; type Abstract[X] = AbstractNonterminal { type Value = X } }
-  
   type Nonterminal = AbstractNonterminal { type Value = NoValue }
-  type &[A <: { type Abstract[_] },T] = A#Abstract[T]
+  
+  trait Terminal extends Symbol { type Value = NoValue; def symbol: org.meerkat.tree.Terminal }
   
   val Ø = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
@@ -162,8 +160,8 @@ object Parsers { import AbstractCPSParsers._
     def | [U >: this.Value](p: SequenceBuilder { type Value = U }) = altAltSeq(this, p)
     def | [U >: this.Value](p: Symbol { type Value = U }) = altAltSym(this, p)
     
-    def | [U >: this.Value](q: SequenceBuilderWithAction)(implicit sub: this.Value <:< q.Value) = altAltSeq(this, q)
-    def | [U >: this.Value](q: SymbolWithAction)(implicit sub: this.Value <:< q.Value) = altAltSym(this, q)
+    def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altAltSeq(this, q)
+    def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altAltSym(this, q)
     
     def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } 
       = groupAlt[NonPackedNode,ebnf.Group](this)
@@ -172,8 +170,7 @@ object Parsers { import AbstractCPSParsers._
   trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with SemanticActions with EBNFs with CharLevelDisambiguation { import AbstractParser._    
     type Value  
     def name: String
-    def action: Option[Any => Any] = None
-    
+    def action: Option[Any => Any] = None   
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }    
   }
@@ -232,8 +229,7 @@ object Parsers { import AbstractCPSParsers._
     }
   }
 
-  trait EBNFs { self: Symbol =>
-    
+  trait EBNFs { self: Symbol =>   
     var opt: Option[AbstractNonterminal] = None
     def ?(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
@@ -293,7 +289,14 @@ object Parsers { import AbstractCPSParsers._
   
   trait CharLevelDisambiguation { self: Symbol =>
     def \(arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
+    def \(args: String*) = postFilter[NonPackedNode](this, (input,t) => !args.contains(input.substring(t.leftExtent, t.rightExtent)), " \\ " + args.mkString(","))
+    def \(arg: Regex) = postFilter[NonPackedNode](this, (input,t) => !input.matchRegex(arg, t.leftExtent, t.rightExtent), s" \\ $arg")
+    def \(arg: Char) = postFilter[NonPackedNode](this, (input,t) => !(t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg), s" \\ $arg")
+    
     def !>>(arg: String) = postFilter[NonPackedNode](this, (input,t) => !input.startsWith(arg, t.rightExtent), s" !>> $arg")
-    def !<<(arg: String) = preFilter[NonPackedNode](this, (input,i) => !input.substring(0,i).endsWith(arg), s"$arg !<< ")
+    def !>>(arg: Regex) = postFilter[NonPackedNode](this, (input,t) => input.matchRegex(arg, t.rightExtent) == -1, s" !>> $arg")
+    
+    def !<<(arg: String) = preFilter(this, (input,i) => !input.substring(0,i).endsWith(arg), s"$arg !<< ")
+    def !<<(arg: Regex) = preFilter(this, (input, i) => !input.matchRegex(arg, i - 1, i), s"$arg !<< ")
   }
 }

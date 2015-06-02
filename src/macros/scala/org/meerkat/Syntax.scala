@@ -5,7 +5,7 @@
 package org.meerkat
 
 import org.meerkat.sppf.NonPackedNode
-import org.meerkat.tmp.Parsers.&
+import org.meerkat.tmp.&
 import org.meerkat.tmp.Parsers.AlternationBuilder
 import org.meerkat.tmp.Parsers.SequenceBuilder
 import org.meerkat.tmp.OperatorParsers.OperatorAlternationBuilder
