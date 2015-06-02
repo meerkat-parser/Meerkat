@@ -144,6 +144,21 @@ object Test {
     }
   }
   
+    object Test10 {
+    
+    val S: Nonterminal
+      = syn ( A ~ B.? )
+    
+    val A: Nonterminal = syn ("a")
+    
+    val B: Nonterminal = syn ("b")
+      
+    def main(args: Array[String]): Unit = {
+      // parse("a+a-a*a/a", E) // (a+((a-a)*(a/a)))
+      parse("ab", S)
+    }
+  }
+  
   def main(args: Array[String]): Unit = {
      Test7.main(args) 
   }
