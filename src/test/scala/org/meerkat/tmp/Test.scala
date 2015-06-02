@@ -154,7 +154,7 @@ object Test {
     }
   }
   
-    object Test10 {
+  object Test10 {
     
     val S: Nonterminal
       = syn ( A ~ B.? )
@@ -169,8 +169,31 @@ object Test {
     }
   }
   
+  object Test11 {
+    
+    val plus: (Int,Int) => Int = (x,y) => x + y
+    val times: (Int,Int) => Int = (x,y) => x * y
+    
+    val Op: Nonterminal & ((Int,Int) => Int) = syn { "+" ^ { _ => plus } | "*" ^ { _ => times } }
+    
+    val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
+    
+    lazy val E_+ = E.+(",")
+    val E: OperatorNonterminal & Int 
+      = syn (  Op ~ "(" ~ E_+ ~ ")"  & { case (op,x) => x.reduceLeft((y,z) => y + z) }
+            |  left { E ~ "*" ~ E }  & { case (x,y) => x*y }
+            |> "-" ~ E               & { x => -x }
+            |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
+            | Num                    ^ toInt )
+            
+    
+    def main(args: Array[String]): Unit = { 
+      parse("+ ( 1 + - 1 + 1 , 1 * - 1 * 1 )",E) // = 0
+    }
+  }
+  
   def main(args: Array[String]): Unit = {
-     Test1.main(args) 
+     Test11.main(args) 
   }
 
 }
