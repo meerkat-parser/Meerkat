@@ -181,7 +181,7 @@ object Parsers { import AbstractCPSParsers._
   trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with EBNFs with CharLevelDisambiguation { import AbstractParser._    
     type Value  
     def name: String
-    def action: Option[Any => Any] = None   
+    def action: Option[Any => Any] = None
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
   

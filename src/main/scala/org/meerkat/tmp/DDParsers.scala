@@ -27,22 +27,27 @@ object DDParsers { import AbstractCPSParsers._
     type SequenceBuilder = DDParsers.SequenceBuilder[A~B] { type Value = V }
     def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A~B] { type Value = V; def apply(slot: Slot) = f(slot) }
   }
+
+  implicit def obj2[A] = new CanBuildAlternative[(NonPackedNode,A)] {
+    implicit val m = obj4[A]
+    def result(e: (NonPackedNode,A), p: Slot, nt: Head, sppfLookup: SPPFLookup) = (sppfLookup.getNonterminalNode(nt, p, e._1),e._2)
+  }
   
-//  implicit def obj2[A] = new CanBuildAlternation[(NonPackedNode,A)] {
-//    
-//    type Alternation = DDParsers.Alternation[A] 
-//    def alternation(p: AbstractParser[(NonPackedNode,A)]): Alternation
-//      = new Alternation {
-//          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-//          def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Alt]
-//        }
-//    
-//    def result(e: (NonPackedNode,A), p: Slot, nt: Head, sppfLookup: SPPFLookup): (NonPackedNode,A) = (sppfLookup.getNonterminalNode(nt,p,e._1),e._2)
-//    
-//    type AlternationBuilder = DDParsers.AlternationBuilder[A]
-//    def builderAlt(f: Head => Alternation): AlternationBuilder = new AlternationBuilder { def apply(head: Head) = f(head) }
-//  }
-//  
+  implicit def obj3[A,B,ValA,ValB] = new CanBuildAlternation[(NonPackedNode,A),(NonPackedNode,B),ValA,ValB] {
+    implicit val m1 = obj4[A]; implicit val m2 = obj4[B]
+    implicit val o1 = obj2[A]; implicit val o2 = obj2[B]
+    
+    type Alternation = DDParsers.Alternation[B] 
+    def alternation(p: AbstractParser[(NonPackedNode,B)]): Alternation
+      = new Alternation {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
+          def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Alt]
+          override def reset = p.reset
+        }    
+    type AlternationBuilder = DDParsers.AlternationBuilder[B] { type Value = ValB }
+    def builderAlt(f: Head => Alternation): AlternationBuilder = new DDParsers.AlternationBuilder[B] { type Value = ValB; def apply(head: Head) = f(head) }
+  }
+  
   implicit def obj4[A] = new Memoizable[(NonPackedNode,A)] {
     type U = (Int,A)
     def value(t: (NonPackedNode, A)): (Int, A) = (t._1.rightExtent, t._2)
@@ -104,10 +109,12 @@ object DDParsers { import AbstractCPSParsers._
   trait Sequence[+T] extends AbstractParser[(NonPackedNode,T)] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }  
   trait Alternation[+T] extends AbstractParser[(NonPackedNode,T)] { def symbol: org.meerkat.tree.Alt }
   
-//  trait Nonterminal[+T] extends AbstractParser[(NonPackedNode,T)] { import AbstractParser._ 
-//    def name: String
-//    def symbol: org.meerkat.tree.Nonterminal
-//    
+  trait AbstractNonterminal[+T] extends AbstractParser[(NonPackedNode,T)] { import AbstractParser._
+    type Value
+    def name: String
+    def symbol: org.meerkat.tree.Nonterminal
+    def action: Option[Any => Any] = None
+    
 //    def ~ [U](p: Nonterminal[U]): SequenceBuilder[T~U] = seq(this, p)
 //    
 //    implicit val m = Parsers.obj3
@@ -118,13 +125,17 @@ object DDParsers { import AbstractCPSParsers._
 //    def | [U >: T](p: AlternationBuilder[U]): AlternationBuilder[U] = altSymAlt(this, p)
 //    def | [U >: T](p: SequenceBuilder[U]): AlternationBuilder[U] = altSymSeq(this, p)
 //    def | [U >: T](p: Nonterminal[U]): AlternationBuilder[U] = altSym(this, p)    
-//  }
-//  
+  }
+  
+  type DataNonterminal[T] = AbstractNonterminal[T] { type Value = NoValue; type Abstract[X] = AbstractNonterminal[T] { type Value = X } }
+  
   trait SequenceBuilder[+T] extends (Slot => Sequence[T]) { import AbstractParser._
     type Value
     def action: Option[Any => Any] = None
     
-//    def ~ [U](p: Nonterminal[U]): SequenceBuilder[T~U] = seq(this, p)
+//    def ~ [U](p: AbstractNonterminal[U]): SequenceBuilder[T~U] = seq(this, p)
+//    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
+//    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
 //    
 //    implicit val m = Parsers.obj3
 //    implicit val obj = Parsers.obj2
@@ -136,12 +147,13 @@ object DDParsers { import AbstractCPSParsers._
 //    def | [U >: T](p: Nonterminal[U]): AlternationBuilder[U] = altSeqSym(this, p)
   }
   
-//  trait AlternationBuilder[+T] extends (Head => Alternation[T]) { import AbstractParser._
+  trait AlternationBuilder[+T] extends (Head => Alternation[T]) { import AbstractParser._
+    type Value
 //    def | [U >: T](p: AlternationBuilder[U]): AlternationBuilder[U] = altAlt(this, p)
 //    def | [U >: T](p: SequenceBuilder[U]): AlternationBuilder[U] = altAltSeq(this, p)
 //    def | [U >: T](p: Nonterminal[U]): AlternationBuilder[U] = altAltSym(this, p)
-//  }
-//
+  }
+
 //  implicit class ParsersSequenceOps(p: Parsers.SequenceBuilder) { import AbstractParser._
 //    implicit val m = Parsers.obj3
 //    implicit val obj = Parsers.obj2
