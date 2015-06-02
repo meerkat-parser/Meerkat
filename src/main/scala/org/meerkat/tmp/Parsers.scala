@@ -265,7 +265,7 @@ object Parsers { import AbstractCPSParsers._
     def *(sep: Terminal)(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       star_sep.getOrElseUpdate(sep.name, {
-        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), star_sep.get(sep.name).asInstanceOf[T] ~ sep ~ this & ebnf.add | Ø ^ ebnf.empty)
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), this.+(sep)(ebnf,layout) | Ø ^ ebnf.empty)
       }).asInstanceOf[T]
     }
           
@@ -289,7 +289,7 @@ object Parsers { import AbstractCPSParsers._
     def +(sep: Terminal)(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       plus_sep.getOrElseUpdate(sep.name, {
-        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), plus_sep.get(sep.name).asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), plus_sep.get(sep.name).get.asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
       }).asInstanceOf[T]
     }
   }
