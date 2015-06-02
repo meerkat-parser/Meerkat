@@ -63,7 +63,7 @@ object Parsers { import AbstractCPSParsers._
       = new Parsers.AbstractNonterminal {
           type Value = Val
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-          def symbol = org.meerkat.tree.Nonterminal(nt)
+          def symbol = org.meerkat.tree.SimpleNonterminal(nt)
           def name = nt
           override def toString = name
         }

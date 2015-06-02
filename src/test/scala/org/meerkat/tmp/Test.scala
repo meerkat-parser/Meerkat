@@ -37,9 +37,9 @@ object Test {
   
     def main(args: Array[String]): Unit = {
       // parse("ababab", SStar)
-       parse("cdcdcd", PStar)
+      // parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      //      parse("cdcdcdcd", PChar2)
+      parse("cd cd cd cd", PChar2)
     }
   }
   
