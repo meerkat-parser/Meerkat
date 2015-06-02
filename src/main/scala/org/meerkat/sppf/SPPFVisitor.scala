@@ -114,9 +114,13 @@ object TreeBuilder {
   }
   
   def flatten(t: Any): Seq[Any] = t match {
-    case (t: (_, _), y) => flatten(t) :+ convert(y)
-    case (x, y) => List(convert(x), convert(y))
-    case x      => List(convert(x))
+    case (t: (_, _), ()) => flatten(t)
+    case (t: (_, _), y)  => flatten(t) :+ convert(y)
+    case ((), ())        => List()
+    case ((), y)         => List(convert(y))
+    case (x, ())         => List(convert(x))
+    case (x, y)          => List(convert(x), convert(y))
+    case x               => List(convert(x))
   }
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = Amb(s.asInstanceOf[Set[Tree]])
