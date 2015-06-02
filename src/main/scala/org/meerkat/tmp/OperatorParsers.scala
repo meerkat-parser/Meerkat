@@ -59,27 +59,23 @@ object OperatorParsers {
       implicit val o1 = Parsers.obj5[Val]
       implicit val o2 = Parsers.obj2
       
-      type OperatorNonterminal = OperatorParsers.AbstractOperatorNonterminal[Val]
-    
+      type OperatorNonterminal = OperatorParsers.AbstractOperatorNonterminal[Val]   
       def nonterminal(ntName: String, f: Prec => o1.Nonterminal): OperatorNonterminal
         = new OperatorNonterminal {
             val table: java.util.Map[Prec, o1.Nonterminal] = new HashMap()
             def apply(prec: Prec) = if (table.containsKey(prec)) table.get(prec) 
                                     else { val nt = f(prec); table.put(prec, nt); nt }
-            def name = ntName
-            override def toString = ntName
+            def name = ntName; override def toString = ntName
           }
     }  
   }
   
   trait OperatorSequence[V] extends ((Prec, Prec) => Parsers.SequenceBuilder { type Value = V }) {
-    def infix: Boolean; def prefix: Boolean; def postfix: Boolean
-    def assoc: Assoc.Assoc
+    def infix: Boolean; def prefix: Boolean; def postfix: Boolean; def assoc: Assoc.Assoc
   }
   
   trait OperatorSequenceWithAction[V] extends ((Prec, Prec) => Parsers.SequenceBuilderWithAction { type Value = V }) {
-    def infix: Boolean; def prefix: Boolean; def postfix: Boolean
-    def assoc: Assoc.Assoc
+    def infix: Boolean; def prefix: Boolean; def postfix: Boolean; def assoc: Assoc.Assoc
   }
   
   trait OperatorAlternation[V] extends (Prec => Parsers.AlternationBuilder { type Value = V })
@@ -89,8 +85,7 @@ object OperatorParsers {
     def name: String
   
     def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~ (p: Symbol)(implicit tuple: V|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    
+    def ~ (p: Symbol)(implicit tuple: V|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)   
     def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqNt(this, p) }
     def ~~ (p: Symbol)(implicit tuple: V|~|p.Value) = { implicit val o = obj1[V,p.Value](tuple); seqNtSym(this, p) }
     

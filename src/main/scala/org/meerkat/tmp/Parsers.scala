@@ -167,12 +167,25 @@ object Parsers { import AbstractCPSParsers._
       = groupAlt[NonPackedNode,ebnf.Group](this)
   }
   
-  trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with SemanticActions with EBNFs with CharLevelDisambiguation { import AbstractParser._    
+  trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with EBNFs with CharLevelDisambiguation { import AbstractParser._    
     type Value  
     def name: String
     def action: Option[Any => Any] = None   
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }    
+    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+  
+    def &[V](f: this.Value => V) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[Symbol.this.Value]) })
+    }   
+    def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[String]) })
+    }
   }
   
   trait SymbolWithAction extends AbstractParser[NonPackedNode] with SymbolOps { import AbstractParser._
@@ -214,21 +227,6 @@ object Parsers { import AbstractCPSParsers._
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
   def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
   
-  trait SemanticActions { self: Symbol =>   
-    def &[V](f: this.Value => V) = new SymbolWithAction {
-      type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
-      def name = self.name; def symbol = self.symbol
-      def action = Option({ x => f(x.asInstanceOf[self.Value]) })
-    }   
-    def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
-      type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
-      def name = self.name; def symbol = self.symbol
-      def action = Option({ x => f(x.asInstanceOf[String]) })
-    }
-  }
-
   trait EBNFs { self: Symbol =>   
     var opt: Option[AbstractNonterminal] = None
     def ?(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
