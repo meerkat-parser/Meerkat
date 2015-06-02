@@ -132,8 +132,11 @@ object Parsers { import AbstractCPSParsers._
       def action = Option({ x => f(x.asInstanceOf[String]) })
     }
     
-    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } 
-      = groupSeq[NonPackedNode,ebnf.Group](this)
+    var group: Option[AbstractNonterminal] = None
+    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } = {
+      type T = AbstractNonterminal { type Value = ebnf.Group }
+      group.asInstanceOf[Option[T]].getOrElse({ val p = groupSeq[NonPackedNode,ebnf.Group](this); group = Option(p); p })
+    }
   }
   
   trait SequenceBuilderWithAction extends (Slot => Sequence) with SequenceBuilderOps { import AbstractParser._
@@ -163,8 +166,11 @@ object Parsers { import AbstractCPSParsers._
     def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altAltSeq(this, q)
     def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altAltSym(this, q)
     
-    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } 
-      = groupAlt[NonPackedNode,ebnf.Group](this)
+    var group: Option[AbstractNonterminal] = None
+    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } = {
+      type T = AbstractNonterminal { type Value = ebnf.Group }
+      group.asInstanceOf[Option[T]].getOrElse({ val p = groupAlt[NonPackedNode,ebnf.Group](this); group = Option(p); p })
+    }
   }
   
   trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with EBNFs with CharLevelDisambiguation { import AbstractParser._    
