@@ -86,7 +86,7 @@ trait AbstractParsers {
     type Group <: AbstractNonterminal[A] { type Value = ValA }
     
     def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular
-    def group(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Group
+    def group(p: AbstractParser[A]): Group
   }
     
   object AbstractParser {
@@ -202,6 +202,16 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   def regular[A,T](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildEBNF[A,T], obj: ClassTag[Result[A]]): builder.Regular = { 
     import builder._
     lazy val q: Regular = builder.regular(symbol, memoize(p(q))); q
+  }
+  
+  def groupSeq[A,T](p: => AbstractSequenceBuilder[A])(implicit builder: CanBuildEBNF[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Group = { 
+    import builder._
+    lazy val q: Group = builder.group(memoize(alt(q, p))); q
+  }
+  
+  def groupAlt[A,T](p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildEBNF[A,T], obj: ClassTag[Result[A]]): builder.Group = { 
+    import builder._
+    lazy val q: Group = builder.group(memoize(p(q))); q
   }
   
   def preFilter[B](p: AbstractSymbol[B], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
