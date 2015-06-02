@@ -111,7 +111,7 @@ object Parsers { import AbstractCPSParsers._
     type Value
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout = default) = (this ~~ layout.get).~~(p)(tuple)
+    def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | [U >: this.Value] (p: AlternationBuilder { type Value = U }) = altSeqAlt(this, p)
@@ -151,7 +151,7 @@ object Parsers { import AbstractCPSParsers._
     def name: String
     def action: Option[Any => Any] = None
     
-    def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout = default) = (this ~~ layout.get).~~(p)(tuple)
+    def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def | [U >: this.Value](p: AlternationBuilder { type Value = U }) = altSymAlt(this, p)

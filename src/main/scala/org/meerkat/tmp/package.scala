@@ -57,8 +57,11 @@ package object tmp {
   }
   
   trait Layout { def get: Parsers.Symbol { type Value = NoValue } }
-  def layout(p: Parsers.Symbol { type Value = NoValue }) = new Layout { def get = p }
-  val default = layout(org.meerkat.util.JavaTokens.Layout)
+  def layout(p: Parsers.Symbol { type Value = NoValue }): Layout = new Layout {
+    val q = Parsers.ntSym("L", p)
+    def get = q
+  }
+  implicit val default: Layout = layout(Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout))
   
   object Syntax {
     import AbstractCPSParsers._

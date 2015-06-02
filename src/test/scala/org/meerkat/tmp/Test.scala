@@ -26,7 +26,7 @@ object Test {
     
     val P = syn ( C ~ D | "c" )
     val PStar: Nonterminal = syn { P.* }
-    val PPlus: Nonterminal = syn { P.+ }
+    val PPlus: Nonterminal = syn { P.+ } 
     val POpt: Nonterminal = syn { P.? }
     
     val PChar1 = syn { P \ "cdd" }
@@ -34,9 +34,9 @@ object Test {
   
     def main(args: Array[String]): Unit = {
       // parse("ababab", SStar)
-      // parse("cdcdcd", PStar)
+      parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      parse("cdcdcdcd", PChar2)
+      // parse("cdcdcdcd", PChar2)
     }
   }
   
@@ -107,7 +107,7 @@ object Test {
     
     def main(args: Array[String]): Unit = {
       // parse("((a))", E)
-      parse("3+-3+3*3+*3+3", E) // 3+(-(3+(((3*3)+)*3)+3)) == -30 !!!
+      parse("3 + - 3 + 3 * 3 + * 3 + 3", E) // 3+(-(3+(((3*3)+)*3)+3)) == -30 !!!
     }
   }
   
@@ -145,7 +145,7 @@ object Test {
   }
   
   def main(args: Array[String]): Unit = {
-     Test3.main(args) 
+     Test7.main(args) 
   }
 
 }
