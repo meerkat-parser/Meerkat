@@ -8,6 +8,8 @@ import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.sppf.Slot
 import org.meerkat.tree.RuleType
 import scala.util.matching.Regex
+import scala.collection.mutable._
+import scala.collection.JavaConversions._
 
 object Parsers { import AbstractCPSParsers._
   
@@ -94,8 +96,7 @@ object Parsers { import AbstractCPSParsers._
           def name = symbol.toString; def symbol = org.meerkat.tree.Group(p.symbol)
           override def toString = name   
           type Value = Val
-        } 
-      
+        }     
   }
   
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
@@ -211,12 +212,20 @@ object Parsers { import AbstractCPSParsers._
         val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), starstar.asInstanceOf[Option[T]].get ~~ this & ebnf.add | Ø ^ ebnf.empty)
         starstar = Option(p); p })
     }
+    
+    var star_sep: Map[String,AbstractNonterminal] = new java.util.HashMap[String,AbstractNonterminal]()
+    def *(sep: Terminal)(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
+      type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
+      star_sep.getOrElseUpdate(sep.name, {
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), star_sep.get(sep.name).asInstanceOf[T] ~ sep ~ this & ebnf.add | Ø ^ ebnf.empty)
+      }).asInstanceOf[T]
+    }
           
     var plus: Option[AbstractNonterminal] = None
     def +(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       plus.asInstanceOf[Option[T]].getOrElse({ 
-        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus.asInstanceOf[Option[T]].get ~ this & ebnf.add | this & ebnf.unit )
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus.asInstanceOf[Option[T]].get ~ this & ebnf.add | this & ebnf.unit)
         plus = Option(p); p })
     }
     
@@ -224,8 +233,16 @@ object Parsers { import AbstractCPSParsers._
     def ++(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       plusplus.asInstanceOf[Option[T]].getOrElse({ 
-        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plusplus.asInstanceOf[Option[T]].get ~~ this & ebnf.add | this & ebnf.unit )
+        val p = regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plusplus.asInstanceOf[Option[T]].get ~~ this & ebnf.add | this & ebnf.unit)
         plusplus = Option(p); p })
+    }
+    
+    var plus_sep: Map[String,AbstractNonterminal] = new java.util.HashMap[String,AbstractNonterminal]()
+    def +(sep: Terminal)(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
+      type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
+      plus_sep.getOrElseUpdate(sep.name, {
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), plus_sep.get(sep.name).asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
+      }).asInstanceOf[T]
     }
     
     def \(arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
