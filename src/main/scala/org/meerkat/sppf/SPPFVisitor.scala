@@ -50,10 +50,10 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
          case x:  Any                   => PlusList(s, List(x))
        }
        case Opt(s) => v match {
-         case ()                   => println("Hi1"); OptList(s, List())
-         case x: Any               => println(s"Hi2 $x"); OptList(s, List(x))
+         case ()                        => OptList(s, List())
+         case x: Any                    => OptList(s, List(x))
        }
-       case _  => nt(p.ruleType, v, leftExtent, rightExtent)
+       case _                           => nt(p.ruleType, v, leftExtent, rightExtent)
      }
    
    def nonterminal(p: PackedNode, leftExtent: Int, rightExtent: Int): Any = 
@@ -75,12 +75,12 @@ object SemanticAction {
   
   def convert(t: Any): Any = t match {
     case StarList(s, List()) => ()
-    case StarList(s, xs)     => convert(xs)
-    case PlusList(s, xs)     => convert(xs)
+    case StarList(s, List(x@StarList(t, l))) => convert(x)
+    case StarList(s, xs)     => xs
+    case PlusList(s, List(x@PlusList(t, l))) => convert(x)
+    case PlusList(s, xs)     => xs
     case OptList(s, List())  => ()
-    case OptList(s, xs)      => convert(xs)
-    case List(List(x))       => convert(List(x))
-    case List()              => ()
+    case OptList(s, xs)      => xs
     case _                   => t 
   }
   
