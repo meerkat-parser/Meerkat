@@ -75,10 +75,12 @@ object SemanticAction {
   
   def convert(t: Any): Any = t match {
     case StarList(s, List()) => ()
-    case StarList(s, xs)     => xs
-    case PlusList(s, xs)     => xs
+    case StarList(s, xs)     => convert(xs)
+    case PlusList(s, xs)     => convert(xs)
     case OptList(s, List())  => ()
-    case OptList(s, xs)      => xs
+    case OptList(s, xs)      => convert(xs)
+    case List(x)             => convert(x)
+    case List()              => ()
     case _                   => t 
   }
   
@@ -95,7 +97,7 @@ object SemanticAction {
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = 
     if (t.action.isDefined)
       if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(convert(v)) 
-    else v
+    else convert(v)
     
   def int(input: Input)(t: RuleType, left: Any, right: Any) = 
     if (t.action.isDefined)
@@ -109,7 +111,7 @@ object SemanticAction {
 object TreeBuilder {
 
    def convert(t: Any): Tree = t match {
-    case StarList(s, xs) => println(xs); Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
+    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
     case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
     case OptList(s, xs)  => Appl(RegularRule(Opt(s)), xs.asInstanceOf[Seq[Tree]])
     case _               => t.asInstanceOf[Tree]
