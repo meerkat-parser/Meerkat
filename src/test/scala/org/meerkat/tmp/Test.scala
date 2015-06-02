@@ -17,7 +17,8 @@ object Test {
   
     val S = syn ( A ~ B  & { case (s1,s2) => s"$s2++$s1" } 
                 | "c"    ^ { toStr } )
-                   
+    
+    val SStarSep: Nonterminal & List[String] = syn { S.*(",") & { x => x.:+("HoHo!!!") }}                                
     val SStar: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
     val SPlus: Nonterminal & List[String] = syn { S.+ & { x => x.:+("HoHo!!!") }}
     val SOpt: Nonterminal & List[String] = syn { S.? & { x => x.:+("HoHo!!!") }}
@@ -36,14 +37,14 @@ object Test {
     val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
-//       parse("ababab", SStar)
-//       parse("cdcdcd", PStar)
+      parse("ab,ab,ab", SStarSep)
+      // parse("cdcdcd", PStar)
       // parse("ababab", SStar)
       // parse("cdcdcd", PStar)
       // parse("cd", POpt)
       // parse("cd cd cd cd", PChar2)
       // parse("c d", PGroup)
-      parse("a b", SGroup)
+//      parse("a b", SGroup)
     }
   }
   
