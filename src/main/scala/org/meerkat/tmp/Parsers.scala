@@ -64,8 +64,8 @@ object Parsers { import AbstractCPSParsers._
           type Value = Val
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = org.meerkat.tree.SimpleNonterminal(nt)
-          def name = nt
-          override def toString = name
+          def name = nt; override def toString = name
+          override def reset = p.reset
         }
     
     type Symbol = Parsers.Symbol { type Value = Val}
@@ -73,6 +73,7 @@ object Parsers { import AbstractCPSParsers._
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
       def name = p.name; def symbol = p.symbol
       type Value = Val
+      override def reset = p.reset
     }
   }
   
@@ -89,6 +90,7 @@ object Parsers { import AbstractCPSParsers._
           def name = symbol.toString; def symbol = sym
           override def toString = name   
           type Value = Val
+          override def reset = p.reset
         }
     def group(p: AbstractParser[NonPackedNode]): Group 
       = new AbstractNonterminal {
@@ -96,6 +98,7 @@ object Parsers { import AbstractCPSParsers._
           def name = symbol.toString; def symbol = org.meerkat.tree.Group(p.symbol)
           override def toString = name   
           type Value = Val
+          override def reset = p.reset
         }     
   }
   
