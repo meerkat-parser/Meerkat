@@ -97,20 +97,15 @@ object SemanticAction {
   
   def convert(t: Any): Any = t match {
     case StarList(s, List())                 => ()
-    case StarList(s, List(x@StarList(t, l))) => convert(x)
     case StarList(s, xs)                     => xs
-    case PlusList(s, List(x@PlusList(t, l))) => convert(x)
     case PlusList(s, xs)                     => xs
     case OptList(s, List())                  => ()
     case OptList(s, xs)                      => xs
+    case (x, StarList(s, List()))            => x
+    case (x, StarList(s, xs))                => (x, xs)
+    case (x, PlusList(s, xs))                => (x, xs)
     case _                                   => t 
   }
-  
-//  def filterUnit(left: Any, right: Any) =
-//    if (left == () && right == ()) ()
-//    else if (left == ()) right
-//    else if (right == ()) left
-//    else (left, right)
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
   
