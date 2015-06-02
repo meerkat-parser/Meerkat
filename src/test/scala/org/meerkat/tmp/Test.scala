@@ -178,9 +178,9 @@ object Test {
     
     val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
     
-    lazy val E_+ = E.+(",")
+    lazy val Es = E.+(",")
     val E: OperatorNonterminal & Int 
-      = syn (  Op ~ "(" ~ E_+ ~ ")"  & { case (op,x) => x.reduceLeft((y,z) => y + z) }
+      = syn (  Op ~ "(" ~ Es ~ ")"  & { case (op,x) => x.reduceLeft((y,z) => y + z) }
             |  left { E ~ "*" ~ E }  & { case (x,y) => x*y }
             |> "-" ~ E               & { x => -x }
             |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
