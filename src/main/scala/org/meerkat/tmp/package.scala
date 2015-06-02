@@ -94,6 +94,7 @@ package object tmp {
                          val x = SemanticAction.execute(node)(input)
                          println(s"WOW: $x")
                          visualize(TreeBuilder.build(node)(input), input)
+//                         visualize(TreeBuilder.build(node)(input), input)
                          println("Done!")
     }
   }

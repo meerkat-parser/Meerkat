@@ -63,7 +63,7 @@ object Parsers { import AbstractCPSParsers._
       = new Parsers.AbstractNonterminal {
           type Value = Val
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-          def symbol = org.meerkat.tree.Nonterminal(nt)
+          def symbol = org.meerkat.tree.SimpleNonterminal(nt)
           def name = nt
           override def toString = name
         }
@@ -132,8 +132,11 @@ object Parsers { import AbstractCPSParsers._
       def action = Option({ x => f(x.asInstanceOf[String]) })
     }
     
-    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } 
-      = groupSeq[NonPackedNode,ebnf.Group](this)
+    var group: Option[AbstractNonterminal] = None
+    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } = {
+      type T = AbstractNonterminal { type Value = ebnf.Group }
+      group.asInstanceOf[Option[T]].getOrElse({ val p = groupSeq[NonPackedNode,ebnf.Group](this); group = Option(p); p })
+    }
   }
   
   trait SequenceBuilderWithAction extends (Slot => Sequence) with SequenceBuilderOps { import AbstractParser._
@@ -163,16 +166,32 @@ object Parsers { import AbstractCPSParsers._
     def | [U >: this.Value](q: SequenceBuilderWithAction { type Value = U }) = altAltSeq(this, q)
     def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altAltSym(this, q)
     
-    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } 
-      = groupAlt[NonPackedNode,ebnf.Group](this)
+    var group: Option[AbstractNonterminal] = None
+    def !(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.Group } = {
+      type T = AbstractNonterminal { type Value = ebnf.Group }
+      group.asInstanceOf[Option[T]].getOrElse({ val p = groupAlt[NonPackedNode,ebnf.Group](this); group = Option(p); p })
+    }
   }
   
-  trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with SemanticActions with EBNFs with CharLevelDisambiguation { import AbstractParser._    
+  trait Symbol extends AbstractParser[NonPackedNode] with SymbolOps with EBNFs with CharLevelDisambiguation { import AbstractParser._    
     type Value  
     def name: String
     def action: Option[Any => Any] = None   
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }    
+    def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+  
+    def &[V](f: this.Value => V) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[Symbol.this.Value]) })
+    }   
+    def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
+      type Value = V
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
+      def name = Symbol.this.name; def symbol = Symbol.this.symbol
+      def action = Option({ x => f(x.asInstanceOf[String]) })
+    }
   }
   
   trait SymbolWithAction extends AbstractParser[NonPackedNode] with SymbolOps { import AbstractParser._
@@ -214,21 +233,6 @@ object Parsers { import AbstractCPSParsers._
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
   def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
   
-  trait SemanticActions { self: Symbol =>   
-    def &[V](f: this.Value => V) = new SymbolWithAction {
-      type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
-      def name = self.name; def symbol = self.symbol
-      def action = Option({ x => f(x.asInstanceOf[self.Value]) })
-    }   
-    def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
-      type Value = V
-      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = self(input, i, sppfLookup)
-      def name = self.name; def symbol = self.symbol
-      def action = Option({ x => f(x.asInstanceOf[String]) })
-    }
-  }
-
   trait EBNFs { self: Symbol =>   
     var opt: Option[AbstractNonterminal] = None
     def ?(implicit ebnf: EBNF[this.Value]): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
@@ -288,15 +292,19 @@ object Parsers { import AbstractCPSParsers._
   }
   
   trait CharLevelDisambiguation { self: Symbol =>
-    def \(arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
-    def \(args: String*) = postFilter[NonPackedNode](this, (input,t) => !args.contains(input.substring(t.leftExtent, t.rightExtent)), " \\ " + args.mkString(","))
-    def \(arg: Regex) = postFilter[NonPackedNode](this, (input,t) => !input.matchRegex(arg, t.leftExtent, t.rightExtent), s" \\ $arg")
-    def \(arg: Char) = postFilter[NonPackedNode](this, (input,t) => !(t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg), s" \\ $arg")
+    def \ (arg: String) = postFilter[NonPackedNode](this, (input,t) => arg != input.substring(t.leftExtent, t.rightExtent), s" \\ $arg")
+    def \ (args: String*) = postFilter[NonPackedNode](this, (input,t) => !args.contains(input.substring(t.leftExtent, t.rightExtent)), " \\ " + args.mkString(","))
+    def \ (arg: Regex) = postFilter[NonPackedNode](this, (input,t) => !input.matchRegex(arg, t.leftExtent, t.rightExtent), s" \\ $arg")
+    def \ (arg: Char) = postFilter[NonPackedNode](this, (input,t) => !(t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg), s" \\ $arg")
     
     def !>>(arg: String) = postFilter[NonPackedNode](this, (input,t) => !input.startsWith(arg, t.rightExtent), s" !>> $arg")
+    def !>>(args: String*) = postFilter[NonPackedNode](this, (input,t) => !args.exists(input.startsWith(_, t.rightExtent)), " !>> " + args.mkString(","))
     def !>>(arg: Regex) = postFilter[NonPackedNode](this, (input,t) => input.matchRegex(arg, t.rightExtent) == -1, s" !>> $arg")
+    def !>>(arg: Char) = postFilter[NonPackedNode](this, (input,t) => input.charAt(t.rightExtent) != arg, s" !>> $arg")
     
     def !<<(arg: String) = preFilter(this, (input,i) => !input.substring(0,i).endsWith(arg), s"$arg !<< ")
+    def !<<(args: String*) = preFilter(this, (input,i) => { val sub = input.substring(0, i); args.filter(sub.endsWith(_)).isEmpty }, args.mkString(",") + " !<< ")
     def !<<(arg: Regex) = preFilter(this, (input, i) => !input.matchRegex(arg, i - 1, i), s"$arg !<< ")
+    def !<<(arg: Char) = preFilter(this, (input, i) => !(i > 0 && input.charAt(i - 1) == arg), s"$arg !<< ")
   }
 }

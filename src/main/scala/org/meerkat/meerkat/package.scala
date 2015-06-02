@@ -34,7 +34,7 @@ package object meerkat {
                                    else failure, word)
 
   implicit def terminal(c: Char): TerminalParser = {
-    terminal((input, sppf, i) => if(i < input.length && input.charAt(i).c == c)
+    terminal((input, sppf, i) => if(i < input.length && input.charAt(i) == c)
                                    success(sppf.getTerminalNode(c, i))
                                  else failure, c.toString)
   }
@@ -56,7 +56,7 @@ package object meerkat {
                                        var found: Boolean = false
                                        breakable {
                                          for(range <- ranges)
-                                           if(c.c >= range._1 && c.c <= range._2) {
+                                           if(c >= range._1 && c <= range._2) {
                                              found = true
                                              break
                                            }

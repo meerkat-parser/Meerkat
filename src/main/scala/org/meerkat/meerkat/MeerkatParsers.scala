@@ -259,12 +259,12 @@ trait MeerkatParser extends Parser with Slot {
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => arg != input.substring(t.leftExtent, t.rightExtent)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
                                             
-  def \(arg: Char): MeerkatParser 
+  def \(arg: scala.Char): MeerkatParser 
     = diff.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => !(t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
           
-  def \(args: Char*): MeerkatParser 
+  def \(args: scala.Char*): MeerkatParser 
     = diff.getOrElseUpdate(args, 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => !args.exists(arg => t.rightExtent - t.leftExtent == 1 && input.charAt(t.leftExtent) == arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
@@ -289,7 +289,7 @@ trait MeerkatParser extends Parser with Slot {
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => !input.startsWith(arg, t.rightExtent)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
     
-  def !>>(arg: Char): MeerkatParser
+  def !>>(arg: scala.Char): MeerkatParser
     = not_follow.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.postFilter((input, t) => input.charAt(t.rightExtent) != arg); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
@@ -321,8 +321,8 @@ trait MeerkatParser extends Parser with Slot {
     = not_procede.getOrElseUpdate(scala.collection.Seq(arg), 
         { val p = this.groupSeqOrAlt
           val q = p.preFilter((input, i) => !input.substring(0, i).endsWith(arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
-    
-  def !<<(arg: Char): MeerkatParser
+  
+  def !<<(arg: scala.Char): MeerkatParser
     = not_procede.getOrElseUpdate(scala.collection.Seq(arg.toString), 
         { val p = this.groupSeqOrAlt
           val q = p.preFilter((input, i) => !(i > 0 && input.charAt(i - 1) == arg)); q.nameAs(p.name.value); q.resetWith(p.reset()); q })
@@ -360,7 +360,7 @@ class StartChar(c1: Char) {
     = terminal((input, sppf, i) => if(i >= input.length) failure
                                    else {
                                      val c = input.charAt(i)
-                                     if(c.c >= c1.c && c.c <= c2.c) success(sppf.getTerminalNode(c, i)) 
+                                     if(c >= c1.c && c <= c2.c) success(sppf.getTerminalNode(c, i)) 
                                      else failure 
                                    }, "[" + c1 + "-" + c2 + "]")
     
@@ -368,7 +368,7 @@ class StartChar(c1: Char) {
     = terminal((input, sppf, i) => if(i >= input.length) failure
                                    else {
                                      val c = input.charAt(i)
-                                     if(c.c < c1.c || c.c > c2.c) success(sppf.getTerminalNode(c, i)) 
+                                     if(c < c1.c || c > c2.c) success(sppf.getTerminalNode(c, i)) 
                                      else failure
                                    }, "[" + c1 + "-" + c2 + "]")      
 }

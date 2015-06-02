@@ -46,7 +46,7 @@ class Input(val s: String) {
     lineColumns(length) = (lineNumber, columnNumber)
   }
   
-  def charAt(i: Int): Char = s.charAt(i)
+  def charAt(i: Int): scala.Char = s.charAt(i)
   
   def substring(start: Int, end: Int): String = s.substring(start, end)
   

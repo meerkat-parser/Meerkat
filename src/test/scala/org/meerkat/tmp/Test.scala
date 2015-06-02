@@ -30,16 +30,20 @@ object Test {
     val PStar: Nonterminal = syn { P.** }
     val PPlus: Nonterminal = syn { P.+ } 
     val POpt: Nonterminal = syn { P.? }
-    val PGroup: Nonterminal = syn { C ~ D }
+    val PGroup: Nonterminal = syn { (C ~ D).! }
     
     val PChar1 = syn { P \ "cdd" }
     val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
 //       parse("ababab", SStar)
-       parse("cdcdcd", PStar)
+//       parse("cdcdcd", PStar)
+      // parse("ababab", SStar)
+      // parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      //      parse("cdcdcdcd", PChar2)
+      // parse("cd cd cd cd", PChar2)
+      // parse("c d", PGroup)
+      parse("a b", SGroup)
     }
   }
   

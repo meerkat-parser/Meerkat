@@ -156,7 +156,7 @@ trait AbstractParsers {
           val q = p(this)
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
           def symbol = q.symbol
-          val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action
+          lazy val ruletype = { val rule = org.meerkat.tree.Rule(head.symbol, this.symbol); rule.action = p.action; rule }
           def ruleType = ruletype 
           override def toString = s"p${this.hashCode}"
         }
@@ -166,7 +166,7 @@ trait AbstractParsers {
       new AbstractParser[B] with Slot { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
         def symbol = p.symbol
-        val ruletype = org.meerkat.tree.Rule(head.symbol, this.symbol); ruletype.action = p.action
+        lazy val ruletype = { val rule = org.meerkat.tree.Rule(head.symbol, this.symbol); rule.action = p.action; rule }
         def ruleType = ruletype
         override def toString = s"p${this.hashCode}"
       }
@@ -217,7 +217,12 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   def preFilter[B](p: AbstractSymbol[B], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
       builder symbol new AbstractParser[B] {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
-        def name = prefix + " " + p.name; def symbol = p.symbol; override def toString = name
+        def name = prefix + " " + p.name; override def toString = name
+        def symbol = p.symbol match {
+                       case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
+                       case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
+                       case _ => throw new RuntimeException("Shouldn't have happened!")
+                     } 
         type Value = p.Value
         def action = None
       }
@@ -226,7 +231,12 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   def postFilter[B](p: AbstractSymbol[B], pred: (Input,B) => Boolean, postfix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
       builder symbol new AbstractParser[B] {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
-        def name = p.name + " " + postfix; def symbol = p.symbol; override def toString = name
+        def name = p.name + " " + postfix; override def toString = name 
+        def symbol = p.symbol match {
+                       case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
+                       case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
+                       case _ => throw new RuntimeException("Shouldn't have happened!")
+                     } 
         type Value = p.Value
         def action = None
       }
