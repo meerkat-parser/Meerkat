@@ -5,6 +5,7 @@ object Test {
   import Parsers._
   import OperatorParsers._
   import Syntax._
+  import DefaultLayout._
   
   val toStr: String => String = x => x
   val toInt: String => Int = x => x.toInt
@@ -20,6 +21,7 @@ object Test {
     val SStar: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
     val SPlus: Nonterminal & List[String] = syn { S.+ & { x => x.:+("HoHo!!!") }}
     val SOpt: Nonterminal & List[String] = syn { S.? & { x => x.:+("HoHo!!!") }}
+    val SGroup: Nonterminal & String = syn { (A ~ B).! & { case (x,y) => s"[$x ++ $y]" }}
     
     val C = syn { "c" }
     val D = syn { "d" }
@@ -28,13 +30,14 @@ object Test {
     val PStar: Nonterminal = syn { P.* }
     val PPlus: Nonterminal = syn { P.+ } 
     val POpt: Nonterminal = syn { P.? }
+    val PGroup: Nonterminal = syn { C ~ D }
     
     val PChar1 = syn { P \ "cdd" }
     val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
-      // parse("ababab", SStar)
-      parse("cdcdcd", PStar)
+      parse("a b a b a b", SStar)
+      // parse("cdcdcd", PStar)
       // parse("cd", POpt)
       // parse("cdcdcdcd", PChar2)
     }
@@ -160,7 +163,7 @@ object Test {
   }
   
   def main(args: Array[String]): Unit = {
-     Test7.main(args) 
+     Test1.main(args) 
   }
 
 }
