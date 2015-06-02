@@ -65,7 +65,7 @@ object Parsers { import AbstractCPSParsers._
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = org.meerkat.tree.SimpleNonterminal(nt)
           def name = nt; override def toString = name
-          override def reset = p.reset
+          override def reset = { println("Resetting " + name); p.reset }
         }
     
     type Symbol = Parsers.Symbol { type Value = Val}
@@ -73,7 +73,7 @@ object Parsers { import AbstractCPSParsers._
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
       def name = p.name; def symbol = p.symbol
       type Value = Val
-      override def reset = p.reset
+      override def reset = { println("Resetting " + name); p.reset }
     }
   }
   
@@ -90,7 +90,7 @@ object Parsers { import AbstractCPSParsers._
           def name = symbol.toString; def symbol = sym
           override def toString = name   
           type Value = Val
-          override def reset = p.reset
+          override def reset = { println("Resetting " + name); p.reset }
         }
     def group(p: AbstractParser[NonPackedNode]): Group 
       = new AbstractNonterminal {
@@ -98,7 +98,7 @@ object Parsers { import AbstractCPSParsers._
           def name = symbol.toString; def symbol = org.meerkat.tree.Group(p.symbol)
           override def toString = name   
           type Value = Val
-          override def reset = p.reset
+          override def reset = { println("Resetting " + name); p.reset }
         }     
   }
   
@@ -188,12 +188,14 @@ object Parsers { import AbstractCPSParsers._
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
       def name = Symbol.this.name; def symbol = Symbol.this.symbol
       def action = Option({ x => f(x.asInstanceOf[Symbol.this.Value]) })
+      override def reset = Symbol.this.reset
     }   
     def ^[V](f: String => V)(implicit sub: this.Value <:< NoValue) = new SymbolWithAction {
       type Value = V
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
       def name = Symbol.this.name; def symbol = Symbol.this.symbol
       def action = Option({ x => f(x.asInstanceOf[String]) })
+      override def reset = Symbol.this.reset
     }
   }
   
@@ -289,7 +291,7 @@ object Parsers { import AbstractCPSParsers._
     def +(sep: Terminal)(implicit ebnf: EBNF[this.Value], layout: Layout): AbstractNonterminal { type Value = ebnf.OptOrSeq } = {
       type T = AbstractNonterminal { type Value = ebnf.OptOrSeq }
       plus_sep.getOrElseUpdate(sep.name, {
-        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), plus_sep.get(sep.name).get.asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Plus(this.symbol), plus_sep.get(sep.name).get.asInstanceOf[T] ~ sep ~ this & ebnf.add | this & ebnf.unit)
       }).asInstanceOf[T]
     }
   }

@@ -37,12 +37,12 @@ object Test {
     val PChar2 = syn { P.* !>> "cd" }
   
     def main(args: Array[String]): Unit = {
-      parse("ab,ab,ab", SStarSep)
+      // parse("ab,ab,ab", SStarSep)
       // parse("cdcdcd", PStar)
       // parse("ababab", SStar)
       // parse("cdcdcd", PStar)
       // parse("cd", POpt)
-      // parse("ab", SOpt)
+      parse("ab", SOpt)
       // parse("cd cd cd cd", PChar2)
       // parse("c d", PGroup)
 //      parse("a b", SGroup)
