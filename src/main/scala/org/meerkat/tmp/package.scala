@@ -126,7 +126,7 @@ package object tmp {
                          println("Visualizing...")
                          val x = SemanticAction.execute(node)(input)
                          println(s"WOW: $x")
-                         visualize(TreeBuilder.build(node)(input), "sppf")
+                         visualize(TreeBuilder.build(node)(input), input)
                          println("Done!")
     }
   }
