@@ -244,7 +244,7 @@ object Parsers { import AbstractCPSParsers._
   
   def ntAlt[T](name: String, p: => AlternationBuilder { type Value = T }) = nonterminalAlt[NonPackedNode,T](name, p)  
   def ntSeq[T](name: String, p: => SequenceBuilder { type Value = T }) = nonterminalSeq[NonPackedNode,T](name, p)
-  def ntSym(name: String, p: AbstractSymbol[NonPackedNode]) = nonterminalSym(name, p)
+  def ntSym[T](name: String, p: => AbstractSymbol[NonPackedNode] { type Value = T }) = nonterminalSym(name, p)
   
   trait EBNFs { self: Symbol =>   
     var opt: Option[AbstractNonterminal] = None

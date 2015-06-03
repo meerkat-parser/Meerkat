@@ -217,14 +217,14 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     
   type Result[+T] = CPSResult[T]
   
-  def nonterminalSym[A](name: String, p: AbstractSymbol[A])(implicit builder: CanBuildNonterminal[A,p.Value], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+  def nonterminalSym[A,T](name: String, p: => AbstractSymbol[A] {type Value = T})(implicit builder: CanBuildNonterminal[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
-    lazy val q: Nonterminal = nonterminal (name, memoize(alt(q, p))); q
+    lazy val q: Nonterminal = nonterminal (name, memoize(alt(q,p))); q
   }
   
   def nonterminalSeq[A,T](name: String, p: => AbstractSequenceBuilder[A])(implicit builder: CanBuildNonterminal[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
-    lazy val q: Nonterminal = nonterminal (name, memoize(alt(q, p))); q
+    lazy val q: Nonterminal = nonterminal (name, memoize(alt(q,p))); q
   }
   
   def nonterminalAlt[A,T](name: String, p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildNonterminal[A,T], obj: ClassTag[Result[A]]): builder.Nonterminal = { 

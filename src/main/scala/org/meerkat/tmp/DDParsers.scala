@@ -172,6 +172,6 @@ object DDParsers { import AbstractCPSParsers._
 
   def ntAlt[A,V](name: String, p: => AlternationBuilder[A] { type Value = V }) = nonterminalAlt[(NonPackedNode,A),V](name, p)
   def ntSeq[A,V](name: String, p: => SequenceBuilder[A] { type Value = V }) = nonterminalSeq[(NonPackedNode,A),V](name, p)
-  def ntSym[A,V](name: String, p: AbstractNonterminal[A]) = nonterminalSym(name, p)
+  def ntSym[A,V](name: String, p: => AbstractNonterminal[A] { type Value = V }) = nonterminalSym[(NonPackedNode,A),V](name, p)
   
 }

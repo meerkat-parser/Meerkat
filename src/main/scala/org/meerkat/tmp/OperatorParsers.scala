@@ -294,13 +294,13 @@ object OperatorParsers {
   def ntSeq[Val](name: String, p: => OperatorSequenceBuilder[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSeq
     nonterminalSeq(name, p)
   }
-  def ntSym[Val](name: String, p: AbstractOperatorNonterminal[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
+  def ntSym[Val](name: String, p: => AbstractOperatorNonterminal[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
     nonterminalSym(name, p)
   }
   def ntSeqWithAction[Val](name: String, p: => OperatorSequenceBuilderWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSeq
     nonterminalSeq(name, p)
   }
-  def ntSymWithAction[Val](name: String, p: OperatorNonterminalWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
+  def ntSymWithAction[Val](name: String, p: => OperatorNonterminalWithAction[Val]): AbstractOperatorNonterminal[Val] = { import OperatorImplicits._; import AbstractOperatorParser.nonterminalSym
     nonterminalSym(name, p)
   }
   

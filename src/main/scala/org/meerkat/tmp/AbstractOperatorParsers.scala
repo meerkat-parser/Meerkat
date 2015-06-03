@@ -346,7 +346,7 @@ object AbstractOperatorParsers {
       }
     }
     
-    def nonterminalSym[A,ValA](name: String, p: AbstractOperatorSymbol[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA]): builder.OperatorNonterminal = {
+    def nonterminalSym[A,ValA](name: String, p: => AbstractOperatorSymbol[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA]): builder.OperatorNonterminal = {
       import builder._
       lazy val q: OperatorNonterminal = nonterminal(name, prec => AbstractCPSParsers.nonterminalSym (s"$name(${prec._1},${prec._2})", p(prec)) )
       q
