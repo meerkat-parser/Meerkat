@@ -52,16 +52,25 @@ object DDParsers { import AbstractCPSParsers._
     def value(t: (NonPackedNode, A)): (Int, A) = (t._1.rightExtent, t._2)
   }
   
-//  implicit def obj5[A] = new CanBuildNonterminal[(NonPackedNode, A)] {
-//    type Nonterminal = DDParsers.Nonterminal[A]
-//    def nonterminal(nt: String, p: AbstractParser[(NonPackedNode,A)]): Nonterminal 
-//      = new Nonterminal {
-//          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
-//          def symbol = org.meerkat.tree.Nonterminal(nt)
-//          def name = nt
-//          override def toString = name
-//        }
-//  }
+  implicit def obj5[A,ValA] = new CanBuildNonterminal[(NonPackedNode,A),ValA] {
+    implicit val m = obj4[A]
+    type Nonterminal = DDParsers.AbstractNonterminal[A] { type Value = ValA }
+    def nonterminal(nt: String, p: AbstractParser[(NonPackedNode,A)]): Nonterminal 
+      = new DDParsers.AbstractNonterminal[A] {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          def symbol = org.meerkat.tree.SimpleNonterminal(nt)
+          def name = nt; override def toString = name
+          type Value = ValA
+          override def reset = p.reset
+        }
+    type Symbol = DDParsers.AbstractNonterminal[A] { type Value = ValA }
+    def symbol(p: AbstractSymbol[(NonPackedNode,A)]) = new DDParsers.AbstractNonterminal[A] { 
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
+      def name = p.name; def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Nonterminal]
+      type Value = ValA
+      override def reset = p.reset
+    }
+  }
   
   implicit def obj6[B,ValA,ValB](implicit vals: ValA|~|ValB) = new CanBuildSequence[NonPackedNode,(NonPackedNode,B),ValA,ValB] {
     implicit val m1 = Parsers.obj4; implicit val m2 = obj4[B]
@@ -159,8 +168,8 @@ object DDParsers { import AbstractCPSParsers._
     def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value) = { implicit val o = obj6[U,V,q.Value](tuple); seq(p, q) }
   }
 
-//  def ntAlt[T](name: String, p: => AlternationBuilder[T]): Nonterminal[T] = nonterminalAlt(name, p)
-//  def ntSeq[T](name: String, p: => SequenceBuilder[T]): Nonterminal[T] = nonterminalSeq(name, p)
-//  def ntSym[T](name: String, p: Nonterminal[T]): Nonterminal[T] = nonterminalSym(name, p)
+  def ntAlt[A,V](name: String, p: => AlternationBuilder[A] { type Value = V }) = nonterminalAlt[(NonPackedNode,A),V](name, p)
+  def ntSeq[A,V](name: String, p: => SequenceBuilder[A] { type Value = V }) = nonterminalSeq[(NonPackedNode,A),V](name, p)
+  def ntSym[A,V](name: String, p: AbstractNonterminal[A]) = nonterminalSym(name, p)
   
 }

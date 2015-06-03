@@ -171,24 +171,26 @@ object Test {
   
   object Test11 {
     
-    val plus: (Int,Int) => Int = (x,y) => x + y
-    val times: (Int,Int) => Int = (x,y) => x * y
+    val plus: BinaryOp = new BinaryOp { def apply(x:Int,y:Int) = x + y }
+    val times: BinaryOp = new BinaryOp { def apply(x:Int,y:Int) = x * y }
     
-    val Op: Nonterminal & ((Int,Int) => Int) = syn { "+" ^ { _ => plus } | "*" ^ { _ => times } }
+    trait BinaryOp extends ((Int,Int) => Int)
+    
+    val Op: Nonterminal & BinaryOp = syn { "+" ^ { _ => plus } | "*" ^ { _ => times } }
     
     val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" }
     
-    lazy val Es = E.+(",")
+    // lazy val Es: OperatorNonterminal & List[Int] = E.+(",")
     val E: OperatorNonterminal & Int 
-      = syn (  Op ~ "(" ~ Es ~ ")"   & { case (op,x) => x.reduceLeft((y,z) => y + z) }
-            |  left { E ~ "*" ~ E }  & { case (x,y) => x*y }
-            |> "-" ~ E               & { x => -x }
-            |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
-            | Num                    ^ toInt )
+      = syn (  E ~ "(" ~ E.+(",") ~ ")"   & { t => t._2.reduceLeft((y,z) => y + z) }
+            |  left { E ~ "*" ~ E }        & { case (x,y) => x*y }
+            |> "-" ~ E                     & { x => -x }
+            |> left { E ~ "+" ~ E }        & { case (x,y) => x+y }
+            | Num                          ^ toInt )
             
     
     def main(args: Array[String]): Unit = { 
-      parse("+ ( 1 + - 1 + 1 , 1 * - 1 * 1 )",E) // = 0
+      parse("* ( 1 + - 1 + 1 , 1 * - 1 * 1 )",E) // = 0 or -1
     }
   }
   
