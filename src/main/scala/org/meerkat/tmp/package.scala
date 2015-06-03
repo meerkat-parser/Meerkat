@@ -118,15 +118,15 @@ package object tmp {
     
     val sppf = new DefaultSPPFLookup(input)
     
-    val startUserTime = getUserTime
+    val startUserTime   = getUserTime
     val startSystemTime = getCpuTime
-    val startNanoTime = System.nanoTime
+    val startNanoTime   = System.nanoTime
     
     run(input, sppf, parser)
     
-    val endUserTime: Long = getUserTime
-    val endSystemTime = getCpuTime
-    val endNanoTime: Long = System.nanoTime
+    val endUserTime     = getUserTime
+    val endSystemTime   = getCpuTime
+    val endNanoTime     = System.nanoTime
     
     val startSymbol = sppf.getStartNode(parser, 0, input.length)
     
