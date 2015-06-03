@@ -3,6 +3,7 @@ package org.meerkat
 /**
  * @author Anastasia Izmaylova
  */
+import org.meerkat.util._
 import org.meerkat.util.Input
 import org.meerkat.util.visualization._
 import org.meerkat.sppf.SPPFLookup
@@ -10,6 +11,9 @@ import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.sppf.SemanticAction
 import org.meerkat.sppf.TreeBuilder
 import org.meerkat.sppf.NonPackedNode
+import org.meerkat.meerkat.ParseError
+import org.meerkat.meerkat.ParseSuccess
+import org.meerkat.meerkat.ParseStatistics
 
 package object tmp {
   
@@ -75,7 +79,7 @@ package object tmp {
   }
   
   def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
-    parser(input, 0, sppf)(t => if(t.rightExtent == input.length) { println(s"Success: $t")  })
+    parser(input, 0, sppf)(t => {})
     Trampoline.run
   }
   
@@ -102,10 +106,41 @@ package object tmp {
 //                         visualize(node, input)
 //                         val x = SemanticAction.execute(node)(input)
 //                         println(s"WOW: $x")
-                         visualize(TreeBuilder.build(node)(input), input)
 //                         visualize(TreeBuilder.build(node)(input), input)
-                         println("Done!")
+//                         visualize(TreeBuilder.build(node)(input), input)
+//                         println("Done!")
     }
+  }
+  
+  def parse(parser: Parsers.AbstractNonterminal, input: Input): Either[ParseError, ParseSuccess] = {
+
+    parser.reset
+    
+    val sppf = new DefaultSPPFLookup(input)
+    
+    val startUserTime = getUserTime
+    val startSystemTime = getCpuTime
+    val startNanoTime = System.nanoTime
+    
+    run(input, sppf, parser)
+    
+    val endUserTime: Long = getUserTime
+    val endSystemTime = getCpuTime
+    val endNanoTime: Long = System.nanoTime
+    
+    val startSymbol = sppf.getStartNode(parser, 0, input.length)
+    
+      startSymbol match {
+        case None    => Left(ParseError(0, " "))
+        case Some(x) => Right(ParseSuccess(x, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
+                                                              (endUserTime - startUserTime) / 1000000,
+                                                              (1000000) / 1000000,
+                                                              sppf.countNonterminalNodes,
+                                                              sppf.countIntermediateNodes,
+                                                              sppf.countTerminalNodes,
+                                                              sppf.countPackedNodes,
+                                                              sppf.countAmbiguousNodes)))
+  }
   }
   
 }
