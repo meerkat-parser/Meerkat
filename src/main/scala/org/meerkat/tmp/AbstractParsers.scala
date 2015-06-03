@@ -92,12 +92,16 @@ trait AbstractParsers {
     def group(p: AbstractParser[A]): Group
   }
   
-  trait CanMap[A,Val] {
-    type Nonterminal <: AbstractNonterminal[A] { type Value = Val }
-    def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
+  trait CanMap[A,B,Val] {
+    implicit val m: Memoizable[A]
+    type Nonterminal <: AbstractNonterminal[B] { type Value = Val }
+    def nonterminal(name: String, p: AbstractParser[B]): Nonterminal
     
-    type Sequence <: AbstractSequence[A]
-    def sequence(p: AbstractSequence[A]): Sequence
+    def index(a: A): Int
+    def intermediate(a: A, b: B, p: Slot, sppfLookup: SPPFLookup): B
+    
+    type Sequence <: AbstractSequence[B]
+    def sequence(p: AbstractSequence[B]): Sequence
     
     type SequenceBuilder <: (Slot => Sequence) { type Value = Val }
     def builderSeq(f: Slot => Sequence): SequenceBuilder
@@ -195,21 +199,51 @@ trait AbstractParsers {
           override def reset = { p1.reset; p2.reset }
         }
     
-    def map[A:Memoizable,B](p: AbstractSequenceBuilder[A], f: A => B)(implicit builder: CanMap[B,p.Value]): builder.SequenceBuilder = {
-      builder.builderSeq { slot =>
+    def map[A,B](p: AbstractSequenceBuilder[A], f: A => B)(implicit builder: CanMap[A,B,p.Value]): builder.SequenceBuilder = {
+      import builder._
+      builderSeq { slot =>
         val q = p(slot)
         builder.sequence(new AbstractParser[B] with Slot {
-          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input,i,sppfLookup).map(f)
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input,i,sppfLookup) map f
           def size = q.size; def ruleType = q.ruleType; def symbol = q.symbol
+          override def reset = q.reset
         }) }
     }
     
-    def map[A:Memoizable,B](p: AbstractSymbol[A], f: A => B)(implicit builder: CanMap[B,p.Value]): builder.Nonterminal = {
-      builder nonterminal (s"${p.name}${f.hashCode}", new AbstractParser[B] {
-        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup).map(f)
+    def map[A,B](p: AbstractSymbol[A], f: A => B)(implicit builder: CanMap[A,B,p.Value]): builder.Nonterminal = {
+      import builder._
+      nonterminal (s"${p.name}${f.hashCode}", new AbstractParser[B] {
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) map f
         def symbol = p.symbol; override def reset = p.reset
       })
     }
+    
+    type AbstractSymbolWithValue[A,V] = AbstractSymbol[A] { type Value = V }
+    
+    def flatMap[A,B,V](p: AbstractSequenceBuilder[A], f: A => AbstractSymbolWithValue[B,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
+      import builder._
+      builderSeq { slot =>
+        val q = p(slot)
+        builder.sequence(new AbstractParser[builder.T] with Slot {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input,i,sppfLookup) flatMap { x => f(x)(input,index(x),sppfLookup).smap { intermediate(x,_,this,sppfLookup) } }
+          def size = q.size + 1; def symbol = org.meerkat.tree.Sequence(q.symbol, org.meerkat.tree.SimpleNonterminal(s"${f.hashCode}"))
+          def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, size)
+          override def toString = s"[${ruleType.toString()},$size]"
+          override def reset = q.reset
+        }) }
+    }
+    
+//    def flatMap[A,B,V](p: AbstractSymbol[A], f: A => AbstractSymbolWithValue[A,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
+//      import builder._
+//      builderSeq { slot =>
+//        builder.sequence(new AbstractParser[B] with Slot {
+//          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) flatMap { x => f(x)(input,index(x),sppfLookup).smap { intermediate(x,_,this,sppfLookup) } }
+//          def size = 2; def symbol = org.meerkat.tree.Sequence(p.symbol, org.meerkat.tree.SimpleNonterminal(s"${f.hashCode}"))
+//          def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, size)
+//          override def toString = s"[${ruleType.toString()},$size]"
+//          override def reset = p.reset
+//        }) }
+//    }
   }
 }
  
