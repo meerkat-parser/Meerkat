@@ -4,6 +4,7 @@ import org.meerkat.util.Input
 import scala.collection.mutable.HashMap
 import org.meerkat.util.visualization.Shape._
 import org.meerkat.util.visualization.Style._
+import org.meerkat.util.visualization.Color._
 import org.meerkat.util.visualization._
 
 trait TreeVisitor {
@@ -42,7 +43,7 @@ class TreeToDot extends TreeVisitor {
       }
     
       case n @ Amb(s)      => {
-        sb ++= getShape(n.id, "Amb", Diamond)
+        sb ++= getShape(n.id, "Amb", Diamond, color = Red)
         s.foreach { t => addEdge(n.id, t.id, sb); visit(t) }
       } 
     }

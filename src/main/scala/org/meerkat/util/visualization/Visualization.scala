@@ -19,3 +19,12 @@ object Style extends Enumeration {
 
   def apply(s: String): Style = Value(s)
 }
+
+object Color extends Enumeration {
+  type Color = Value;
+
+  val Black   = Color("black")
+  val Red     = Color("red")
+  
+  def apply(s: String): Color = Value(s)
+}

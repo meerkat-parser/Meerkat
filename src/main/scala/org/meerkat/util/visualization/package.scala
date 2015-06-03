@@ -2,6 +2,7 @@ package org.meerkat.util
 
 import org.meerkat.util.visualization.Shape._
 import org.meerkat.util.visualization.Style._
+import org.meerkat.util.visualization.Color._
 import scala.sys.process._
 import java.io.File
 import java.io.BufferedWriter
@@ -45,10 +46,10 @@ package object visualization {
   }
 
   
-  def getShape(id: Any, label: String, shape: Shape, style: Style = Default) = 
-    s""""${escape(id)}"[$shape $style height=0.1, width=0.1, color=black, fontcolor=black, label="${escape(label)}", fontsize=10];\n""" 
+  def getShape(id: Any, label: String, shape: Shape, style: Style = Default, color: Color = Black) = 
+    s""""${escape(id)}"[$shape $style height=0.1, width=0.1, color=$color, fontcolor=$color, label="${escape(label)}", fontsize=10];\n""" 
 
-  def addEdge(src: Any, dst: Any, sb: StringBuilder) {
+  def addEdge(src: Any, dst: Any, sb: StringBuilder, color: Color = Black) {
     sb ++= s"""edge [color=black, style=solid, penwidth=0.5, arrowsize=0.7]; "${escape(src)}" -> { "${escape(dst)}" }\n"""
   }
     
