@@ -60,7 +60,7 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
    
    def flattenOpt(v: Any): List[Any] = v match {
      case ()                          => List()
-     case x: Any                      => List(x)     
+     case x: Any                      => List(x)
    }
    
    def intermediate(p: PackedNode, l: Any, r: Any): Any = (l,r) match {
@@ -97,13 +97,14 @@ object SemanticAction {
   
   def convert(t: Any): Any = t match {
     case StarList(s, List())                 => ()
-    case StarList(s, xs)                     => xs
-    case PlusList(s, xs)                     => xs
+    case StarList(s, xs)                     => convert(xs)
+    case PlusList(s, xs)                     => convert(xs)
     case OptList(s, List())                  => ()
-    case OptList(s, xs)                      => xs
-    case (x, StarList(s, List()))            => x
-    case (x, StarList(s, xs))                => (x, xs)
-    case (x, PlusList(s, xs))                => (x, xs)
+    case OptList(s, xs)                      => convert(xs)
+    case List()                              => ()
+    case l: List[Any]                        => l.map { convert(_) }.filter { _ != ()}
+    case ((), ())                            => ()
+    case (x, y)                              => convert((convert(x), convert(y)))
     case _                                   => t 
   }
   
@@ -128,13 +129,13 @@ object SemanticAction {
 object TreeBuilder {
 
    def convert(t: Any): Tree = t match {
-    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs.asInstanceOf[Seq[Tree]]) 
-    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs.asInstanceOf[Seq[Tree]])
-    case OptList(s, xs)  => Appl(RegularRule(Opt(s)), xs.asInstanceOf[Seq[Tree]])
+    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs map { convert(_) }) 
+    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs map { convert(_) })
+    case OptList(s, xs)  => Appl(RegularRule(Opt(s)),  xs map { convert(_) })
     case _               => t.asInstanceOf[Tree]
   }
   
-  def flatten(t: Any): Seq[Any] = t match {
+  def flatten(t: Any): Seq[Tree] = t match {
     case (t: (_, _), y)  => flatten(t) :+ convert(y)
     case (x, y)          => List(convert(x), convert(y))
     case ()              => List()

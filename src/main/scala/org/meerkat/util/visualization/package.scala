@@ -35,12 +35,13 @@ package object visualization {
           
       sb ++= "}\n"
       
-        val file = new File(s"$name.dot")  
-        val writer = new BufferedWriter(new FileWriter(file))
-        writer.write(sb.toString)
-        writer.close()
-        
-        s"/usr/local/bin/dot -Tpdf -o $name.pdf $path/$name.dot"!
+      val file = new File(s"$name.dot")  
+      val writer = new BufferedWriter(new FileWriter(file))
+      writer.write(sb.toString)
+      writer.close()
+      
+      println(s"/usr/local/bin/dot -Tpdf -o $name.pdf $path/$name.dot")
+      s"/usr/local/bin/dot -Tpdf -o $name.pdf $path/$name.dot"!
   }
 
   
