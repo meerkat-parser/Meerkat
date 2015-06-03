@@ -124,6 +124,9 @@ object Parsers { import AbstractCPSParsers._
     
     def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
+  
+    def ~ (p: String)(implicit layout: Layout) = (this ~~ layout.get).~~(p)
+    def ~~ (p: String)(implicit tuple: this.Value|~|NoValue) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def & [V](f: this.Value => V) = new SequenceBuilderWithAction {
       type Value = V
@@ -185,6 +188,9 @@ object Parsers { import AbstractCPSParsers._
     def ~ (p: Symbol)(implicit tuple: this.Value |~| p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
   
+    def ~ (p: String)(implicit layout: Layout) = (this ~~ layout.get).~~(p)
+    def ~~ (p: String)(implicit tuple: this.Value|~|NoValue) = { implicit val o = obj1(tuple); seq(this, p) }
+  
     def &[V](f: this.Value => V) = new SymbolWithAction {
       type Value = V
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
@@ -220,7 +226,7 @@ object Parsers { import AbstractCPSParsers._
     def | [U >: this.Value](q: SymbolWithAction { type Value = U }) = altSym(this, q)
   }
   
-  implicit def toTerminal(s: String) = new Terminal { 
+  implicit def toTerminal(s: String): Terminal = new Terminal { 
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
       = if (input.startsWith(s, i)) { CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) } 
         else CPSResult.failure

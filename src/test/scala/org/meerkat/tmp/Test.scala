@@ -108,7 +108,7 @@ object Test {
   object Test7 {
     
     val E: OperatorNonterminal & Int
-      = syn (  "(" ~ E ~ ")"
+      = syn (  "("  ~ E ~ ")"
             |> right { E ~ "*" ~ E } & { case (x,y) => x*y } 
             |> E ~ "+"
             |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
@@ -182,7 +182,7 @@ object Test {
     
     // lazy val Es: OperatorNonterminal & List[Int] = E.+(",")
     val E: OperatorNonterminal & Int 
-      = syn (  E ~ "(" ~ E.+(",") ~ ")"   & { t => t._2.reduceLeft((y,z) => y + z) }
+      = syn (  Op ~ "(" ~ E.+(",") ~ ")"   & { case (op,x) => x.reduceLeft((y,z) => op(y,z)) }
             |  left { E ~ "*" ~ E }        & { case (x,y) => x*y }
             |> "-" ~ E                     & { x => -x }
             |> left { E ~ "+" ~ E }        & { case (x,y) => x+y }

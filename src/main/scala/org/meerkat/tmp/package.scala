@@ -60,12 +60,11 @@ package object tmp {
   
   trait Layout { def get: Parsers.Symbol { type Value = NoValue } }
   def layout(p: Parsers.Symbol { type Value = NoValue }): Layout = new Layout {
-    val q = Parsers.ntSym("L", p)
-    def get = q
+    def get = p
   }
   
   object DefaultLayout {
-    implicit val L: Layout = layout(Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout))  
+    implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout)))  
   }
   
   def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
