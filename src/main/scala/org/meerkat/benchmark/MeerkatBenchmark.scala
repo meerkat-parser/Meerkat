@@ -30,14 +30,14 @@ class MeerkatBenchmark(parser: Nonterminal,
                        runCount: Int = 1,
                        runGCInBetween: Boolean = false,
                        timeOut: Int = -1) {
+
+  printf("%-20s %-20s %-20s %-20s %-20s %-15s %-15s\n", "size", "user_time", "nonterminal_nodes", "intermediate_nodes", "terminal_nodes", "packed_nodes", "ambiguous_nodes")
   
   def run() {
     for (f <- files) {
-      printf("%-20s %-20s %-20s %-20s %-20s %-15s %-15s\n", "size", "user_time", "nonterminal_nodes", "intermediate_nodes", "terminal_nodes", "packed_nodes", "ambiguous_nodes")
       val input: Input = Input(scala.io.Source.fromFile(f).mkString)
       
       println("#" + f)
-      print(input.length + "   ")
       run(input)
       if (runGCInBetween) GcFinalization.awaitFullGc()
     }
