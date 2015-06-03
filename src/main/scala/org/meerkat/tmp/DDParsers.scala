@@ -129,7 +129,9 @@ object DDParsers { import AbstractCPSParsers._
     
     def | [U >: T,V >: this.Value](p: AlternationBuilder[U] { type Value = V }) = altSymAlt(this, p)
     def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altSymSeq(this, p)
-    def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSym(this, p)    
+    def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSym(this, p)
+    
+//    def map[U](f: T => U) = AbstractParser.map[(NonPackedNode,T),(NonPackedNode,U)](this, t => (t._1,f(t._2)))(obj4[T],obj5[U,this.Value])
   }
   
   type DataNonterminal[T] = AbstractNonterminal[T] { type Value = NoValue; type Abstract[X] = AbstractNonterminal[T] { type Value = X } }

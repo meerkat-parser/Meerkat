@@ -91,6 +91,17 @@ trait AbstractParsers {
     def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular
     def group(p: AbstractParser[A]): Group
   }
+  
+  trait CanMap[A,Val] {
+    type Nonterminal <: AbstractNonterminal[A] { type Value = Val }
+    def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
+    
+    type Sequence <: AbstractSequence[A]
+    def sequence(p: AbstractSequence[A]): Sequence
+    
+    type SequenceBuilder <: (Slot => Sequence) { type Value = Val }
+    def builderSeq(f: Slot => Sequence): SequenceBuilder
+  }
     
   object AbstractParser {
     
@@ -183,6 +194,22 @@ trait AbstractParsers {
           def symbol = org.meerkat.tree.Alt(p1.symbol, p2.symbol)
           override def reset = { p1.reset; p2.reset }
         }
+    
+    def map[A:Memoizable,B](p: AbstractSequenceBuilder[A], f: A => B)(implicit builder: CanMap[B,p.Value]): builder.SequenceBuilder = {
+      builder.builderSeq { slot =>
+        val q = p(slot)
+        builder.sequence(new AbstractParser[B] with Slot {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input,i,sppfLookup).map(f)
+          def size = q.size; def ruleType = q.ruleType; def symbol = q.symbol
+        }) }
+    }
+    
+    def map[A:Memoizable,B](p: AbstractSymbol[A], f: A => B)(implicit builder: CanMap[B,p.Value]): builder.Nonterminal = {
+      builder nonterminal (s"${p.name}${f.hashCode}", new AbstractParser[B] {
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup).map(f)
+        def symbol = p.symbol; override def reset = p.reset
+      })
+    }
   }
 }
  
@@ -221,34 +248,34 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   }
   
   def preFilter[B](p: AbstractSymbol[B], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
-      builder symbol new AbstractParser[B] {
-        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
-        def name = prefix + " " + p.name; override def toString = name
-        def symbol = p.symbol match {
-                       case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
-                       case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
-                       case _ => throw new RuntimeException("Shouldn't have happened!")
-                     } 
-        type Value = p.Value
-        def action = None
-        override def reset = p.reset
-      }
+    builder symbol new AbstractParser[B] {
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
+      def name = prefix + " " + p.name; override def toString = name
+      def symbol = p.symbol match {
+                     case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
+                     case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
+                     case _ => throw new RuntimeException("Shouldn't have happened!")
+                   } 
+      type Value = p.Value
+      def action = None
+      override def reset = p.reset
     }
+  }
   
   def postFilter[B](p: AbstractSymbol[B], pred: (Input,B) => Boolean, postfix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
-      builder symbol new AbstractParser[B] {
-        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
-        def name = p.name + " " + postfix; override def toString = name 
-        def symbol = p.symbol match {
-                       case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
-                       case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
-                       case _ => throw new RuntimeException("Shouldn't have happened!")
-                     } 
-        type Value = p.Value
-        def action = None
-        override def reset = p.reset
-      }
+    builder symbol new AbstractParser[B] {
+      def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
+      def name = p.name + " " + postfix; override def toString = name 
+      def symbol = p.symbol match {
+                     case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
+                     case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
+                     case _ => throw new RuntimeException("Shouldn't have happened!")
+                   } 
+      type Value = p.Value
+      def action = None
+      override def reset = p.reset
     }
+  }
   
   import CPSResult.memo
   
