@@ -91,15 +91,15 @@ package object tmp {
     println(s"Trying to find: ${parser.name}(0,${sentence.length()})")
     val startSymbol = sppf.getStartNode(parser, 0, sentence.length())
     
-    println("Resetting ...")
-    parser.reset
+//    println("Resetting ...")
+//    parser.reset
     
     startSymbol match {
       case None       => println("Parse error")
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-                         println("Visualizing...")
-                         visualize(node, input)
+//                         println("Visualizing...")
+//                         visualize(node, input)
                          val x = SemanticAction.execute(node)(input)
                          println(s"WOW: $x")
                          visualize(TreeBuilder.build(node)(input), input)
