@@ -10,6 +10,9 @@ package org.meerkat
 
 import java.lang.management.ThreadMXBean
 import java.lang.management.ManagementFactory
+import java.io.File
+import scala.collection.mutable.ListBuffer
+import org.apache.commons.io.FileUtils
 
 package object util {
   
@@ -35,4 +38,17 @@ package object util {
         (bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime( )) else 0L
   }
   
+  
+   implicit class Load(dir: String) {
+     def load(ext: String, rec: Boolean = true): scala.Seq[File] = {
+        val files = FileUtils.listFiles(new File(dir), Array(ext), rec)
+        val it = files.iterator
+        val inputPaths: ListBuffer[File] = new ListBuffer
+        
+        while(it.hasNext()) {
+          inputPaths += (it.next().asInstanceOf[File])
+        }
+        inputPaths
+     } 
+   } 
 }

@@ -334,7 +334,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
       def symbol = q.symbol
       override def reset = { 
         val done = results == null
-        if (!done) { results = null; println("reset!"); q.reset } 
+        if (!done) { results = null; q.reset }
       }
     }
   }
