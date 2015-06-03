@@ -18,7 +18,7 @@ object DDParsers { import AbstractCPSParsers._
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
           def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
           override def reset = p.reset
-        }    
+        }
     def index(a: (NonPackedNode,A)): Int = a._1.rightExtent
     def intermediate(a: (NonPackedNode,A), b: (NonPackedNode,B), p: Slot, sppfLookup: SPPFLookup): T 
       = (sppfLookup.getIntermediateNode(p, a._1, b._1), new ~(a._2, b._2))
@@ -110,6 +110,24 @@ object DDParsers { import AbstractCPSParsers._
     def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A] { type Value = V; def apply(slot: Slot) = f(slot) }
   }
   
+  implicit def obj8[A,B,Val] = new CanMap[(NonPackedNode,A),(NonPackedNode,B),Val] {
+    implicit val m = obj4[A]
+    type Nonterminal = DDParsers.AbstractNonterminal[B] { type Value = Val }
+    def nonterminal(name: String, p: AbstractParser[(NonPackedNode,B)]) = obj5[B,Val].nonterminal(name, p)
+    
+    def index(a: (NonPackedNode,A)) = a._1.rightExtent
+    def intermediate(a: (NonPackedNode,A), b: (NonPackedNode,B), p: Slot, sppfLookup: SPPFLookup) = (sppfLookup.getIntermediateNode(p, a._1, b._1), b._2)
+    
+    type Sequence = DDParsers.Sequence[B]
+    def sequence(p: AbstractSequence[(NonPackedNode,B)]) = new Sequence { 
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
+          def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
+          override def reset = p.reset
+        }   
+    type SequenceBuilder = DDParsers.SequenceBuilder[B] { type Value = Val }
+    def builderSeq(f: Slot => Sequence) = new DDParsers.SequenceBuilder[B] { type Value = Val; def apply(slot: Slot) = f(slot) }
+  }
+  
   trait Sequence[+T] extends AbstractParser[(NonPackedNode,T)] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }  
   trait Alternation[+T] extends AbstractParser[(NonPackedNode,T)] { def symbol: org.meerkat.tree.Alt }
   
@@ -131,7 +149,7 @@ object DDParsers { import AbstractCPSParsers._
     def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altSymSeq(this, p)
     def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSym(this, p)
     
-//    def map[U](f: T => U) = AbstractParser.map[(NonPackedNode,T),(NonPackedNode,U)](this, t => (t._1,f(t._2)))(obj4[T],obj5[U,this.Value])
+    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
   }
   
   type DataNonterminal[T] = AbstractNonterminal[T] { type Value = NoValue; type Abstract[X] = AbstractNonterminal[T] { type Value = X } }
@@ -151,6 +169,11 @@ object DDParsers { import AbstractCPSParsers._
     def | [U >: T,V >: this.Value](p: AlternationBuilder[U] { type Value = V }) = altSeqAlt(this, p)
     def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altSeq(this, p)
     def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSeqSym(this, p)
+    
+    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
+    
+    def flatMap[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,this.Value,V](tuple))
   }
   
   trait AlternationBuilder[+T] extends (Head => Alternation[T]) { import AbstractParser._
