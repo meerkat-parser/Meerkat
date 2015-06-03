@@ -190,7 +190,8 @@ object Test {
             
     
     def main(args: Array[String]): Unit = { 
-      parse("* ( 1 + - 1 + 1 , 1 * - 1 * 1 )",E) // = 0 or -1
+      val parser: Nonterminal & Int = start(E($))
+      parse("* ( 1 + - 1 + 1 , 1 * - 1 * 1 )",parser) // = 0 or -1
     }
   }
   

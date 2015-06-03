@@ -14,13 +14,7 @@ object Assoc extends Enumeration {
   val UNDEFINED, LEFT, RIGHT, ASSOC, NON_ASSOC = Value
 }
 
-object AbstractOperatorParsers {
-  
-  import AbstractCPSParsers._
-  
-  type Prec = (Int, Int)
-  
-  val $: Prec = (0,0)
+object AbstractOperatorParsers { import AbstractCPSParsers._
   
   type AbstractOperatorParser[+T] = (Prec => AbstractParser[T])
   

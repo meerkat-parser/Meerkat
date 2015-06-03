@@ -50,6 +50,7 @@ package object tmp {
     val empty: String => OptOrSeq = _ => null
     val group: NoValue => Group = _ => null
   }
+  
   implicit def ebnf2[Val: ![NoValue]#f] = new EBNF[Val] { 
     type OptOrSeq = List[Val]; type Group = Val
     val add: ((OptOrSeq,Val)) => OptOrSeq = { case (s,x) => s.:+(x) }
@@ -58,10 +59,16 @@ package object tmp {
     val group: Val => Group = x => x
   }
   
+  type Prec = (Int, Int)
+  val $: Prec = (0,0)
+  
   trait Layout { def get: Parsers.Symbol { type Value = NoValue } }
   def layout(p: Parsers.Symbol { type Value = NoValue }): Layout = new Layout {
     def get = p
   }
+  
+  def start[T](p: Parsers.Symbol { type Value = T})(implicit layout: Layout): Parsers.AbstractNonterminal { type Value = T } 
+    = Parsers.ntSeq("", layout.get ~~ p ~~ layout.get)
   
   object DefaultLayout {
     implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout)))  
