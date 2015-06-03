@@ -68,7 +68,7 @@ package object tmp {
   }
   
   def start[T](p: Parsers.Symbol { type Value = T})(implicit layout: Layout): Parsers.AbstractNonterminal { type Value = T } 
-    = Parsers.ntSeq("", layout.get ~~ p ~~ layout.get)
+    = Parsers.ntSeq(s"start[${p.name}]", layout.get ~~ p ~~ layout.get)
   
   object DefaultLayout {
     implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout)))  
