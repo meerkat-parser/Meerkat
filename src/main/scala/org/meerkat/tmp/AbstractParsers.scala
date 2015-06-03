@@ -212,8 +212,16 @@ trait AbstractParsers {
     
     def map[A,B](p: AbstractSymbol[A], f: A => B)(implicit builder: CanMap[A,B,p.Value]): builder.Nonterminal = {
       import builder._
-      nonterminal (s"${p.name}${f.hashCode}", new AbstractParser[B] {
+      nonterminal (p.name, new AbstractParser[B] {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) map f
+        def symbol = p.symbol; override def reset = p.reset
+      })
+    }
+    
+    def map[A,B](p: AbstractSymbol[A], f: (Input,A) => B)(implicit builder: CanMap[A,B,p.Value]): builder.Nonterminal = {
+      import builder._
+      nonterminal (p.name, new AbstractParser[B] {
+        def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) map { f(input,_) }
         def symbol = p.symbol; override def reset = p.reset
       })
     }
@@ -233,17 +241,17 @@ trait AbstractParsers {
         }) }
     }
     
-//    def flatMap[A,B,V](p: AbstractSymbol[A], f: A => AbstractSymbolWithValue[A,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
-//      import builder._
-//      builderSeq { slot =>
-//        builder.sequence(new AbstractParser[B] with Slot {
-//          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) flatMap { x => f(x)(input,index(x),sppfLookup).smap { intermediate(x,_,this,sppfLookup) } }
-//          def size = 2; def symbol = org.meerkat.tree.Sequence(p.symbol, org.meerkat.tree.SimpleNonterminal(s"${f.hashCode}"))
-//          def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, size)
-//          override def toString = s"[${ruleType.toString()},$size]"
-//          override def reset = p.reset
-//        }) }
-//    }
+    def flatMap[A,B,V](p: AbstractSymbol[A], f: A => AbstractSymbolWithValue[B,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
+      import builder._
+      builderSeq { slot =>
+        builder.sequence(new AbstractParser[builder.T] with Slot {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) flatMap { x => f(x)(input,index(x),sppfLookup).smap { intermediate(x,_,this,sppfLookup) } }
+          def size = 2; def symbol = org.meerkat.tree.Sequence(p.symbol, org.meerkat.tree.SimpleNonterminal(s"${f.hashCode}"))
+          def ruleType = org.meerkat.tree.PartialRule(slot.ruleType.head, slot.ruleType.body, size)
+          override def toString = s"[${ruleType.toString()},$size]"
+          override def reset = p.reset
+        }) }
+    }
   }
 }
  

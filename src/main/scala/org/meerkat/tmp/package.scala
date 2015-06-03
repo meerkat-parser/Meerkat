@@ -78,7 +78,7 @@ package object tmp {
     implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout)))  
   }
   
-  def run(input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[NonPackedNode]): Unit = {
+  def run[T](input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[T]): Unit = {
     parser(input, 0, sppf)(t => {})
     Trampoline.run
   }
@@ -86,7 +86,7 @@ package object tmp {
   def parse[Val](sentence: String, parser: OperatorParsers.AbstractOperatorNonterminal[Val]): Unit 
     = parse(sentence, parser((0,0)))
   
-  def parse(sentence: String, parser: Parsers.AbstractNonterminal): Unit = {
+  def parse[T](sentence: String, parser: AbstractCPSParsers.AbstractSymbol[T]): Unit = {
     val input = new Input(sentence)
     val sppf = new DefaultSPPFLookup(input)
     
