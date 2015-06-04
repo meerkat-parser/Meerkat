@@ -125,8 +125,8 @@ object Parsers { import AbstractCPSParsers._
     def ~ (p: Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     def ~~ (p: Symbol)(implicit tuple: this.Value|~|p.Value) = { implicit val o = obj1(tuple); seq(this, p) }
   
-    def ~ (p: String)(implicit layout: Layout) = (this ~~ layout.get).~~(p)
-    def ~~ (p: String)(implicit tuple: this.Value|~|NoValue) = { implicit val o = obj1(tuple); seq(this, p) }
+//    def ~ (p: String)(implicit layout: Layout) = (this ~~ layout.get).~~(p)
+//    def ~~ (p: String)(implicit tuple: this.Value|~|NoValue) = { implicit val o = obj1(tuple); seq(this, p) }
     
     def & [V](f: this.Value => V) = new SequenceBuilderWithAction {
       type Value = V

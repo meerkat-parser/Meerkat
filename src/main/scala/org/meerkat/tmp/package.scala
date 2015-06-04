@@ -102,13 +102,12 @@ package object tmp {
       case None       => println("Parse error")
       case Some(node) => println("Success: " + node)
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-//                         println("Visualizing...")
-//                         visualize(node, input)
-//                         val x = SemanticAction.execute(node)(input)
-//                         println(s"WOW: $x")
-//                         visualize(TreeBuilder.build(node)(input), input)
-//                         visualize(TreeBuilder.build(node)(input), input)
-//                         println("Done!")
+                         println("Visualizing...")
+                         visualize(node, input)
+                         val x = SemanticAction.execute(node)(input)
+                         println(s"WOW: $x")
+                         visualize(TreeBuilder.build(node)(input), input)
+                         println("Done!")
     }
   }
   

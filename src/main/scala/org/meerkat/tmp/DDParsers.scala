@@ -169,8 +169,11 @@ object DDParsers { import AbstractCPSParsers._
     
     def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
     
-    def flatMap[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
+    def ~>[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
       = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,this.Value,V](tuple))
+    
+    def ~>>[V](f: T => Parsers.Symbol { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,this.Value,V](tuple))
   }
   
   type DataNonterminal[+T] = AbstractNonterminal[T] { type Value = NoValue }
@@ -194,8 +197,11 @@ object DDParsers { import AbstractCPSParsers._
     
     def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
     
-    def flatMap[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
+    def ~>[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
       = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,this.Value,V](tuple))
+    
+    def ~>>[V](f: T => Parsers.Symbol { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,this.Value,V](tuple))
   }
   
   trait AlternationBuilder[+T] extends (Head => Alternation[T]) { import AbstractParser._
@@ -215,6 +221,12 @@ object DDParsers { import AbstractCPSParsers._
     def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value) = { implicit val o = obj6[U,V,q.Value](tuple); seq(p, q) }
   
     def map[U](f: String => U) = AbstractParser.map(p, (input: Input, t: NonPackedNode) => (t,f(input.substring(t.leftExtent, t.rightExtent))))(obj9[U,V])
+  }
+  
+  implicit class StringSeqOps(term: String) { import AbstractParser._
+    val p = Parsers.toTerminal(term)
+    def ~ [U](q: AbstractNonterminal[U])(implicit tuple: p.Value|~|q.Value, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
+    def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: p.Value|~|q.Value) = { implicit val o = obj6[U,p.Value,q.Value](tuple); seq(p, q) }
   }
 
   def ntAlt[A,V](name: String, p: => AlternationBuilder[A] { type Value = V }) = nonterminalAlt[(NonPackedNode,A),V](name, p)
