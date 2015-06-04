@@ -92,8 +92,11 @@ class JavaRegexMatcher(s: String) extends Matcher {
 }
 
 object RegularExpression {
-  
   def apply(s: String) = StringPattern(s)
   
   implicit def toRegularExpression(s: String) = RegularExpression(s)
+  
+  implicit class ToRegularExpression(s: String) {
+    def re() = RegularExpression(s)  
+  } 
 }
