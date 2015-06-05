@@ -96,16 +96,15 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
 object SemanticAction {
   
   def convert(t: Any): Any = t match {
-    case StarList(s, List())                 => ()
-    case StarList(s, xs)                     => convert(xs)
-    case PlusList(s, xs)                     => convert(xs)
-    case OptList(s, List())                  => ()
-    case OptList(s, xs)                      => convert(xs)
-    case List()                              => ()
-    case l: List[Any]                        => l.map { convert(_) }.filter { _ != ()}
-    case ((), ())                            => ()
-    case (x, y)                              => convert((convert(x), convert(y)))
-    case _                                   => t 
+    case StarList(s, xs)       => convert(xs)
+    case PlusList(s, xs)       => convert(xs)
+    case OptList(s, xs)        => convert(xs)
+    case List()                => ()
+    case l: List[Any]          => l.map { convert(_) }.filter { _ != ()}
+    case (x, y: EBNFList)      => convert(x, convert(y))
+    case (x: EBNFList, y)      => convert(convert(x), y)
+    case ((), ())              => ()
+    case _                     => t 
   }
   
   def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
