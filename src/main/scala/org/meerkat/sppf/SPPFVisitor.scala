@@ -122,7 +122,7 @@ object SemanticAction {
     else v
   
   def execute(node: NonPackedNode)(implicit input: Input) =
-    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node)
+    convert(new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node))
 }
 
 object TreeBuilder {
@@ -148,21 +148,12 @@ object TreeBuilder {
   def int(input: Input)(t: RuleType, v: Any) = v
   
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
-
-  
-  def newBuilder(implicit input: Input): SPPFVisitor = {
-    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input))
-  }
-  
-  def newMemoBuilder(implicit input: Input): SPPFVisitor = {
-    new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
-  }
   
   def build(node: NonPackedNode, memoized: Boolean = false)(implicit input: Input): Tree =
     if (memoized)
-      newMemoBuilder.visit(node).asInstanceOf[Tree]
+      convert(new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node))
     else 
-      newBuilder.visit(node).asInstanceOf[Tree]
+      convert((new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization).visit(node))
 }
 
 class SPPFToDot extends SPPFVisitor {
