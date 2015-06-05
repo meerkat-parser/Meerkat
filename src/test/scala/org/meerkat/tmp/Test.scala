@@ -188,15 +188,36 @@ object Test {
             |> left { E ~ "+" ~ E }        & { case (x,y) => x+y }
             | Num                          ^ toInt )
             
-    
     def main(args: Array[String]): Unit = { 
       val parser: Nonterminal & Int = start(E($))
       parse(" * ( 1 + - 1 + 1 , 1 * - 1 * 1 ) ",parser) // = 0 or -1
     }
   }
   
+  object Test12 {
+    
+    val Num = syn { "[0-9]".r }
+    val E: Nonterminal = syn ( E ~~ "*" ~~ E | E ~~ "+" ~~ E | Num )
+    
+    def main(args: Array[String]): Unit = {
+      parse("1+2*3",E)
+    }
+  }
+  
+  object Test13 {
+    
+    val Num = syn { "[0-9]".r }
+    val E: Nonterminal = syn ( E ~~ "*" ~~ E | E ~~ "+" ~~ E | Num )
+    
+    val S = syn ( E.*(",") )
+    
+    def main(args: Array[String]): Unit = {
+      parse("1,2,3",S)
+    }
+  }
+  
   def main(args: Array[String]): Unit = {
-     Test11.main(args)
+     Test13.main(args)
   }
 
 }

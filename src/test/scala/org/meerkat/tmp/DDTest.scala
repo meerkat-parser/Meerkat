@@ -20,7 +20,7 @@ object DDTest {
     
     val Octet = syn { """.""".r }
     
-    val L8 = syn { "~{" ~ Num.map { s => s.toInt } ~"}" ~>> { n => println("num:" + n); Octets(n,Octet) } }
+    val L8 = syn { "~{" ~ Num.map { _.toInt } ~"}" ~>> { Octets(_,Octet) } }
     
     def Octets(n: Int, p: Nonterminal) 
       = n match {
