@@ -158,7 +158,7 @@ object TreeBuilder {
     new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
   }
   
-  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree =
+  def build(node: NonPackedNode, memoized: Boolean = false)(implicit input: Input): Tree =
     if (memoized)
       newMemoBuilder.visit(node).asInstanceOf[Tree]
     else 
