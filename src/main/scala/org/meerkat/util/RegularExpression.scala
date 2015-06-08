@@ -1,5 +1,9 @@
 package org.meerkat.util
 
+import org.meerkat.tmp.Parsers.Terminal
+import org.meerkat.sppf.SPPFLookup
+import org.meerkat.tmp.CPSResult
+
 trait RegularExpression {
 
   def ~(r: RegularExpression): RegularExpression = Seq(this, r)
@@ -38,6 +42,7 @@ trait RegularExpression {
     case ']' => "\\]"
     case '(' => "\\("
     case ')' => "\\)"
+    case '.' => "\\."
     case x => x + "" 
   }
   
@@ -59,7 +64,15 @@ case class Char(c: scala.Char) extends RegularExpression {
 
 object Char {
   implicit def toChar(c: scala.Char) = Char(c)
+//  implicit def toSequence(s: String) = fromString(s)
+  
+//  def fromString(s: String): RegularExpression =
+//   if (s.length == 0) throw new RuntimeException("Length cannot be zero")
+//   else if(s.length() == 1) Char(s.charAt(0))
+//   else { val x = s.foldLeft(Seq(s.charAt(0), s.charAt(1)))((seq, c) => Seq(seq, c)); 
+//   x }
 }
+
 
 case class Range(start: Char, end: Char) extends RegularExpression
 
@@ -76,11 +89,11 @@ class JavaRegexMatcher(s: String) extends Matcher {
   val matcher: java.util.regex.Matcher = s.r.pattern.matcher("")
   
   override def next(input: Input, i: Int): Int = {
+    if (i < 0) return -1
     matcher.reset(input.s)
-    if (matcher.find(i))
-      return i + matcher.end()
-    else 
-      return -1
+    matcher.region(i, input.length)
+    if (matcher.lookingAt()) matcher.end 
+    else -1
   }
   
   override def matches(input:Input, i: Int, j: Int): Boolean = {
@@ -92,11 +105,13 @@ class JavaRegexMatcher(s: String) extends Matcher {
 }
 
 object RegularExpression {
+  
   def apply(s: String) = StringPattern(s)
   
-  implicit def toRegularExpression(s: String) = RegularExpression(s)
+  implicit def toRegularExpression(s: String) = RegularExpression(s) 
   
-  implicit class ToRegularExpression(s: String) {
-    def re() = RegularExpression(s)  
-  } 
+//  implicit class ToRegularExpression(s: String) {
+//    def re() = RegularExpression(s)  
+//  }
+  
 }
