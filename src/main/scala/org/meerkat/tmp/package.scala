@@ -19,7 +19,7 @@ package object tmp {
   
   case class ~[+A,+B](_1: A, _2: B)
   
-  trait <:<[A,B]
+  trait <:<[-A,B]
   implicit def sub[A,B >: A]: A <:< B = null
   
   trait <:!<[A,B]
@@ -31,7 +31,7 @@ package object tmp {
   
   sealed trait NoValue
   
-  trait |~|[A,B] { type R }
+  trait |~|[-A,B] { type R }
   implicit def f1[A <: NoValue,B <: NoValue] = new |~|[NoValue,NoValue] { type R = NoValue }
   implicit def f2[A <: NoValue,B: ![NoValue]#f] = new |~|[NoValue,B] { type R = B }
   implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
@@ -39,7 +39,9 @@ package object tmp {
   
   type &[A <: { type Abstract[_] },T] = A#Abstract[T]
   
-  trait EBNF[Val] {
+  type && [T] = { type action[F]  }
+  
+  trait EBNF[-Val] {
     type OptOrSeq; type Seq; type Group
     val add: ((OptOrSeq,Val)) => OptOrSeq
     val unit: Val => OptOrSeq
@@ -66,12 +68,12 @@ package object tmp {
   type Prec = (Int, Int)
   val $: Prec = (0,0)
   
-  trait Layout { def get: Parsers.Symbol { type Value = NoValue } }
-  def layout(p: Parsers.Symbol { type Value = NoValue }): Layout = new Layout {
+  trait Layout { def get: Parsers.Symbol[NoValue] }
+  def layout(p: Parsers.Symbol[NoValue]): Layout = new Layout {
     def get = p
   }
   
-  def start[T](p: Parsers.Symbol { type Value = T})(implicit layout: Layout): Parsers.AbstractNonterminal { type Value = T } 
+  def start[T](p: Parsers.Symbol[T])(implicit layout: Layout): Parsers.AbstractNonterminal[T]
     = Parsers.ntSeq(s"start[${p.name}]", layout.get ~~ p ~~ layout.get)
   
   object DefaultLayout {
@@ -86,7 +88,7 @@ package object tmp {
   def parse[Val](sentence: String, parser: OperatorParsers.AbstractOperatorNonterminal[Val]): Unit 
     = parse(sentence, parser((0,0)))
   
-  def parse[T](sentence: String, parser: AbstractCPSParsers.AbstractSymbol[T]): Unit = {
+  def parse[T,V](sentence: String, parser: AbstractCPSParsers.AbstractSymbol[T,V]): Unit = {
     val input = new Input(sentence)
     val sppf = new DefaultSPPFLookup(input)
     
@@ -104,14 +106,14 @@ package object tmp {
                          println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
                          println("Visualizing...")
                          visualize(node, input)
-//                         val x = SemanticAction.execute(node)(input)
-//                         println(s"WOW: $x")
+                         val x = SemanticAction.execute(node)(input)
+                         println(s"WOW: $x")
                          visualize(TreeBuilder.build(node)(input), input)
                          println("Done!")
     }
   }
   
-  def parse(parser: Parsers.AbstractNonterminal, input: Input): Either[ParseError, ParseSuccess] = {
+  def parse[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, ParseSuccess] = {
 
     parser.reset
     
