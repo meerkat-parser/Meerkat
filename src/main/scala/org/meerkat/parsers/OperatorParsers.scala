@@ -1,13 +1,8 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import org.meerkat.sppf.NonPackedNode
-import org.meerkat.sppf.SPPFLookup
-import org.meerkat.util.Input
 import java.util.HashMap
-import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.util.visualization._
-import org.meerkat.sppf.SemanticAction
-import org.meerkat.sppf.TreeBuilder
 import scala.collection.mutable._
 import scala.collection.JavaConversions._
 

@@ -5,10 +5,8 @@
  *     Anastasia Izmaylova  <anastasia.izmaylova@cwi.nl>
  *     Ali Afroozeh         <ali.afroozeh@cwi.nl>
  */
-package org.meerkat.meerkat
+package org.meerkat.parsers
 
-import org.meerkat.sppf.SPPFNode
-import sun.util.locale.ParseStatus
 import org.meerkat.sppf.NonPackedNode
 
 case class ParseSuccess(sppf: NonPackedNode, stat: ParseStatistics)

@@ -1,6 +1,7 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import org.meerkat.Syntax._
+import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
 import DefaultLayout._
@@ -182,11 +183,13 @@ object Test {
     
     // lazy val Es: OperatorNonterminal & List[Int] = E.+(",")
     val E: OperatorNonterminal & Int 
-      = syn (  Op ~ "(" ~ E.+(",") ~ ")"   & { case (op,x) => x.reduceLeft((y,z) => op(y,z)) }
+      = syn (  Op ~ "(" ~ E.+(",") ~ ")"   & { (t: (BinaryOp,List[Int])) => t._2.reduceLeft((y,z) => t._1(y,z)) }
             |  left { E ~ "*" ~ E }        & { case (x,y) => x*y }
             |> "-" ~ E                     & { x => -x }
             |> left { E ~ "+" ~ E }        & { case (x,y) => x+y }
             | Num                          ^ toInt )
+            
+    val v: OperatorParsers.OperatorSequenceBuilder[(BinaryOp,List[Int])] = Op ~ "(" ~ E.+(",") ~ ")"
             
     def main(args: Array[String]): Unit = { 
       val parser: Nonterminal & Int = start(E($))
@@ -207,12 +210,12 @@ object Test {
   object Test13 {
     
     val Num = syn { "[0-9]".r }
-    val E: Nonterminal = syn ( E ~~ "*" ~~ E | E ~~ "+" ~~ E | Num )
+    val E: OperatorNonterminal = syn ( left { E ~~ "*" ~~ E } |> left { E ~~ "+" ~~ E } | Num )
     
     val S = syn ( E.*(",") )
     
     def main(args: Array[String]): Unit = {
-      parse("1,2,3",S)
+      parse("1+2*3",E)
     }
   }
   
@@ -247,7 +250,7 @@ object Test {
   }
   
   def main(args: Array[String]): Unit = {
-     Test14.main(args)
+     Test13.main(args)
   }
 
 }

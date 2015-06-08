@@ -1,8 +1,8 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import java.util.Deque
 import java.util.ArrayDeque
-import java.util.Set 
+import java.util.Set
 import java.util.LinkedHashSet
 
 trait Memoizable[-T] { 

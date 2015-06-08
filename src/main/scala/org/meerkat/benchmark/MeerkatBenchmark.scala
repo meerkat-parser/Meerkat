@@ -12,17 +12,14 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import scala.collection.mutable.ListBuffer
 import com.google.common.testing.GcFinalization
-import org.meerkat.tmp._
-import org.meerkat.tmp.Parsers._
+import org.meerkat.parsers._
+import org.meerkat.parsers.Parsers._
 import scala.concurrent.impl.Future
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
-import org.meerkat.meerkat.ParseError
-import org.meerkat.meerkat.ParseSuccess
 import org.meerkat.util.Input
 import java.util.concurrent.Callable
-import org.meerkat.meerkat.ParseStatistics
 
 class MeerkatBenchmark(parser: Nonterminal,
                        files: scala.Seq[File],

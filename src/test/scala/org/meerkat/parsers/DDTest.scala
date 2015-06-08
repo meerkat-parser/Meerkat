@@ -1,11 +1,11 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 /**
  * @author Anastasia Izmaylova
  */
 
 import org.meerkat.Syntax._
-import org.meerkat.tmp._
+import org.meerkat.parsers._
 import DDParsers._
 import Parsers._
 import DefaultLayout._

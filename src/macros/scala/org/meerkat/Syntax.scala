@@ -5,22 +5,22 @@
 package org.meerkat
 
 import org.meerkat.sppf.NonPackedNode
-import org.meerkat.tmp.&
-import org.meerkat.tmp.Parsers
-import org.meerkat.tmp.DDParsers
-import org.meerkat.tmp.Parsers.AlternationBuilder
-import org.meerkat.tmp.Parsers.SequenceBuilder
-import org.meerkat.tmp.OperatorParsers.OperatorAlternationBuilder
-import org.meerkat.tmp.OperatorParsers.OperatorSequenceBuilderWithAction
-import org.meerkat.tmp.OperatorParsers.AbstractOperatorNonterminal
-import org.meerkat.tmp.OperatorParsers.OperatorNonterminalWithAction
-import org.meerkat.tmp.Parsers.Nonterminal
-import org.meerkat.tmp.DDParsers.DataNonterminal
-import org.meerkat.tmp.DDParsers.DataNonterminalWithAction
-import org.meerkat.tmp.OperatorParsers.OperatorSequenceBuilder
-import org.meerkat.tmp.OperatorParsers.OperatorNonterminal
+import org.meerkat.parsers.&
+import org.meerkat.parsers.Parsers
+import org.meerkat.parsers.DDParsers
+import org.meerkat.parsers.Parsers.AlternationBuilder
+import org.meerkat.parsers.Parsers.SequenceBuilder
+import org.meerkat.parsers.OperatorParsers.OperatorAlternationBuilder
+import org.meerkat.parsers.OperatorParsers.OperatorSequenceBuilderWithAction
+import org.meerkat.parsers.OperatorParsers.AbstractOperatorNonterminal
+import org.meerkat.parsers.OperatorParsers.OperatorNonterminalWithAction
+import org.meerkat.parsers.Parsers.Nonterminal
+import org.meerkat.parsers.DDParsers.DataNonterminal
+import org.meerkat.parsers.DDParsers.DataNonterminalWithAction
+import org.meerkat.parsers.OperatorParsers.OperatorSequenceBuilder
+import org.meerkat.parsers.OperatorParsers.OperatorNonterminal
 import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
-import org.meerkat.tmp.AbstractCPSParsers.AbstractSymbol
+import org.meerkat.parsers.AbstractCPSParsers.AbstractSymbol
 import scala.reflect.macros.blackbox.Context
 
 object Syntax { 

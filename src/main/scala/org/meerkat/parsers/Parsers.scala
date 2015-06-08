@@ -1,12 +1,9 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import org.meerkat.sppf.NonPackedNode
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
-import scala.reflect.ClassTag
-import org.meerkat.sppf.DefaultSPPFLookup
 import org.meerkat.sppf.Slot
-import org.meerkat.tree.RuleType
 import scala.util.matching.Regex
 import scala.collection.mutable._
 import scala.collection.JavaConversions._

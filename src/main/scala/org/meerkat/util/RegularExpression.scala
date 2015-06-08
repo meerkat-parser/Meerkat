@@ -1,8 +1,8 @@
 package org.meerkat.util
 
-import org.meerkat.tmp.Parsers.Terminal
+import org.meerkat.parsers.Parsers.Terminal
 import org.meerkat.sppf.SPPFLookup
-import org.meerkat.tmp.CPSResult
+import org.meerkat.parsers.CPSResult
 
 trait RegularExpression {
 

@@ -1,9 +1,38 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import org.meerkat.sppf.NonPackedNode
 import org.meerkat.util.Input
 import org.meerkat.sppf.SPPFLookup
 import org.meerkat.sppf.Slot
+import AbstractCPSParsers.AbstractParser
+import AbstractCPSParsers.AbstractParser.altAlt
+import AbstractCPSParsers.AbstractParser.altAltSeq
+import AbstractCPSParsers.AbstractParser.altAltSym
+import AbstractCPSParsers.AbstractParser.altSeq
+import AbstractCPSParsers.AbstractParser.altSeqAlt
+import AbstractCPSParsers.AbstractParser.altSeqSym
+import AbstractCPSParsers.AbstractParser.altSym
+import AbstractCPSParsers.AbstractParser.altSymAlt
+import AbstractCPSParsers.AbstractParser.altSymSeq
+import AbstractCPSParsers.AbstractParser.seq
+import AbstractCPSParsers.AbstractSequence
+import AbstractCPSParsers.AbstractSymbol
+import AbstractCPSParsers.CanBuildAlternation
+import AbstractCPSParsers.CanBuildAlternative
+import AbstractCPSParsers.CanBuildNonterminal
+import AbstractCPSParsers.CanBuildSequence
+import AbstractCPSParsers.CanMap
+import AbstractCPSParsers.Head
+import AbstractCPSParsers.nonterminalAlt
+import AbstractCPSParsers.nonterminalSeq
+import AbstractCPSParsers.nonterminalSym
+import AbstractCPSParsers.AbstractSequence
+import AbstractCPSParsers.AbstractSymbol
+import AbstractCPSParsers.CanBuildAlternation
+import AbstractCPSParsers.CanBuildAlternative
+import AbstractCPSParsers.CanBuildNonterminal
+import AbstractCPSParsers.CanBuildSequence
+import AbstractCPSParsers.CanMap
 
 object DDParsers { import AbstractCPSParsers._
   

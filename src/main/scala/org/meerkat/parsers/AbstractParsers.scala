@@ -1,10 +1,9 @@
-package org.meerkat.tmp
+package org.meerkat.parsers
 
 import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import scala.reflect.ClassTag
 import org.meerkat.sppf.Slot
-import org.meerkat.tree.RuleType
 
 trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def map[U](f: T => U)(implicit m: Memoizable[T]): M[U]
