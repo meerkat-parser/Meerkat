@@ -16,7 +16,7 @@ object DDTest {
     
     val Num = syn { "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" }
     
-    val E: DataNonterminal[String] = syn { ( E ~ "+" ~ E ).map { case x~y => s"($x plus $y)" } | Num.map { s => s } }
+    val E: DataNonterminal[String] = syn { ( E ~ "+" ~ E ).map { case x~y => s"(${x+y})" } | Num.map { s => s } }
     
     val Octet = syn { """.""".r }
     

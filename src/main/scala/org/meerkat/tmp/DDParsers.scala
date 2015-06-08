@@ -23,8 +23,8 @@ object DDParsers { import AbstractCPSParsers._
     def intermediate(a: (NonPackedNode,A), b: (NonPackedNode,B), p: Slot, sppfLookup: SPPFLookup): T 
       = (sppfLookup.getIntermediateNode(p, a._1, b._1), new ~(a._2, b._2))
       
-    type SequenceBuilder = DDParsers.SequenceBuilder[A~B] { type Value = V }
-    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A~B] { type Value = V; def apply(slot: Slot) = f(slot) }
+    type SequenceBuilder = DDParsers.SequenceBuilder[A~B,V]
+    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A~B,V] { def apply(slot: Slot) = f(slot) }
   }
 
   implicit def obj2[A] = new CanBuildAlternative[(NonPackedNode,A)] {
@@ -43,8 +43,8 @@ object DDParsers { import AbstractCPSParsers._
           def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Alt]
           override def reset = p.reset
         }    
-    type AlternationBuilder = DDParsers.AlternationBuilder[B] { type Value = ValB }
-    def builderAlt(f: Head => Alternation): AlternationBuilder = new DDParsers.AlternationBuilder[B] { type Value = ValB; def apply(head: Head) = f(head) }
+    type AlternationBuilder = DDParsers.AlternationBuilder[B,ValB]
+    def builderAlt(f: Head => Alternation): AlternationBuilder = new DDParsers.AlternationBuilder[B,ValB] { def apply(head: Head) = f(head) }
   }
   
   implicit def obj4[A] = new Memoizable[(NonPackedNode,A)] {
@@ -54,20 +54,19 @@ object DDParsers { import AbstractCPSParsers._
   
   implicit def obj5[A,ValA] = new CanBuildNonterminal[(NonPackedNode,A),ValA] {
     implicit val m = obj4[A]
-    type Nonterminal = DDParsers.AbstractNonterminal[A] { type Value = ValA }
+    type Nonterminal = DDParsers.AbstractNonterminal[A,ValA]
     def nonterminal(nt: String, p: AbstractParser[(NonPackedNode,A)]): Nonterminal 
-      = new DDParsers.AbstractNonterminal[A] {
+      = new DDParsers.AbstractNonterminal[A,ValA] {
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = org.meerkat.tree.SimpleNonterminal(nt)
           def name = nt; override def toString = name
           type Value = ValA
           override def reset = p.reset
         }
-    type Symbol = DDParsers.AbstractNonterminal[A] { type Value = ValA }
-    def symbol(p: AbstractSymbol[(NonPackedNode,A)]) = new DDParsers.AbstractNonterminal[A] { 
+    type Symbol = DDParsers.AbstractNonterminal[A,ValA]
+    def symbol(p: AbstractSymbol[(NonPackedNode,A),ValA]) = new DDParsers.AbstractNonterminal[A,ValA] { 
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
       def name = p.name; def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Nonterminal]
-      type Value = ValA
       override def reset = p.reset
     }
   }
@@ -87,8 +86,8 @@ object DDParsers { import AbstractCPSParsers._
     def index(a: NonPackedNode): Int = a.rightExtent
     def intermediate(a: NonPackedNode, b: (NonPackedNode,B), p: Slot, sppfLookup: SPPFLookup) = (sppfLookup.getIntermediateNode(p, a, b._1), b._2)
       
-    type SequenceBuilder = DDParsers.SequenceBuilder[B] { type Value = V }
-    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[B] { type Value = V; def apply(slot: Slot) = f(slot) }
+    type SequenceBuilder = DDParsers.SequenceBuilder[B,V]
+    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[B,V] { def apply(slot: Slot) = f(slot) }
   }
   
   implicit def obj7[A,ValA,ValB](implicit vals: ValA|~|ValB) = new CanBuildSequence[(NonPackedNode,A),NonPackedNode,ValA,ValB] {
@@ -106,13 +105,13 @@ object DDParsers { import AbstractCPSParsers._
     def index(a: (NonPackedNode,A)): Int = a._1.rightExtent
     def intermediate(a: (NonPackedNode,A), b: NonPackedNode, p: Slot, sppfLookup: SPPFLookup) = (sppfLookup.getIntermediateNode(p, a._1, b), a._2)
       
-    type SequenceBuilder = DDParsers.SequenceBuilder[A] { type Value = V }
-    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A] { type Value = V; def apply(slot: Slot) = f(slot) }
+    type SequenceBuilder = DDParsers.SequenceBuilder[A,V]
+    def builderSeq(f: Slot => Sequence): SequenceBuilder = new DDParsers.SequenceBuilder[A,V] { def apply(slot: Slot) = f(slot) }
   }
   
   implicit def obj8[A,B,Val] = new CanMap[(NonPackedNode,A),(NonPackedNode,B),Val] {
     implicit val m = obj4[A]
-    type Nonterminal = DDParsers.AbstractNonterminal[B] { type Value = Val }
+    type Nonterminal = DDParsers.AbstractNonterminal[B,Val]
     def nonterminal(name: String, p: AbstractParser[(NonPackedNode,B)]) = obj5[B,Val].nonterminal(name, p)
     
     def index(a: (NonPackedNode,A)) = a._1.rightExtent
@@ -124,13 +123,13 @@ object DDParsers { import AbstractCPSParsers._
           def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
           override def reset = p.reset
         }   
-    type SequenceBuilder = DDParsers.SequenceBuilder[B] { type Value = Val }
-    def builderSeq(f: Slot => Sequence) = new DDParsers.SequenceBuilder[B] { type Value = Val; def apply(slot: Slot) = f(slot) }
+    type SequenceBuilder = DDParsers.SequenceBuilder[B,Val]
+    def builderSeq(f: Slot => Sequence) = new DDParsers.SequenceBuilder[B,Val] { type Value = Val; def apply(slot: Slot) = f(slot) }
   }
   
   implicit def obj9[B,Val] = new CanMap[NonPackedNode,(NonPackedNode,B),Val] {
     implicit val m = Parsers.obj4
-    type Nonterminal = DDParsers.AbstractNonterminal[B] { type Value = Val }
+    type Nonterminal = DDParsers.AbstractNonterminal[B,Val]
     def nonterminal(name: String, p: AbstractParser[(NonPackedNode,B)]) = obj5[B,Val].nonterminal(name, p)
     
     def index(a: NonPackedNode) = a.rightExtent
@@ -142,95 +141,91 @@ object DDParsers { import AbstractCPSParsers._
           def size = p.size; def symbol = p.symbol; def ruleType = p.ruleType
           override def reset = p.reset
         }   
-    type SequenceBuilder = DDParsers.SequenceBuilder[B] { type Value = Val }
-    def builderSeq(f: Slot => Sequence) = new DDParsers.SequenceBuilder[B] { type Value = Val; def apply(slot: Slot) = f(slot) }
+    type SequenceBuilder = DDParsers.SequenceBuilder[B,Val]
+    def builderSeq(f: Slot => Sequence) = new DDParsers.SequenceBuilder[B,Val] { def apply(slot: Slot) = f(slot) }
   }
   
   trait Sequence[+T] extends AbstractParser[(NonPackedNode,T)] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }  
   trait Alternation[+T] extends AbstractParser[(NonPackedNode,T)] { def symbol: org.meerkat.tree.Alt }
   
-  trait AbstractNonterminal[+T] extends AbstractParser[(NonPackedNode,T)] { import AbstractParser._
-    type Value
+  trait AbstractNonterminal[+T,+V] extends AbstractParser[(NonPackedNode,T)] { import AbstractParser._
     def name: String
     def symbol: org.meerkat.tree.Nonterminal
-    def action: Option[Any => Any] = None
+    def action: Option[Any => V] = None
         
-    def ~ [U](p: AbstractNonterminal[U])(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ [U](p: AbstractNonterminal[U])(implicit tuple: this.Value|~|p.Value) 
-      = { implicit val o = obj1[T,U,this.Value,p.Value](tuple); seq(this, p) }
+    def ~ [U,F](p: AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
+    def ~~ [U,F](p: AbstractNonterminal[U,F])(implicit tuple: V|~|F) 
+      = seq(this, p)(obj1[T,U,V,F](tuple))
 
-    def ~ (p: Parsers.Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)  
-    def ~~ (p: Parsers.Symbol)(implicit tuple: this.Value|~|p.Value) 
-      = { implicit val o = obj7[T,this.Value,p.Value](tuple); seq(this, p) }
+    def ~ [F](p: Parsers.Symbol[F])(implicit tuple: V|~|F, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)  
+    def ~~ [F](p: Parsers.Symbol[F])(implicit tuple: V|~|F) = seq(this, p)(obj7[T,V,F](tuple))
     
-    def | [U >: T,V >: this.Value](p: AlternationBuilder[U] { type Value = V }) = altSymAlt(this, p)
-    def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altSymSeq(this, p)
-    def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSym(this, p)
+    def | [U >: T,F >: V](p: AlternationBuilder[U,F]) = altSymAlt(this, p)
+    def | [U >: T,F >: V](p: SequenceBuilder[U,F]) = altSymSeq(this, p)
+    def | [U >: T,F >: V](p: AbstractNonterminal[U,F]) = altSym(this, p)
     
-    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
+    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,V])
     
-    def ~>[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
-      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,this.Value,V](tuple))
+    def ~>[U,F](f: T => AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,V,F](tuple))
     
-    def ~>>[V](f: T => Parsers.Symbol { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
-      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,this.Value,V](tuple))
+    def ~>>[F](f: T => Parsers.Symbol[F])(implicit tuple: V|~|F, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,V,F](tuple))
   }
   
-  type DataNonterminal[+T] = AbstractNonterminal[T] { type Value = NoValue }
-  type DataNonterminalWithAction[+T,V] = AbstractNonterminal[T] { type Value = V }
+  type DataNonterminal[+T] = AbstractNonterminal[T,NoValue]
   
-  trait SequenceBuilder[+T] extends (Slot => Sequence[T]) { import AbstractParser._
-    type Value
-    def action: Option[Any => Any] = None
+  type DataNonterminalWithAction[+T,+V] = AbstractNonterminal[T,V]
+  
+  trait SequenceBuilder[+T,+V] extends (Slot => Sequence[T]) { import AbstractParser._
+    def action: Option[Any => V] = None
     
-    def ~ [U](p: AbstractNonterminal[U])(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ [U](p: AbstractNonterminal[U])(implicit tuple: this.Value|~|p.Value) 
-      = { implicit val o = obj1[T,U,this.Value,p.Value](tuple); seq(this, p) }
+    def ~ [U,F](p: AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
+    def ~~ [U,F](p: AbstractNonterminal[U,F])(implicit tuple: V|~|F) = seq(this, p)(obj1[T,U,V,F](tuple))
 
-    def ~ (p: Parsers.Symbol)(implicit tuple: this.Value|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)  
-    def ~~ (p: Parsers.Symbol)(implicit tuple: this.Value|~|p.Value) 
-      = { implicit val o = obj7[T,this.Value,p.Value](tuple); seq(this, p) }
+    def ~ [F](p: Parsers.Symbol[F])(implicit tuple: V|~|F, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)  
+    def ~~ [F](p: Parsers.Symbol[F])(implicit tuple: V|~|F) = seq(this, p)(obj7[T,V,F](tuple))
 
-    def | [U >: T,V >: this.Value](p: AlternationBuilder[U] { type Value = V }) = altSeqAlt(this, p)
-    def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altSeq(this, p)
-    def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altSeqSym(this, p)
+    def | [U >: T,F >: V](p: AlternationBuilder[U,F]) = altSeqAlt(this, p)
+    def | [U >: T,F >: V](p: SequenceBuilder[U,F]) = altSeq(this, p)
+    def | [U >: T,F >: V](p: AbstractNonterminal[U,F]) = altSeqSym(this, p)
     
-    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,this.Value])
+    def map[U](f: T => U) = AbstractParser.map(this, (t:(NonPackedNode,T)) => (t._1,f(t._2)))(obj8[T,U,V])
     
-    def ~>[U,V](f: T => AbstractNonterminal[U] { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
-      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,this.Value,V](tuple))
+    def ~>[U,F](f: T => AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj1[T,U,V,F](tuple))
     
-    def ~>>[V](f: T => Parsers.Symbol { type Value = V })(implicit tuple: this.Value|~|V, layout: Layout) 
-      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,this.Value,V](tuple))
+    def ~>>[F](f: T => Parsers.Symbol[F])(implicit tuple: V|~|F, layout: Layout) 
+      = AbstractParser.flatMap(this ~~ layout.get, (t:(NonPackedNode,T)) => f(t._2))(obj7[T,V,F](tuple))
   }
   
-  trait AlternationBuilder[+T] extends (Head => Alternation[T]) { import AbstractParser._
-    type Value
-    def | [U >: T,V >: this.Value](p: AlternationBuilder[U] { type Value = V }) = altAlt(this, p)
-    def | [U >: T,V >: this.Value](p: SequenceBuilder[U] { type Value = V }) = altAltSeq(this, p)
-    def | [U >: T,V >: this.Value](p: AbstractNonterminal[U] { type Value = V }) = altAltSym(this, p)
+  trait AlternationBuilder[+T,+V] extends (Head => Alternation[T]) { import AbstractParser._
+    def action: Option[Any => V] = None
+    def | [U >: T,F >: V](p: AlternationBuilder[U,F]) = altAlt(this, p)
+    def | [U >: T,F >: V](p: SequenceBuilder[U,F]) = altAltSeq(this, p)
+    def | [U >: T,F >: V](p: AbstractNonterminal[U,F]) = altAltSym(this, p)
   }
 
-  implicit class SequenceBuilderOps[V](p: Parsers.SequenceBuilder { type Value = V }) { import AbstractParser._
-    def ~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
-    def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value) = { implicit val o = obj6[U,V,q.Value](tuple); seq(p, q) }
+  implicit class SequenceBuilderOps[V](p: Parsers.SequenceBuilder[V]) { import AbstractParser._
+    def ~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
+    def ~~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: V|~|F) = seq(p, q)(obj6[U,V,F](tuple))
   }
   
-  implicit class SymbolOps[V](p: Parsers.Symbol { type Value = V }) { import AbstractParser._
-    def ~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
-    def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: V|~|q.Value) = { implicit val o = obj6[U,V,q.Value](tuple); seq(p, q) }
+  implicit class SymbolOps[V](p: Parsers.Symbol[V]) { import AbstractParser._
+    def ~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
+    def ~~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: V|~|F) = seq(p, q)(obj6[U,V,F](tuple))
   
     def map[U](f: String => U) = AbstractParser.map(p, (input: Input, t: NonPackedNode) => (t,f(input.substring(t.leftExtent, t.rightExtent))))(obj9[U,V])
   }
   
   implicit class StringSeqOps(term: String) { import AbstractParser._
     val p = Parsers.toTerminal(term)
-    def ~ [U](q: AbstractNonterminal[U])(implicit tuple: p.Value|~|q.Value, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
-    def ~~ [U](q: AbstractNonterminal[U])(implicit tuple: p.Value|~|q.Value) = { implicit val o = obj6[U,p.Value,q.Value](tuple); seq(p, q) }
+    def ~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: NoValue|~|F, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
+    def ~~ [U,F](q: AbstractNonterminal[U,F])(implicit tuple: NoValue|~|F) = seq(p, q)(obj6[U,NoValue,F](tuple))
   }
 
-  def ntAlt[A,V](name: String, p: => AlternationBuilder[A] { type Value = V }) = nonterminalAlt[(NonPackedNode,A),V](name, p)
-  def ntSeq[A,V](name: String, p: => SequenceBuilder[A] { type Value = V }) = nonterminalSeq[(NonPackedNode,A),V](name, p)
-  def ntSym[A,V](name: String, p: => AbstractNonterminal[A] { type Value = V }) = nonterminalSym[(NonPackedNode,A),V](name, p)
+  def ntAlt[A,V](name: String, p: => AlternationBuilder[A,V]) = nonterminalAlt[(NonPackedNode,A),V](name, p)
+  def ntSeq[A,V](name: String, p: => SequenceBuilder[A,V]) = nonterminalSeq[(NonPackedNode,A),V](name, p)
+  def ntSym[A,V](name: String, p: => AbstractNonterminal[A,V]) = nonterminalSym[(NonPackedNode,A),V](name, p)
   
 }

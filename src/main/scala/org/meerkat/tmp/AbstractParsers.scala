@@ -29,14 +29,14 @@ trait AbstractParsers {
   
   type AbstractAlternation[+T] = AbstractParser[T] { def symbol: org.meerkat.tree.Alt }
   
-  type AbstractSymbol[+T] = AbstractParser[T] { type Value; def name: String; def action: Option[Any => Any] }
+  type AbstractSymbol[+T,+V] = AbstractParser[T] { def name: String; def action: Option[Any => V] }
   
-  type AbstractNonterminal[+T] = AbstractSymbol[T] { def symbol: org.meerkat.tree.Nonterminal }
+  type AbstractNonterminal[+T,+V] = AbstractSymbol[T,V] { def symbol: org.meerkat.tree.Nonterminal }
   
-  type Head = AbstractNonterminal[Any]
+  type Head = AbstractNonterminal[Any,Any]
   
-  type AbstractSequenceBuilder[+T] = (Slot => AbstractSequence[T]) { type Value; def action: Option[Any => Any] }
-  type AbstractAlternationBuilder[+T] = (Head => AbstractAlternation[T]) { type Value }
+  type AbstractSequenceBuilder[+T,+V] = (Slot => AbstractSequence[T]) { def action: Option[Any => V] }
+  type AbstractAlternationBuilder[+T,+V] = (Head => AbstractAlternation[T]) { def action: Option[Any => V] }
     
   trait CanBuildSequence[A,B,ValA,ValB] {
     implicit val m1: Memoizable[A]
@@ -50,7 +50,7 @@ trait AbstractParsers {
     def index(a: A): Int
     def intermediate(a: A, b: B, p: Slot, sppfLookup: SPPFLookup): T
     
-    type SequenceBuilder <: (Slot => Sequence) { type Value = V }
+    type SequenceBuilder <: (Slot => Sequence) { def action: Option[Any => V] }
     def builderSeq(f: Slot => Sequence): SequenceBuilder
   }
   
@@ -69,24 +69,24 @@ trait AbstractParsers {
     type Alternation <: AbstractAlternation[B]
     def alternation(f: AbstractParser[B]): Alternation
     
-    type AlternationBuilder <: (Head => Alternation) { type Value = ValB }
+    type AlternationBuilder <: (Head => Alternation) { def action: Option[Any => ValB] }
     def builderAlt(f: Head => Alternation): AlternationBuilder
   }
   
   trait CanBuildNonterminal[A,ValA] {
     implicit val m: Memoizable[A]
-    type Nonterminal <: AbstractNonterminal[A] { type Value = ValA }
+    type Nonterminal <: AbstractNonterminal[A,ValA]
     def nonterminal(name: String, p: AbstractParser[A]): Nonterminal
     
-    type Symbol <: AbstractSymbol[A] { type Value = ValA}
-    def symbol(p: AbstractSymbol[A]): Symbol
+    type Symbol <: AbstractSymbol[A,ValA]
+    def symbol(p: AbstractSymbol[A,ValA]): Symbol
   }
   
   trait CanBuildEBNF[A,ValA] {
     implicit val m: Memoizable[A]
     
-    type Regular <: AbstractNonterminal[A] { type Value = ValA }   
-    type Group <: AbstractNonterminal[A] { type Value = ValA }
+    type Regular <: AbstractNonterminal[A,ValA]  
+    type Group <: AbstractNonterminal[A,ValA]
     
     def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular
     def group(p: AbstractParser[A]): Group
@@ -94,7 +94,7 @@ trait AbstractParsers {
   
   trait CanMap[A,B,Val] {
     implicit val m: Memoizable[A]
-    type Nonterminal <: AbstractNonterminal[B] { type Value = Val }
+    type Nonterminal <: AbstractNonterminal[B,Val]
     def nonterminal(name: String, p: AbstractParser[B]): Nonterminal
     
     def index(a: A): Int
@@ -103,16 +103,16 @@ trait AbstractParsers {
     type Sequence <: AbstractSequence[B]
     def sequence(p: AbstractSequence[B]): Sequence
     
-    type SequenceBuilder <: (Slot => Sequence) { type Value = Val }
+    type SequenceBuilder <: (Slot => Sequence) { def action: Option[Any => Val] }
     def builderSeq(f: Slot => Sequence): SequenceBuilder
   }
     
   object AbstractParser {
     
-    def seq[A,B](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B,p1.Value,p2.Value]): builder.SequenceBuilder
+    def seq[A,B,ValA,ValB](p1: AbstractSequenceBuilder[A,ValA], p2: AbstractSymbol[B,ValB])(implicit builder: CanBuildSequence[A,B,ValA,ValB]): builder.SequenceBuilder
       = builder builderSeq { slot => val q1 = p1(slot); sequence(slot,q1,p2,q1.size + 1) }
     
-    def seq[A,B](p1: AbstractSymbol[A], p2: AbstractSymbol[B])(implicit builder: CanBuildSequence[A,B,p1.Value,p2.Value]): builder.SequenceBuilder
+    def seq[A,B,ValA,ValB](p1: AbstractSymbol[A,ValA], p2: AbstractSymbol[B,ValB])(implicit builder: CanBuildSequence[A,B,ValA,ValB]): builder.SequenceBuilder
       = builder builderSeq { slot => sequence(slot,p1,p2,2) }
     
     protected def sequence[A,B,ValA,ValB](slot: Slot, p1: AbstractParser[A], p2: AbstractParser[B], s: Int)
@@ -126,50 +126,50 @@ trait AbstractParsers {
       })
     }
     
-    def altAlt[A,B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractAlternationBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder
+    def altAlt[A,B >: A,ValA,ValB >: ValA](p1: AbstractAlternationBuilder[A,ValA], p2: AbstractAlternationBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder
       = builder builderAlt { head => alternation(p1(head), p2(head)) }
     
-    def altAltSeq[A,B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractSequenceBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altAltSeq[A,B >: A,ValA,ValB >: ValA](p1: AbstractAlternationBuilder[A,ValA], p2: AbstractSequenceBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(p1(head), alt(head, p2)) }
     }
     
-    def altSeqAlt[A,B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractAlternationBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSeqAlt[A,B >: A,ValA,ValB >: ValA](p1: AbstractSequenceBuilder[A,ValA], p2: AbstractAlternationBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(alt(head, p1), p2(head)) }
     }
     
-    def altAltSym[A,B >: A](p1: AbstractAlternationBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altAltSym[A,B >: A,ValA,ValB >: ValA](p1: AbstractAlternationBuilder[A,ValA], p2: AbstractSymbol[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(p1(head), alt(head, p2)) }
     }
     
-    def altSymAlt[A,B >: A](p1: AbstractSymbol[A], p2: AbstractAlternationBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSymAlt[A,B >: A,ValA,ValB >: ValA](p1: AbstractSymbol[A,ValA], p2: AbstractAlternationBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(alt(head, p1), p2(head)) }
     }
     
-    def altSeq[A,B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractSequenceBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSeq[A,B >: A,ValA,ValB >: ValA](p1: AbstractSequenceBuilder[A,ValA], p2: AbstractSequenceBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(alt(head, p1), alt(head, p2)) }
     }
     
-    def altSymSeq[A,B >: A](p1: AbstractSymbol[A], p2: AbstractSequenceBuilder[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSymSeq[A,B >: A,ValA,ValB >: ValA](p1: AbstractSymbol[A,ValA], p2: AbstractSequenceBuilder[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(alt(head, p1), alt(head, p2)) }
     }
     
-    def altSeqSym[A,B >: A](p1: AbstractSequenceBuilder[A], p2: AbstractSymbol[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSeqSym[A,B >: A,ValA,ValB >: ValA](p1: AbstractSequenceBuilder[A,ValA], p2: AbstractSymbol[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builder builderAlt { head => this.alternation(alt(head, p1), alt(head, p2)) }
     }
     
-    def altSym[A,B >: A](p1: AbstractSymbol[A], p2: AbstractSymbol[B])(implicit builder: CanBuildAlternation[A,B,p1.Value,p2.Value], sub: p1.Value <:< p2.Value): builder.AlternationBuilder = {
+    def altSym[A,B >: A,ValA,ValB >: ValA](p1: AbstractSymbol[A,ValA], p2: AbstractSymbol[B,ValB])(implicit builder: CanBuildAlternation[A,B,ValA,ValB]): builder.AlternationBuilder = {
       import builder._
       builderAlt { head => this.alternation(alt(head, p1), alt(head, p2)) }
     }
     
-    def alt[B](head: Head, p: AbstractSequenceBuilder[B])(implicit builder: CanBuildAlternative[B]) = { import builder._
+    def alt[B,Val](head: Head, p: AbstractSequenceBuilder[B,Val])(implicit builder: CanBuildAlternative[B]) = { import builder._
       new AbstractParser[B] with Slot { 
           val q = p(this)
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = q(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
@@ -181,7 +181,7 @@ trait AbstractParsers {
         }
     }
     
-    def alt[B](head: Head, p: AbstractSymbol[B])(implicit builder: CanBuildAlternative[B]) = { import builder._
+    def alt[B,Val](head: Head, p: AbstractSymbol[B,Val])(implicit builder: CanBuildAlternative[B]) = { import builder._
       new AbstractParser[B] with Slot { 
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup).map { x => builder result (x, this, head, sppfLookup) }
         def symbol = p.symbol
@@ -199,7 +199,7 @@ trait AbstractParsers {
           override def reset = { p1.reset; p2.reset }
         }
     
-    def map[A,B](p: AbstractSequenceBuilder[A], f: A => B)(implicit builder: CanMap[A,B,p.Value]): builder.SequenceBuilder = {
+    def map[A,B,ValA](p: AbstractSequenceBuilder[A,ValA], f: A => B)(implicit builder: CanMap[A,B,ValA]): builder.SequenceBuilder = {
       import builder._
       builderSeq { slot =>
         val q = p(slot)
@@ -210,7 +210,7 @@ trait AbstractParsers {
         }) }
     }
     
-    def map[A,B](p: AbstractSymbol[A], f: A => B)(implicit builder: CanMap[A,B,p.Value]): builder.Nonterminal = {
+    def map[A,B,ValA](p: AbstractSymbol[A,ValA], f: A => B)(implicit builder: CanMap[A,B,ValA]): builder.Nonterminal = {
       import builder._
       nonterminal (p.name, new AbstractParser[B] {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) map f
@@ -218,7 +218,7 @@ trait AbstractParsers {
       })
     }
     
-    def map[A,B](p: AbstractSymbol[A], f: (Input,A) => B)(implicit builder: CanMap[A,B,p.Value]): builder.Nonterminal = {
+    def map[A,B,ValA](p: AbstractSymbol[A,ValA], f: (Input,A) => B)(implicit builder: CanMap[A,B,ValA]): builder.Nonterminal = {
       import builder._
       nonterminal (p.name, new AbstractParser[B] {
         def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) map { f(input,_) }
@@ -226,9 +226,7 @@ trait AbstractParsers {
       })
     }
     
-    type AbstractSymbolWithValue[A,V] = AbstractSymbol[A] { type Value = V }
-    
-    def flatMap[A,B,V](p: AbstractSequenceBuilder[A], f: A => AbstractSymbolWithValue[B,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
+    def flatMap[A,B,ValA,ValB](p: AbstractSequenceBuilder[A,ValA], f: A => AbstractSymbol[B,ValB])(implicit builder: CanBuildSequence[A,B,ValA,ValB]): builder.SequenceBuilder = {
       import builder._
       builderSeq { slot =>
         val q = p(slot)
@@ -241,7 +239,7 @@ trait AbstractParsers {
         }) }
     }
     
-//    def flatMap2[A,B,V](p: AbstractSymbol[A], f: A => AbstractSymbolWithValue[B,V])(implicit builder: CanBuildSequence[A,B,p.Value,V]): builder.SequenceBuilder = {
+//    def flatMap2[A,B,ValA,ValB](p: AbstractSymbol[A,ValA], f: A => AbstractSymbol[B,ValB])(implicit builder: CanBuildSequence[A,B,ValA,ValB]): builder.SequenceBuilder = {
 //      import builder._ 
 //      builderSeq { slot =>
 //        builder.sequence(new AbstractParser[builder.T] with Slot {
@@ -259,37 +257,37 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     
   type Result[+T] = CPSResult[T]
   
-  def nonterminalSym[A,T](name: String, p: => AbstractSymbol[A] {type Value = T})(implicit builder: CanBuildNonterminal[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+  def nonterminalSym[A,ValA](name: String, p: => AbstractSymbol[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
     lazy val q: Nonterminal = nonterminal (name, memoize(alt(q,p))); q
   }
   
-  def nonterminalSeq[A,T](name: String, p: => AbstractSequenceBuilder[A])(implicit builder: CanBuildNonterminal[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+  def nonterminalSeq[A,ValA](name: String, p: => AbstractSequenceBuilder[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
     lazy val q: Nonterminal = nonterminal (name, memoize(alt(q,p))); q
   }
   
-  def nonterminalAlt[A,T](name: String, p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildNonterminal[A,T], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+  def nonterminalAlt[A,ValA](name: String, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
     lazy val q: Nonterminal = builder nonterminal (name, memoize(p(q))); q
   }
   
-  def regular[A,T](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildEBNF[A,T], obj: ClassTag[Result[A]]): builder.Regular = { 
+  def regular[A,ValA](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildEBNF[A,ValA], obj: ClassTag[Result[A]]): builder.Regular = { 
     import builder._
     lazy val q: Regular = builder.regular(symbol, memoize(p(q))); q
   }
   
-  def groupSeq[A,T](p: => AbstractSequenceBuilder[A])(implicit builder: CanBuildEBNF[A,T], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Group = { 
+  def groupSeq[A,ValA](p: => AbstractSequenceBuilder[A,_])(implicit builder: CanBuildEBNF[A,ValA], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Group = { 
     import builder._
     lazy val q: Group = builder.group(memoize(alt(q, p))); q
   }
   
-  def groupAlt[A,T](p: => AbstractAlternationBuilder[A])(implicit builder: CanBuildEBNF[A,T], obj: ClassTag[Result[A]]): builder.Group = { 
+  def groupAlt[A,ValA](p: => AbstractAlternationBuilder[A,_])(implicit builder: CanBuildEBNF[A,ValA], obj: ClassTag[Result[A]]): builder.Group = { 
     import builder._
     lazy val q: Group = builder.group(memoize(p(q))); q
   }
   
-  def preFilter[B](p: AbstractSymbol[B], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
+  def preFilter[B,Val](p: AbstractSymbol[B,Val], pred: (Input,Int) => Boolean, prefix: String)(implicit builder: CanBuildNonterminal[B,Val]): builder.Symbol = {
     builder symbol new AbstractParser[B] {
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
       def name = prefix + " " + p.name; override def toString = name
@@ -298,13 +296,12 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
                      case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
                      case _ => throw new RuntimeException("Shouldn't have happened!")
                    } 
-      type Value = p.Value
-      def action = None
+      def action: Option[Any => Val] = None
       override def reset = p.reset
     }
   }
   
-  def postFilter[B](p: AbstractSymbol[B], pred: (Input,B) => Boolean, postfix: String)(implicit builder: CanBuildNonterminal[B,p.Value]): builder.Symbol = {
+  def postFilter[B,Val](p: AbstractSymbol[B,Val], pred: (Input,B) => Boolean, postfix: String)(implicit builder: CanBuildNonterminal[B,Val]): builder.Symbol = {
     builder symbol new AbstractParser[B] {
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
       def name = p.name + " " + postfix; override def toString = name 
@@ -313,8 +310,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
                      case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
                      case _ => throw new RuntimeException("Shouldn't have happened!")
                    } 
-      type Value = p.Value
-      def action = None
+      def action: Option[Any => Val] = None
       override def reset = p.reset
     }
   }

@@ -14,15 +14,15 @@ object Test {
     
     val A = syn { "a" ^ toStr }
     val B = syn { "b" ^ toStr }
-  
-    val S = syn ( A ~ B  & { case (s1,s2) => s"$s2++$s1" } 
+    
+    val S = syn ( A ~ B  & { (x: (String,String)) => s"${x._1}++${x._2}" } 
                 | "c"    ^ { toStr } )
     
     val SStarSep: Nonterminal & List[String] = syn { S.*(",") & { x => x.:+("HoHo!!!") }}                                
     val SStar: Nonterminal & List[String] = syn { S.* & { x => x.:+("HoHo!!!") }}
     val SPlus: Nonterminal & List[String] = syn { S.+ & { x => x.:+("HoHo!!!") }}
     val SOpt: Nonterminal & List[String] = syn { S.? & { x => x.:+("HoHo!!!") }}
-    val SGroup: Nonterminal & String = syn { (A ~ B).! & { case (x,y) => s"[$x ++ $y]" }}
+    val SGroup: Nonterminal & String = syn { (A ~ B).! & { case (x,y) => x.concat(y) }}
     
     val C = syn { "c" }
     val D = syn { "d" }
@@ -55,7 +55,7 @@ object Test {
     val C = syn { "c" ^ toStr }
     
     val LIST: Nonterminal & String
-      = syn ( LIST ~ C & { case (s1,s2) => s"$s1;$s2" } 
+      = syn ( LIST ~ C & { case (s1,s2) => s1.concat(s2) } 
             | C )
             
     def main(args: Array[String]): Unit = {
@@ -98,7 +98,7 @@ object Test {
   object Test6 {
     
     val E: OperatorNonterminal & String 
-      = syn ( E ~ "+" ~ E & { case (x,y) => s"($x) + ($y)" } | "9" ^ toStr )
+      = syn ( E ~ "+" ~ E & { case (x,y) => x.concat(y) } | "9" ^ toStr )
       
     def main(args: Array[String]): Unit = {
       parse("9+9", E)
@@ -131,7 +131,7 @@ object Test {
                     | E ~ "-" ~ E)
             |> "-" ~ E
             |  "a" )
-    
+            
     def main(args: Array[String]): Unit = {
       parse("a+a-a*a/a", E)
     }
@@ -216,8 +216,38 @@ object Test {
     }
   }
   
+   object Test14 {
+    
+    sealed trait Exp
+
+    case class Add(l: Exp, r: Exp) extends Exp
+    case class Mul(l: Exp, r: Exp) extends Exp
+    case class Sub(l: Exp, r: Exp) extends Exp
+    case class Div(l: Exp, r: Exp) extends Exp
+    case class Neg(l: Exp)         extends Exp
+    case class Pow(l: Exp, r: Exp) extends Exp
+    case class Num(n: Int)         extends Exp
+    
+    
+     val E: OperatorNonterminal & Exp = 
+       syn (  right { E ~ "^" ~ E } & { case (x, y) => Pow(x, y) }
+           |> "-" ~ E               & { Neg(_) }
+           |> left ( E ~ "*" ~ E    & { case (x, y) => Mul(x, y) } 
+           |         E ~ "/" ~ E    & { case (x, y) => Div(x, y) }) 
+           |> left ( E ~ "+" ~ E    & { case (x, y) => Add(x, y) } 
+           |         E ~ "-" ~ E    & { case (x, y) => Sub(x, y) })
+           | "(" ~ E ~ ")"
+           | "[0-9]".r              ^ { s => Num(toInt(s)) } 
+           )
+           
+     def main(args: Array[String]): Unit = {
+       parse("1+2*3-5",E)
+     }
+     
+  }
+  
   def main(args: Array[String]): Unit = {
-     Test13.main(args)
+     Test14.main(args)
   }
 
 }

@@ -72,24 +72,24 @@ object OperatorParsers {
     }  
   }
   
-  trait OperatorSequence[V] extends ((Prec, Prec) => Parsers.SequenceBuilder { type Value = V }) {
+  trait OperatorSequence[+V] extends ((Prec, Prec) => Parsers.SequenceBuilder[V]) {
     def infix: Boolean; def prefix: Boolean; def postfix: Boolean; def assoc: Assoc.Assoc
   }
   
-  trait OperatorSequenceWithAction[V] extends ((Prec, Prec) => Parsers.SequenceBuilderWithAction { type Value = V }) {
+  trait OperatorSequenceWithAction[+V] extends ((Prec, Prec) => Parsers.SequenceBuilderWithAction[V]) {
     def infix: Boolean; def prefix: Boolean; def postfix: Boolean; def assoc: Assoc.Assoc
   }
   
-  trait OperatorAlternation[V] extends (Prec => Parsers.AlternationBuilder { type Value = V })
+  trait OperatorAlternation[+V] extends (Prec => Parsers.AlternationBuilder[V])
   
-  trait AbstractOperatorNonterminal[V] extends (Prec => Parsers.AbstractNonterminal { type Value = V }) with EBNFs[V] { import OperatorImplicits._; import AbstractOperatorParser._
-    type Abstract[X] = AbstractOperatorNonterminal[X]
+  trait AbstractOperatorNonterminal[+V] extends (Prec => Parsers.AbstractNonterminal[V]) with EBNFs[V] { import OperatorImplicits._; import AbstractOperatorParser._
+    type Abstract[+X] = AbstractOperatorNonterminal[X]
     def name: String
   
     def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~ (p: Symbol)(implicit tuple: V|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)   
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)   
     def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqNt(this, p) }
-    def ~~ (p: Symbol)(implicit tuple: V|~|p.Value) = { implicit val o = obj1[V,p.Value](tuple); seqNtSym(this, p) }
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqNtSym(this, p)(obj1[V,U](tuple))
     
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSymOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpSymOpSeq(this, p)
@@ -97,11 +97,11 @@ object OperatorParsers {
     def | [U >: V](p: OperatorSequenceBuilderWithAction[U]) = altOpSymOpSeq(this, p)
     def | [U >: V](p: OperatorNonterminalWithAction[U]) = altOpSym(this, p)
     
-    def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpSymOpAlt(this, altAltOpAlt(p))
-    def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSymOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpSym(this, altSymOpSym(p))
-    def | [U >: V](p: SequenceBuilderWithAction { type Value = U }) = altOpSymOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: AlternationBuilder[U]) = altOpSymOpAlt(this, altAltOpAlt(p))
+    def | [U >: V](p: SequenceBuilder[U]) = altOpSymOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: Symbol[U]) = altOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SequenceBuilderWithAction[U]) = altOpSymOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: SymbolWithAction[U]) = altOpSym(this, altSymOpSym(p))
     
     def & [U](f: V => U) = new OperatorNonterminalWithAction[U] {
       def apply(prec: Prec) = AbstractOperatorNonterminal.this(prec) & f
@@ -114,7 +114,7 @@ object OperatorParsers {
     }
   }
   
-  trait OperatorNonterminalWithAction[V] extends (Prec => Parsers.SymbolWithAction { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait OperatorNonterminalWithAction[+V] extends (Prec => Parsers.SymbolWithAction[V]) { import OperatorImplicits._; import AbstractOperatorParser._
     def name: String
     
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSymOpAlt(this, p)
@@ -123,22 +123,22 @@ object OperatorParsers {
     def | [U >: V](p: OperatorSequenceBuilderWithAction[U]) = altOpSymOpSeq(this, p)
     def | [U >: V](p: OperatorNonterminalWithAction[U]) = altOpSym(this, p)
     
-    def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpSymOpAlt(this, altAltOpAlt(p))
-    def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSymOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpSym(this, altSymOpSym(p))
-    def | [U >: V](p: SequenceBuilderWithAction { type Value = U }) = altOpSymOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: AlternationBuilder[U]) = altOpSymOpAlt(this, altAltOpAlt(p))
+    def | [U >: V](p: SequenceBuilder[U]) = altOpSymOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: Symbol[U]) = altOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SequenceBuilderWithAction[U]) = altOpSymOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: SymbolWithAction[U]) = altOpSym(this, altSymOpSym(p))
   }
   
   type OperatorNonterminal = AbstractOperatorNonterminal[NoValue]
   
-  trait OperatorSequenceBuilder[V] extends (Head => OperatorSequence[V]) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait OperatorSequenceBuilder[+V] extends (Head => OperatorSequence[V]) { import OperatorImplicits._; import AbstractOperatorParser._
   
     def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~ (p: Symbol)(implicit tuple: V|~|p.Value, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
     
     def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqOpSeqNt(this, p) }
-    def ~~ (p: Symbol)(implicit tuple: V|~|p.Value) = { implicit val o = obj1[V,p.Value](tuple); seqOpSeqSym(this, p) }
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqOpSeqSym(this, p)(obj1[V,U](tuple))
     
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSeqOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpSeq(this, p)
@@ -146,11 +146,11 @@ object OperatorParsers {
     def | [U >: V](p: OperatorSequenceBuilderWithAction[U]) = altOpSeq(this, p)
     def | [U >: V](p: OperatorNonterminalWithAction[U]) = altOpSeqOpSym(this, p)
     
-    def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpSeqOpAlt(this, altAltOpAlt(p))
-    def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpSeqOpSym(this, altSymOpSym(p))
-    def | [U >: V](p: SequenceBuilderWithAction { type Value = U }) = altOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpSeqOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: AlternationBuilder[U]) = altOpSeqOpAlt(this, altAltOpAlt(p))
+    def | [U >: V](p: SequenceBuilder[U]) = altOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: Symbol[U]) = altOpSeqOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SequenceBuilderWithAction[U]) = altOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: SymbolWithAction[U]) = altOpSeqOpSym(this, altSymOpSym(p))
     
     def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpSeqOpAlt(this, p)
     def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpSeq(this, p)    
@@ -177,45 +177,45 @@ object OperatorParsers {
     }
   }
   
-  trait OperatorSequenceBuilderWithAction[V] extends (Head => OperatorSequenceWithAction[V]) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait OperatorSequenceBuilderWithAction[+V] extends (Head => OperatorSequenceWithAction[V]) { import OperatorImplicits._; import AbstractOperatorParser._
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSeqOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpSeq(this, p)
     def | [U >: V](p: AbstractOperatorNonterminal[U]) = altOpSeqOpSym(this, p)
     def | [U >: V](p: OperatorSequenceBuilderWithAction[U]) = altOpSeq(this, p)
     def | [U >: V](p: OperatorNonterminalWithAction[U]) = altOpSeqOpSym(this, p)
     
-    def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpSeqOpAlt(this, altAltOpAlt(p))
-    def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpSeqOpSym(this, altSymOpSym(p))
-    def | [U >: V](p: SequenceBuilderWithAction { type Value = U }) = altOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpSeqOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: AlternationBuilder[U]) = altOpSeqOpAlt(this, altAltOpAlt(p))
+    def | [U >: V](p: SequenceBuilder[U]) = altOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: Symbol[U]) = altOpSeqOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SequenceBuilderWithAction[U]) = altOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: SymbolWithAction[U]) = altOpSeqOpSym(this, altSymOpSym(p))
     
     def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpSeqOpAlt(this, p)
     def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpSeq(this, p)
     def |> [U >: V](p: OperatorSequenceBuilderWithAction[U]) = greaterOpSeq(this, p)
   }
   
-  trait OperatorAlternationBuilder[V] extends ((Head, Group) => (Group => OperatorAlternation[V], Group, Option[Group])) { import OperatorImplicits._; import AbstractOperatorParser._
+  trait OperatorAlternationBuilder[+V] extends ((Head, Group) => (Group => OperatorAlternation[V], Group, Option[Group])) { import OperatorImplicits._; import AbstractOperatorParser._
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpAltOpSeq(this, p)
     def | [U >: V](p: AbstractOperatorNonterminal[U]) = altOpAltOpSym(this, p)
     def | [U >: V](p: OperatorSequenceBuilderWithAction[U]) = altOpAltOpSeq(this, p)
     def | [U >: V](p: OperatorNonterminalWithAction[U]) = altOpAltOpSym(this, p)
     
-    def | [U >: V](p: AlternationBuilder { type Value = U }) = altOpAlt(this, altAltOpAlt(p))
-    def | [U >: V](p: SequenceBuilder { type Value = U }) = altOpAltOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: Symbol { type Value = U }) = altOpAltOpSym(this, altSymOpSym(p))
-    def | [U >: V](p: SequenceBuilderWithAction { type Value = U }) = altOpAltOpSeq(this, altSeqOpSeq(p))
-    def | [U >: V](p: SymbolWithAction { type Value = U }) = altOpAltOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: AlternationBuilder[U]) = altOpAlt(this, altAltOpAlt(p))
+    def | [U >: V](p: SequenceBuilder[U]) = altOpAltOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: Symbol[U]) = altOpAltOpSym(this, altSymOpSym(p))
+    def | [U >: V](p: SequenceBuilderWithAction[U]) = altOpAltOpSeq(this, altSeqOpSeq(p))
+    def | [U >: V](p: SymbolWithAction[U]) = altOpAltOpSym(this, altSymOpSym(p))
     
     def |> [U >: V](p: OperatorAlternationBuilder[U]) = greaterOpAlt(this, p)
     def |> [U >: V](p: OperatorSequenceBuilder[U]) = greaterOpAltOpSeq(this, p)
     def |> [U >: V](p: OperatorSequenceBuilderWithAction[U]) = greaterOpAltOpSeq(this, p)
   }
   
-  implicit class ParsersSeqOps[V](p: Parsers.Symbol { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+  implicit class ParsersSeqOps[V](p: Parsers.Symbol[V]) { import OperatorImplicits._; import AbstractOperatorParser._
     def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
-    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqSymNt(p, q) }
+    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = seqSymNt(p, q)(obj1[V,U](tuple))
     
     def | [U >: V](q: OperatorAlternationBuilder[U]) = altOpSymOpAlt(altSymOpSym(p), q)
     def | [U >: V](q: OperatorSequenceBuilder[U]) = altOpSymOpSeq(altSymOpSym(p), q)
@@ -224,18 +224,7 @@ object OperatorParsers {
     def | [U >: V](q: OperatorNonterminalWithAction[U]) = altOpSym(altSymOpSym(p), q)
   }
   
-  implicit class ParsersAltOps1[V](p: Parsers.SequenceBuilder { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
-    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
-    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqSeqNt(p, q) }
-    
-    def | [U >: V](q: OperatorAlternationBuilder[U]) = altOpSeqOpAlt(altSeqOpSeq(p), q)
-    def | [U >: V](q: OperatorSequenceBuilder[U]) = altOpSeq(altSeqOpSeq(p), q)
-    def | [U >: V](q: AbstractOperatorNonterminal[U]) = altOpSeqOpSym(altSeqOpSeq(p), q)
-    def | [U >: V](q: OperatorSequenceBuilderWithAction[U]) = altOpSeq(altSeqOpSeq(p), q)
-    def | [U >: V](q: OperatorNonterminalWithAction[U]) = altOpSeqOpSym(altSeqOpSeq(p), q)
-  }
-  
-  implicit class ParsersAltOps2[V](p: Parsers.AlternationBuilder { type Value = V }) { import OperatorImplicits._; import AbstractOperatorParser._
+  implicit class ParsersAltOps2[V](p: Parsers.AlternationBuilder[V]) { import OperatorImplicits._; import AbstractOperatorParser._
     def | [U >: V](q: OperatorAlternationBuilder[U]) = altOpAlt(altAltOpAlt(p), q)
     def | [U >: V](q: OperatorSequenceBuilder[U]) = altOpAltOpSeq(altAltOpAlt(p), q)
     def | [U >: V](q: AbstractOperatorNonterminal[U]) = altOpAltOpSym(altAltOpAlt(p), q)
@@ -243,10 +232,18 @@ object OperatorParsers {
     def | [U >: V](q: OperatorNonterminalWithAction[U]) = altOpAltOpSym(altAltOpAlt(p), q)
   }
   
+  implicit class ParsersAltOps1[+V](p: Parsers.SequenceBuilder[V]) { import OperatorImplicits._; import AbstractOperatorParser._
+    def | [U >: V](q: OperatorAlternationBuilder[U]) = altOpSeqOpAlt(altSeqOpSeq(p), q)
+    def | [U >: V](q: OperatorSequenceBuilder[U]) = altOpSeq(altSeqOpSeq(p), q)
+    def | [U >: V](q: AbstractOperatorNonterminal[U]) = altOpSeqOpSym(altSeqOpSeq(p), q)
+    def | [U >: V](q: OperatorSequenceBuilderWithAction[U]) = altOpSeq(altSeqOpSeq(p), q)
+    def | [U >: V](q: OperatorNonterminalWithAction[U]) = altOpSeqOpSym(altSeqOpSeq(p), q)
+  }
+  
   implicit class StringSeqOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
     val p = Parsers.toTerminal(term)
-    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: p.Value|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
-    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: p.Value|~|U) = { implicit val o = obj1[p.Value,U](tuple); seqSymNt(p, q) }
+    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
+    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U) = seqSymNt(p, q)(obj1[NoValue,U](tuple))
   }
   
 //  implicit class StringAltOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
@@ -304,7 +301,7 @@ object OperatorParsers {
     nonterminalSym(name, p)
   }
   
-  trait EBNFs[V] { self: AbstractOperatorNonterminal[V] =>
+  trait EBNFs[+V] { self: AbstractOperatorNonterminal[V] =>
     var star: Option[AbstractOperatorNonterminal[_]] = None
     def *(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
       star.getOrElse({
