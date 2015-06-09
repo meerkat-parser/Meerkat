@@ -1,7 +1,3 @@
-/** 
- * @author Anastasia Izmaylova
- */
-
 package org.meerkat
 
 import org.meerkat.sppf.NonPackedNode

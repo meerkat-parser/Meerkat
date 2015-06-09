@@ -1,9 +1,5 @@
 package org.meerkat.parsers
 
-/**
- * @author Anastasia Izmaylova
- */
-
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import DDParsers._

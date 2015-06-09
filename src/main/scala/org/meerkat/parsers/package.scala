@@ -1,8 +1,5 @@
 package org.meerkat
 
-/**
- * @author Anastasia Izmaylova
- */
 import org.meerkat.util._
 import org.meerkat.util.Input
 import org.meerkat.util.visualization._
@@ -81,7 +78,7 @@ package object parsers {
     = Parsers.ntSeq(s"start[${p.name}]", layout.get ~~ p ~~ layout.get)
   
   object DefaultLayout {
-    implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal(org.meerkat.util.JavaTokens.Layout)))  
+    implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal("""((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r)))  
   }
   
   def run[T](input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[T]): Unit = {
