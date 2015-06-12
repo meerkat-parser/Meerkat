@@ -108,10 +108,10 @@ object OperatorParsers {
     type Abstract[+X] = AbstractOperatorNonterminal[X]
     def name: String
   
-    def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)   
-    def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqNt(this, p) }
-    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqNtSym(this, p)(obj1[V,U](tuple))
+    def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p   
+    def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = seqNt(this, p)
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqNtSym(this, p)
     
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSymOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpSymOpSeq(this, p)
@@ -156,11 +156,11 @@ object OperatorParsers {
   
   trait OperatorSequenceBuilder[+V] extends (Head => OperatorSequence[V]) { import OperatorImplicits._; import AbstractOperatorParser._
   
-    def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
+    def ~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p
     
-    def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = { implicit val o = obj1[V,U](tuple); seqOpSeqNt(this, p) }
-    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqOpSeqSym(this, p)(obj1[V,U](tuple))
+    def ~~ [U](p: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = seqOpSeqNt(this, p)
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seqOpSeqSym(this, p)
     
     def | [U >: V](p: OperatorAlternationBuilder[U]) = altOpSeqOpAlt(this, p)
     def | [U >: V](p: OperatorSequenceBuilder[U]) = altOpSeq(this, p)
@@ -236,8 +236,8 @@ object OperatorParsers {
   }
   
   implicit class ParsersSeqOps[V](p: Parsers.Symbol[V]) { import OperatorImplicits._; import AbstractOperatorParser._
-    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple)
-    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = seqSymNt(p, q)(obj1[V,U](tuple))
+    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = p ~~ layout.get ~~ q
+    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) = seqSymNt(p, q)
     
     def | [U >: V](q: OperatorAlternationBuilder[U]) = altOpSymOpAlt(altSymOpSym(p), q)
     def | [U >: V](q: OperatorSequenceBuilder[U]) = altOpSymOpSeq(altSymOpSym(p), q)
@@ -264,8 +264,8 @@ object OperatorParsers {
   
   implicit class StringSeqOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
     val p = Parsers.toTerminal(term)
-    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U, layout: Layout) = (p ~~ layout.get).~~(q)(tuple) 
-    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U) = seqSymNt(p, q)(obj1[NoValue,U](tuple))
+    def ~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U, layout: Layout) = p ~~ layout.get ~~ q 
+    def ~~ [U](q: AbstractOperatorNonterminal[U])(implicit tuple: NoValue|~|U) = seqSymNt(p, q)
   }
   
 //  implicit class StringAltOps(term: String) { import OperatorImplicits._; import AbstractOperatorParser._
@@ -341,7 +341,7 @@ object OperatorParsers {
     var plus: Option[AbstractOperatorNonterminal[_]] = None
     def +(implicit ebnf: EBNF[V], layout: Layout): AbstractOperatorNonterminal[ebnf.OptOrSeq] = {
       plus.getOrElse({
-        val p = new AbstractOperatorNonterminal[ebnf.OptOrSeq] { def apply(prec: Prec) = self($).+(ebnf,layout); def name = self.name + "+" }
+        val p = new AbstractOperatorNonterminal[ebnf.OptOrSeq] { def apply(prec: Prec) = self($).+; def name = self.name + "+" }
         plus = Option(p); p
         }).asInstanceOf[AbstractOperatorNonterminal[ebnf.OptOrSeq]]
     }
