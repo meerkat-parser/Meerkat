@@ -39,15 +39,6 @@ trait TreeVisitor {
   def visit(t: Tree)(implicit input: Input): T  
 }
 
-trait Memoization extends TreeVisitor {
-
-  val cache = new HashMap[Tree, T]
-  
-  override abstract def visit(t: Tree)(implicit input: Input): T =
-    cache.getOrElseUpdate(t, super.visit(t))
-}
-
-
 class TreeToDot extends TreeVisitor {
     type T = Unit
     

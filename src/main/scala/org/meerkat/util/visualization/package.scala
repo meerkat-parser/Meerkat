@@ -40,7 +40,6 @@ import org.meerkat.tree.TreeVisitor
 import org.meerkat.sppf.SPPFNode
 import org.meerkat.tree.TreeToDot
 import org.meerkat.sppf.SPPFToDot
-import org.meerkat.tree.Memoization
 
 package object visualization {
   
@@ -83,7 +82,6 @@ package object visualization {
   def escape(s: Any): String = s.toString.replaceAll("\"", "\\\\\"").replaceAll("\t", "t").replaceAll("\n", "n").replaceAll("\r", "r")
   
   def toDot(t: Tree, input: Input, memoize: Boolean): String = {
-    // TODO: with memoization doesn't work: equals in nodes!!!
     val v = new TreeToDot
     v.visit(t)(input)
     v.get

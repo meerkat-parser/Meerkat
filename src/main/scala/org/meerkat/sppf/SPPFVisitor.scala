@@ -134,7 +134,7 @@ object SemanticAction {
     case _                     => t 
   }
   
-  def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException
+  def amb(input: Input)(s: Set[Any], l: Int, r: Int) = throw new RuntimeException("Cannot execute while the grammar is ambiguous.")
   
   def t(input: Input)(l: Int, r: Int) = ()
       
@@ -176,11 +176,12 @@ object TreeBuilder {
   
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
   
-  def build(node: NonPackedNode, memoized: Boolean = false)(implicit input: Input): Tree =
-    if (memoized)
-      convert(new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)).visit(node))
-    else 
-      convert((new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization).visit(node))
+  def build(node: NonPackedNode, memoized: Boolean = false)(implicit input: Input): Tree = {
+    val executer = if (memoized) new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
+                   else new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) 
+    
+    convert(executer.visit(node))               
+  }
 }
 
 class SPPFToDot extends SPPFVisitor {
