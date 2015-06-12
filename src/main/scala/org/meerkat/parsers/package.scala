@@ -44,29 +44,20 @@ import org.meerkat.parsers.Parsers
 
 package object parsers {
   
-    case class ~[+A,+B](_1: A, _2: B)
+  case class ~[+A,+B](_1: A, _2: B)
   
-  trait <:<[-A,B]
-  implicit def sub[A,B >: A]: A <:< B = null
-  
+  trait <:<[-A,B]  
   trait <:!<[A,B]
-  implicit def nsub[A,B]: A <:!< B = null
-  implicit def nsubAmb1[A,B >: A]: A <:!< B = null
-  implicit def nsubAmb2[A,B >: A]: A <:!< B = null
 
   type ![T] = { type f[U] = U <:!< T }
   
   sealed trait NoValue
   
   trait |~|[-A,B] { type R }
-  implicit def f1[A <: NoValue,B <: NoValue] = new |~|[NoValue,NoValue] { type R = NoValue }
-  implicit def f2[A <: NoValue,B: ![NoValue]#f] = new |~|[NoValue,B] { type R = B }
-  implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
-  implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = (A,B) }
   
   type &[A <: { type Abstract[_] },T] = A#Abstract[T]
   
-  type && [T] = { type action[F]  }
+  type && [T] = { type action[F] }
   
   trait EBNF[-Val] {
     type OptOrSeq; type Seq; type Group
@@ -76,20 +67,39 @@ package object parsers {
     val group: Val => Group
   }
   
-  implicit val ebnf1 = new EBNF[NoValue] { 
-    type OptOrSeq = NoValue; type Group = NoValue
-    val add: ((OptOrSeq,NoValue)) => OptOrSeq = _ => null
-    val unit: NoValue => OptOrSeq = _ => null
-    val empty: String => OptOrSeq = _ => null
-    val group: NoValue => Group = _ => null
+  object |~| {
+    implicit def f1[A <: NoValue,B <: NoValue] = new |~|[NoValue,NoValue] { type R = NoValue }
+    implicit def f2[A <: NoValue,B: ![NoValue]#f] = new |~|[NoValue,B] { type R = B }
+    implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
+    implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = (A,B) }
   }
   
-  implicit def ebnf2[Val: ![NoValue]#f] = new EBNF[Val] { 
-    type OptOrSeq = List[Val]; type Group = Val
-    val add: ((OptOrSeq,Val)) => OptOrSeq = { case (s,x) => s.:+(x) }
-    val unit: Val => OptOrSeq = x => List(x)
-    val empty: String => OptOrSeq = _ => List()
-    val group: Val => Group = x => x
+  object <:< {
+    implicit def sub[A,B >: A]: A <:< B = null
+  }
+  
+  object <:!< {
+    implicit def nsub[A,B]: A <:!< B = null
+    implicit def nsubAmb1[A,B >: A]: A <:!< B = null
+    implicit def nsubAmb2[A,B >: A]: A <:!< B = null
+  }
+  
+  object EBNF {
+    implicit val ebnf1 = new EBNF[NoValue] { 
+      type OptOrSeq = NoValue; type Group = NoValue
+      val add: ((OptOrSeq,NoValue)) => OptOrSeq = _ => null
+      val unit: NoValue => OptOrSeq = _ => null
+      val empty: String => OptOrSeq = _ => null
+      val group: NoValue => Group = _ => null
+    }
+  
+    implicit def ebnf2[Val: ![NoValue]#f] = new EBNF[Val] { 
+      type OptOrSeq = List[Val]; type Group = Val
+      val add: ((OptOrSeq,Val)) => OptOrSeq = { case (s,x) => s.:+(x) }
+      val unit: Val => OptOrSeq = x => List(x)
+      val empty: String => OptOrSeq = _ => List()
+      val group: Val => Group = x => x
+    }
   }
   
   type Prec = (Int, Int)
@@ -100,10 +110,10 @@ package object parsers {
     def get = p
   }
   
-  def start[T](p: Parsers.Symbol[T])(implicit layout: Layout): Parsers.AbstractNonterminal[T]
+  def start[T](p: Parsers.Symbol[T])(implicit layout: Layout): Parsers.AbstractNonterminal[T] 
     = Parsers.ntSeq(s"start[${p.name}]", layout.get ~~ p ~~ layout.get)
   
-  object DefaultLayout {
+  object Layout {
     implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal("""((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r)))  
   }
   

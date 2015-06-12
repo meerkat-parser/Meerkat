@@ -142,8 +142,8 @@ object Parsers { import AbstractCPSParsers._
   trait SequenceBuilder[+V] extends (Slot => Sequence) with SequenceBuilderOps[V] { import AbstractParser._ 
     def action: Option[Any => V] = None
     
-    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seq(this, p)(obj1(tuple))
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seq(this, p)
   
 //    def ~ (p: String)(implicit layout: Layout) = (this ~~ layout.get).~~(p)
 //    def ~~ (p: String)(implicit tuple: this.Value|~|NoValue) = { implicit val o = obj1(tuple); seq(this, p) }
@@ -165,7 +165,7 @@ object Parsers { import AbstractCPSParsers._
         val p = groupSeq(this); group = Option(p); p })
     }
     
-    def ~ [U](q: OperatorParsers.AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(q)(tuple)
+    def ~ [U](q: OperatorParsers.AbstractOperatorNonterminal[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ q
     def ~~ [U](q: OperatorParsers.AbstractOperatorNonterminal[U])(implicit tuple: V|~|U) 
       = AbstractOperatorParsers.AbstractOperatorParser.seqSeqNt(this, q)(OperatorParsers.OperatorImplicits.obj1[V,U](tuple))
   }
@@ -206,11 +206,11 @@ object Parsers { import AbstractCPSParsers._
     def name: String
     def action: Option[Any => V] = None
     
-    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = (this ~~ layout.get).~~(p)(tuple)
-    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seq(this, p)(obj1(tuple))
+    def ~ [U](p: Symbol[U])(implicit tuple: V|~|U, layout: Layout) = this ~~ layout.get ~~ p
+    def ~~ [U](p: Symbol[U])(implicit tuple: V|~|U) = seq(this, p)
   
     def ~ (p: String)(implicit layout: Layout) = this ~~ layout.get ~~ p
-    def ~~ (p: String)(implicit tuple: V|~|NoValue) = seq(this, p)(obj1(tuple))
+    def ~~ (p: String)(implicit tuple: V|~|NoValue) = seq(this, p)
   
     def &[U](f: V => U) = new SymbolWithAction[U] {
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = Symbol.this(input, i, sppfLookup)
@@ -301,7 +301,7 @@ object Parsers { import AbstractCPSParsers._
     def *(sep: Terminal)(implicit ebnf: EBNF[V], layout: Layout): AbstractNonterminal[ebnf.OptOrSeq] = {
       type T = AbstractNonterminal[ebnf.OptOrSeq]
       star_sep.getOrElseUpdate(sep.name, {
-        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), this.+(sep)(ebnf,layout) | Ø ^ ebnf.empty)
+        regular[NonPackedNode,ebnf.OptOrSeq](org.meerkat.tree.Star(this.symbol), this.+(sep) | Ø ^ ebnf.empty)
       }).asInstanceOf[T]
     }
           
