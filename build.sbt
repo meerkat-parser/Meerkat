@@ -1,11 +1,13 @@
 
-name in ThisBuild := "Meerkat"
+name := "Meerkat"
 
-organization in ThisBuild := "com.meerkat"
+organization := "com.meerkat"
 
-version in ThisBuild := "0.1.0"
+version := "0.1.0"
 
-scalaVersion in ThisBuild := "2.11.6"
+scalaVersion := "2.11.6"
+
+unmanagedSourceDirectories in Compile += baseDirectory.value / "src" / "macros"
 
 libraryDependencies ++= Seq(
     "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
@@ -14,3 +16,11 @@ libraryDependencies ++= Seq(
 	"commons-io" % "commons-io" % "2.4",
 	"org.bitbucket.inkytonik.dsinfo" %% "dsinfo" % "0.4.0"
 )
+
+// SBT Eclipse configuration
+
+EclipseKeys.eclipseOutput in Compile := Some("bin/main/scala")
+EclipseKeys.eclipseOutput in Test := Some("bin/test/scala")
+
+EclipseKeys.withSource := true
+
