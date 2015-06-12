@@ -37,7 +37,6 @@ import org.meerkat.sppf.TreeBuilder
 import org.meerkat.sppf.NonPackedNode
 import org.meerkat.parsers.ParseError
 import org.meerkat.parsers.ParseSuccess
-import org.meerkat.parsers.ParseStatistics
 import org.meerkat.parsers.AbstractCPSParsers
 import org.meerkat.parsers.OperatorParsers
 import org.meerkat.parsers.Trampoline
@@ -145,30 +144,48 @@ package object parsers {
 
     parser.reset
     
-    val sppf = new DefaultSPPFLookup(input)
+    val sppfLookup = new DefaultSPPFLookup(input)
     
     val startUserTime   = getUserTime
     val startSystemTime = getCpuTime
     val startNanoTime   = System.nanoTime
     
-    run(input, sppf, parser)
+    run(input, sppfLookup, parser)
     
     val endUserTime     = getUserTime
     val endSystemTime   = getCpuTime
     val endNanoTime     = System.nanoTime
     
-    val startSymbol = sppf.getStartNode(parser, 0, input.length)
-    
-    startSymbol match {
+    val parseTimeStatistics = ParseTimeStatistics((endNanoTime - startNanoTime) / 1000000,
+                                                  (endUserTime - startUserTime) / 1000000,
+                                                  (endSystemTime - startSystemTime) / 1000000)
+                                                  
+    val sppftatistics = SPPFStatistics(sppfLookup.countNonterminalNodes,
+                                       sppfLookup.countIntermediateNodes,
+                                       sppfLookup.countTerminalNodes,
+                                       sppfLookup.countPackedNodes,
+                                       sppfLookup.countAmbiguousNodes)
+                                       
+    sppfLookup.getStartNode(parser, 0, input.length) match {
       case None    => Left(ParseError(0, " "))
-      case Some(x) => Right(ParseSuccess(x, ParseStatistics((endNanoTime - startNanoTime) / 1000000, 
-                                                            (endUserTime - startUserTime) / 1000000,
-                                                            (1000000) / 1000000,
-                                                            sppf.countNonterminalNodes,
-                                                            sppf.countIntermediateNodes,
-                                                            sppf.countTerminalNodes,
-                                                            sppf.countPackedNodes,
-                                                            sppf.countAmbiguousNodes)))
+      case Some(root) => {
+          val startUserTime   = getUserTime
+          val startSystemTime = getCpuTime
+          val startNanoTime   = System.nanoTime
+          
+          val t = TreeBuilder.build(root)(input)
+          
+          val endUserTime     = getUserTime
+          val endSystemTime   = getCpuTime
+          val endNanoTime     = System.nanoTime
+
+          val treeBuildingStatistics = new TreeBuildingStatistics((endNanoTime - startNanoTime) / 1000000,
+                                                                  (endUserTime - startUserTime) / 1000000,
+                                                                  (endSystemTime - startSystemTime) / 1000000)
+          val treeStatistics = ???
+          
+          Right(ParseSuccess(t, parseTimeStatistics, treeBuildingStatistics, sppftatistics, treeStatistics))
+      }
     }
   }
   

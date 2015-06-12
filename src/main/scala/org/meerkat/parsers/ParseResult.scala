@@ -27,22 +27,44 @@
 
 package org.meerkat.parsers
 
-import org.meerkat.sppf.NonPackedNode
+import org.meerkat.tree.Tree
 
-case class ParseSuccess(sppf: NonPackedNode, stat: ParseStatistics)
+case class ParseSuccess(root: Tree, 
+                        parseTimeStatistics: ParseTimeStatistics,
+                        treeBuidingStatistics: TreeBuildingStatistics,
+                        sppfStatistics: SPPFStatistics,
+                        treeStatistics: TreeStatistics)
 		  				  
 case class ParseError(index: Int, slot: String) {
   override def toString = s"Parse error at $slot and $index"
 }
 
-case class ParseStatistics(nanoTime: Long, 
-                           userTime: Long,
-                           systemTime: Long,
-                           countNonterminalNodes: Int,
-                           countIntermediateNodes: Int,
-                           countTerminalNodes: Int,
-                           countPackedNodes: Int,
-                           countAmbiguousNodes: Int) {
-
-  override def toString = "%-20d %-20d %-20d %-20d %-15d %-15d\n".format(userTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)
+case class ParseTimeStatistics(nanoTime: Long, 
+                               userTime: Long,
+                               systemTime: Long) {
+  override def toString = "User time: %d, Nano time: %d, System time:  %d\n".format(userTime, nanoTime, systemTime)  
 }
+
+case class TreeBuildingStatistics(nanoTime: Long,
+                                  userTime: Long,
+                                  systemTime: Long) {
+  override def toString = "User time: %d, Nano time: %d, System time:  %d\n".format(userTime, nanoTime, systemTime)
+}  
+
+case class SPPFStatistics(nonterminalNodes: Int,
+                          intermediateNodes: Int,
+                          terminalNodes: Int,
+                          packedNodes: Int,
+                          ambiguousNodes: Int) {
+
+  override def toString = "Nonterminal nodes: %d, Intermediate nodes: %d, Terminal nodes: %d, Packed nodes: %d, Ambiguous nodes: %d\n".format(nonterminalNodes, intermediateNodes, terminalNodes, packedNodes, ambiguousNodes)
+}
+
+case class TreeStatistics(nonterminalNodes: Int,
+                          terminalNodes: Int,
+                          ambiguousNodes: Int) {
+  
+  override def toString = "Nonterminal nodes: %d, Terminal nodes: %d, Ambiguous nodes: %d\n".format(nonterminalNodes, terminalNodes, ambiguousNodes)  
+}
+
+

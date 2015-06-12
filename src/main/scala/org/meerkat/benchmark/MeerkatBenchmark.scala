@@ -62,14 +62,21 @@ class MeerkatBenchmark(parser: Nonterminal,
                        
   private def run(input: Input) {
     parse(parser, input) match {
-      case Right(x) => printStatistics(x.stat, input)
+      case Right(x) => printStatistics(x, input)
       case Left(x)  => println(s"Parse error $x")
     }
   }
   
-  def printStatistics(s: ParseStatistics, input: Input): Unit =  s match {
-    case ParseStatistics(nanoTime, userTime, cpuTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes) => {
-      printf("%-20d %-20d %-20d %-20d %-20d %-15d %-15d\n", input.length, userTime, countNonterminalNodes, countIntermediateNodes, countTerminalNodes, countPackedNodes, countAmbiguousNodes)
+  def printStatistics(s: ParseSuccess, input: Input): Unit =  s match {
+    case ParseSuccess(root, parseTimeStatistics, treeBuidingStatistics, sppfStatistics, treeStatistics) => {
+      printf("%-20d %-20d %-20d %-20d %-20d %-15d %-15d\n", 
+             input.length, 
+             parseTimeStatistics.userTime, 
+             sppfStatistics.nonterminalNodes, 
+             sppfStatistics.intermediateNodes, 
+             sppfStatistics.terminalNodes, 
+             sppfStatistics.packedNodes, 
+             sppfStatistics.ambiguousNodes)
     }
   }
 }
