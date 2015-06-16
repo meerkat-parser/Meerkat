@@ -1,9 +1,9 @@
 # Meerkat
 
 The Meerat library enables general combinator-style parsing in Scala. 
-In particular Meerkat parsers provide:
+Meerkat parsers provide:
 
-- Support for all context-free grammars (left recursive and ambiguous)
+- Support for all context-free grammars (including left recursive and ambiguous grammars)
 - Produce Shared Packed Parse Forest (SPPF) in cubic time and space
 
 To make Meerkat parsers practical for parsing programming languages, we also provide the following features:
