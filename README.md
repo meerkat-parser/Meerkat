@@ -18,9 +18,8 @@ At the moment, the Meerkat library is a prototype, and we are trying to fix the 
 issues and complete the documentation **in the coming weeks**. In the meantime, if you encounter
 any problem, please open an issue or contact us.
 
-Currently the only way to use the Meerkat library is to build it from the source.
-You need to first install [SBT](http://www.scala-sbt.org/). To build the Meerkat library,
-clone this repository, and run `sbt package`.
+- [Download and Installation](https://github.com/Anastassija/Meerkat/wiki/installation)
+- [Getting started](https://github.com/Anastassija/Meerkat/wiki/getting-started)
 
 More information about the Meerkat libary can be found in [Wiki](https://github.com/Anastassija/Meerkat/wiki).
 
