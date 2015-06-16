@@ -1,6 +1,18 @@
 # Meerkat
 
-Meerkat is a library of general, practical parser combinators in Scala. 
+The Meerat library enables general combinator-style parsing in Scala. 
+In particular Meerkat parsers provide:
+
+- Support for all context-free grammars (left recursive and ambiguous)
+- Produce Shared Packed Parse Forest (SPPF) in cubic time and space
+
+To make Meerkat parsers practical for parsing programming languages, we also provide the following features:
+
+- Scannerless parsing and character-level disambiguation combinators
+- Declarative operator precedence combinators
+- A user-friendly Tree format for processing parse results
+- Support for Semantic actions
+- Data-dependent parsing to deal with context-sensitive constructs
 
 At the moment, the Meerkat library is a prototype, and we are trying to fix the remaining
 issues and complete the documentation **in the coming weeks**. In the meantime, if you encounter
