@@ -29,8 +29,4 @@ package org.meerkat
 
 package object tree {
   
-  type Term = TerminalSymbol
-  
-  type Nt = NonterminalSymbol
-  
 }
