@@ -45,7 +45,7 @@ object Example14 {
     
   def Octets(n: Int, p: Nonterminal) 
     = n match {
-        case 0 => syn { Ø }
+        case 0 => syn { ε }
         case 1 => syn { p }
         case _ => syn { (1 to n-2).foldLeft(p ~ p)((q,_) => q ~ p) }
       }
