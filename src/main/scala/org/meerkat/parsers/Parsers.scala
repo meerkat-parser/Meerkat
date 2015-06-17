@@ -87,7 +87,6 @@ object Parsers { import AbstractCPSParsers._
     type Nonterminal = Parsers.AbstractNonterminal[Val]
     def nonterminal(nt: String, p: AbstractParser[NonPackedNode]) 
       = new Parsers.AbstractNonterminal[Val] {
-          type Value = Val
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def symbol = org.meerkat.tree.SimpleNonterminal(nt)
           def name = nt; override def toString = name
@@ -123,6 +122,19 @@ object Parsers { import AbstractCPSParsers._
           override def toString = name   
           override def reset = p.reset
         }     
+  }
+  
+  implicit def obj7[Val <: NoValue] = new CanBuildLayout[NonPackedNode,Val] {
+    implicit val m = obj4
+    
+    type Nonterminal = Parsers.AbstractNonterminal[Val]
+    def layout(nt: String, p: AbstractParser[NonPackedNode]) 
+      = new Parsers.AbstractNonterminal[Val] {
+          def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
+          def symbol = org.meerkat.tree.Layout(nt)
+          def name = nt; override def toString = name
+          override def reset = p.reset
+        }
   }
   
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
@@ -274,6 +286,10 @@ object Parsers { import AbstractCPSParsers._
   def ntAlt[Val](name: String, p: => AlternationBuilder[Val]) = nonterminalAlt(name, p)  
   def ntSeq[Val](name: String, p: => SequenceBuilder[Val]) = nonterminalSeq(name, p)
   def ntSym[Val](name: String, p: => AbstractSymbol[NonPackedNode,Val]) = nonterminalSym(name, p)
+  
+  def ltAlt[Val <: NoValue](name: String, p: => AlternationBuilder[Val]) = layoutAlt(name, p)  
+  def ltSeq[Val <: NoValue](name: String, p: => SequenceBuilder[Val]) = layoutSeq(name, p)
+  def ltSym[Val <: NoValue](name: String, p: => AbstractSymbol[NonPackedNode,Val]) = layoutSym(name, p)
   
   trait EBNFs[+V] { self: Symbol[V] =>   
     var opt: Option[AbstractNonterminal[_]] = None

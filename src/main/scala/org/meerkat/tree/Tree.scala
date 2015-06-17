@@ -80,8 +80,8 @@ trait Symbol {
   override def toString = name
 }
 
-case class Layout(symbol: Symbol) extends Nonterminal {
-  override def name = "Layout(" + symbol.name + ")"
+case class Layout(name: String) extends Nonterminal {
+  override def isRegular = false
 }
 
 case class Terminal(name: String) extends Symbol with Tree {
@@ -99,7 +99,7 @@ object Nonterminal {
 }
 
 case class SimpleNonterminal(name: String) extends Nonterminal {
-  override def isRegular: Boolean = false
+  override def isRegular = false
 }
 
 case class Star(s: Symbol) extends Nonterminal {
