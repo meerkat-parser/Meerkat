@@ -39,8 +39,7 @@ import OperatorParsers._
 
 object Example9 {
   
-  val L = syn { "".r }
-  implicit val l = layout(L)
+  implicit val LAYOUT = layout { "".r }
   
   val E: OperatorNonterminal 
     = syn (  "(" ~ E ~ ")" 

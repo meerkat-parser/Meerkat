@@ -34,8 +34,7 @@ import OperatorParsers._
 
 object Example10 {
   
-  val L = syn { """\s?""".r }
-  implicit val l = layout(L)
+  implicit val L = layout { """\s?""".r }
   
   val Op: Nonterminal & BinaryOp = syn { "+" ^ { _ => plus } | "*" ^ { _ => times } }
     

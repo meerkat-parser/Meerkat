@@ -1,7 +1,7 @@
 
 name := "Meerkat"
 
-organization := "com.meerkat"
+organization := "org.meerkat"
 
 version := "0.1.0"
 

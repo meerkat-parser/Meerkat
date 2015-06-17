@@ -34,8 +34,7 @@ import Parsers._
 
 object Example13 {
   
-  val L = syn { """\s?""".r }
-  implicit val l = layout(L)
+  implicit val L = layout { """\s?""".r }
   
   val Num = syn { "[0-9]".r }
     

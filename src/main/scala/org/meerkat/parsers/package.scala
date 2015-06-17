@@ -106,16 +106,13 @@ package object parsers {
   val $: Prec = (0,0)
   
   trait Layout { def get: Parsers.Symbol[NoValue] }
-  def layout(p: Parsers.Symbol[NoValue]): Layout = new Layout {
-    def get = p
+  
+  object Layout {
+    implicit val LAYOUT: Layout = Parsers.ltSym("LAYOUT", Parsers.toTerminal("""((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r))
   }
   
   def start[T](p: Parsers.Symbol[T])(implicit layout: Layout): Parsers.AbstractNonterminal[T] 
     = Parsers.ntSeq(s"start[${p.name}]", layout.get ~~ p ~~ layout.get)
-  
-  object Layout {
-    implicit val L: Layout = layout(Parsers.ntSym("L",Parsers.toTerminal("""((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r)))  
-  }
   
   def run[T](input: Input, sppf: SPPFLookup, parser: AbstractCPSParsers.AbstractParser[T]): Unit = {
     parser(input, 0, sppf)(t => {})

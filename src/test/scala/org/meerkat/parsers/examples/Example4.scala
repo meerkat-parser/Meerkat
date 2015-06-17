@@ -33,10 +33,7 @@ import Parsers._
 
 object Example4 {
   
-  val L: Nonterminal = syn {"""((/\*(.|[\r\n])*?\*/|//[^\r\n]*)|\s)*""".r }
-  // val L: Nonterminal = syn { "_".r }
-  
-  implicit val l = layout(L)
+  implicit val LAYOUT = layout { "_".r }
   
   val E: Nonterminal & Int 
       = syn ( E ~ "+" ~ E & { case (x,y) => x + y }
@@ -46,8 +43,8 @@ object Example4 {
   val Num = syn { "[0-9]".r }
     
   def main(args: Array[String]): Unit = {
-    parse("5    * 3", E)
-    // parse("5_*_3", E)
+    // parse("5    * 3", E)
+    parse("5_*_3", E)
   }
   
 }

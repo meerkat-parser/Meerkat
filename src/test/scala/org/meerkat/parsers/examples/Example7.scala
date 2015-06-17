@@ -34,8 +34,7 @@ import OperatorParsers._
 
 object Example7 {
   
-  val L = syn { """[\s]?""".r }
-  implicit val l = layout(L)
+  implicit val LayOut = layout { """[\s]?""".r }
   
   val E: OperatorNonterminal & Int
   

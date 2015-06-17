@@ -56,10 +56,9 @@ object Syntax {
     def syn[T](p: Parsers.SequenceBuilder[T]) = macro makeNonterminalSeqWithName[T]
     def syn[T](p: AbstractSymbol[NonPackedNode,T]) = macro makeNonterminalSymWithName[T]
     
-    // TODO: rename
-    def lay(p: Parsers.AlternationBuilder[NoValue]) = macro makeLayoutAltWithName
-    def lay(p: Parsers.SequenceBuilder[NoValue]) = macro makeLayoutSeqWithName
-    def lay(p: AbstractSymbol[NonPackedNode,NoValue]) = macro makeLayoutSymWithName
+    def layout(p: Parsers.AlternationBuilder[NoValue]) = macro makeLayoutAltWithName
+    def layout(p: Parsers.SequenceBuilder[NoValue]) = macro makeLayoutSeqWithName
+    def layout(p: AbstractSymbol[NonPackedNode,NoValue]) = macro makeLayoutSymWithName
     
     def syn[T,V](p: DDParsers.AlternationBuilder[T,V]) = macro makeDataNonterminalAltWithName[T,V]
     def syn[T,V](p: DDParsers.SequenceBuilder[T,V]) = macro makeDataNonterminalSeqWithName[T,V]

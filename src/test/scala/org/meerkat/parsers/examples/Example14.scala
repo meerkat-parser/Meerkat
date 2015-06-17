@@ -34,8 +34,7 @@ import Parsers._
 
 object Example14 {
   
-  val L = syn { """\s?""".r }
-  implicit val l = layout(L)
+  implicit val LAYOUT = layout { """\s?""".r }
   
   val Octet = syn { """.""".r }
   

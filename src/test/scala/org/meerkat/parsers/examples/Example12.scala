@@ -34,8 +34,7 @@ import OperatorParsers._
 
 object Example12 {
   
-  val L = syn { """\s?""".r }
-  implicit val l = layout(L)
+  implicit val Layout = layout { """\s?""".r }
   
   val Int = syn { "[0-9]".r }
   
