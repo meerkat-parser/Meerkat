@@ -20,6 +20,7 @@ any problem, please open an issue or contact us.
 
 - [Download and Installation](https://github.com/Anastassija/Meerkat/wiki/installation)
 - [Getting started](https://github.com/Anastassija/Meerkat/wiki/getting-started)
+- [An Expression Grammar](https://github.com/Anastassija/Meerkat/wiki/an-expression-grammar)
 
 More information about the Meerkat libary can be found in [Wiki](https://github.com/Anastassija/Meerkat/wiki).
 
