@@ -189,10 +189,10 @@ package object parsers {
           val endSystemTime   = getCpuTime
           val endNanoTime     = System.nanoTime
 
-          val treeBuildingStatistics = new TreeBuildingStatistics((endNanoTime - startNanoTime) / 1000000,
-                                                                  (endUserTime - startUserTime) / 1000000,
-                                                                  (endSystemTime - startSystemTime) / 1000000)
-          val treeStatistics = ???
+          val treeBuildingStatistics = TreeBuildingStatistics((endNanoTime - startNanoTime) / 1000000,
+                                                              (endUserTime - startUserTime) / 1000000,
+                                                              (endSystemTime - startSystemTime) / 1000000)
+          val treeStatistics = TreeStatistics(0, 0, 0)
           
           Right(ParseSuccess(t, parseTimeStatistics, treeBuildingStatistics, sppftatistics, treeStatistics))
       }

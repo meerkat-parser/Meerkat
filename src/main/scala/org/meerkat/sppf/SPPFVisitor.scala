@@ -176,7 +176,7 @@ object TreeBuilder {
   
   def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
   
-  def build(node: NonPackedNode, memoized: Boolean = false)(implicit input: Input): Tree = {
+  def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
     val executer = if (memoized) new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
                    else new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) 
     
