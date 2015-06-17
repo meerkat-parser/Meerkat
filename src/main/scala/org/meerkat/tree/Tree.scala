@@ -96,6 +96,7 @@ trait Nonterminal extends Symbol {
 
 object Nonterminal {
   def apply(s: String) = SimpleNonterminal(s)
+  def unapply(s: Nonterminal): Option[String] = Some(s.name)
 }
 
 case class SimpleNonterminal(name: String) extends Nonterminal {
