@@ -45,9 +45,7 @@ object Tree {
   def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
-case class Appl(r: RuleType, ts: Seq[Tree]) extends Tree {
-  override def toString = r.toString
-}
+case class Appl(r: RuleType, ts: Seq[Tree]) extends Tree
 
 case class Amb(ts: Set[Tree]) extends Tree
 
@@ -82,6 +80,14 @@ trait Symbol {
   override def toString = name
 }
 
+case class Layout(symbol: Symbol) extends Nonterminal {
+  override def name = "Layout(" + symbol.name + ")"
+}
+
+case class Terminal(name: String) extends Symbol with Tree {
+  override def toString = "\"" + name + "\""
+}
+
 trait Nonterminal extends Symbol {
   def name: String
   
@@ -95,8 +101,6 @@ object Nonterminal {
 case class SimpleNonterminal(name: String) extends Nonterminal {
   override def isRegular: Boolean = false
 }
-
-case class Terminal(name: String) extends Symbol with Tree
 
 case class Star(s: Symbol) extends Nonterminal {
   override def name = s.name + "*"
