@@ -6,3 +6,8 @@ target
 .classpath
 .settings
 .worksheet
+.cache-macros
+.cache-main
+.cache-tests
+graph.dot
+graph.pdf

@@ -54,8 +54,8 @@ case class OptList(s: Symbol, l: List[Any])  extends EBNFList
 
 class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
                              tn : (Int, Int) => Any,
-                             int: (RuleType, Any) => Any,
-                             nt:  (RuleType, Any, Int, Int) => Any) extends SPPFVisitor {
+                             int: (Rule, Any) => Any,
+                             nt:  (Rule, Any, Int, Int) => Any) extends SPPFVisitor {
  
    type T = Any
   
@@ -138,12 +138,12 @@ object SemanticAction {
   
   def t(input: Input)(l: Int, r: Int) = ()
       
-  def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = 
+  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = 
     if (t.action.isDefined)
       if (v == ()) t.action.get(input.substring(l, r)) else t.action.get(convert(v)) 
     else convert(v)
     
-  def int(input: Input)(t: RuleType, v: Any) = 
+  def int(input: Input)(t: Rule, v: Any) = 
     if (t.action.isDefined)
       t.action.get(v)
     else v
@@ -155,9 +155,9 @@ object SemanticAction {
 object TreeBuilder {
 
    def convert(t: Any): Tree = t match {
-    case StarList(s, xs) => Appl(RegularRule(Star(s)), xs map { convert(_) }) 
-    case PlusList(s, xs) => Appl(RegularRule(Plus(s)), xs map { convert(_) })
-    case OptList(s, xs)  => Appl(RegularRule(Opt(s)),  xs map { convert(_) })
+    case StarList(s, xs) => RuleNode(RegularRule(Star(s)), xs map { convert(_) }) 
+    case PlusList(s, xs) => RuleNode(RegularRule(Plus(s)), xs map { convert(_) })
+    case OptList(s, xs)  => RuleNode(RegularRule(Opt(s)),  xs map { convert(_) })
     case _               => t.asInstanceOf[Tree]
   }
   
@@ -168,13 +168,13 @@ object TreeBuilder {
     case x               => List(convert(x))
   }
   
-  def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = Amb(s.asInstanceOf[Set[Tree]])
+  def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = AmbNode(s.asInstanceOf[Set[Tree]])
   
-  def t(input: Input)(l: Int, r: Int): Tree = Terminal(input.substring(l, r))
+  def t(input: Input)(l: Int, r: Int): Tree = org.meerkat.tree.TerminalNode(input.substring(l, r))
   
-  def int(input: Input)(t: RuleType, v: Any) = v
+  def int(input: Input)(t: Rule, v: Any) = v
   
-  def nt(input: Input)(t: RuleType, v: Any, l: Int, r: Int) = Appl(t, flatten(v).asInstanceOf[Seq[Tree]])
+  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = RuleNode(t, flatten(v).asInstanceOf[Seq[Tree]])
   
   def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
     val executer = if (memoized) new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization

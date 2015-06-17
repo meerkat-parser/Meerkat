@@ -25,30 +25,12 @@
  *
  */
 
-package org.meerkat.tree
+package org.meerkat
 
-import org.meerkat.sppf.SPPFNode
-import org.meerkat.sppf.NonterminalNode
-
-trait Tree {
-  import Tree._  
-  val id = inc
-}
-
-object Tree {
-  private var id = 0
-  private def inc = { id += 1; id }
+package object tree {
   
-  val epsilon = EpsilonNode()
+  type Term = TerminalSymbol
   
-  def isEpsilon(t: Tree): Boolean = t == epsilon  
+  type Nt = NonterminalSymbol
+  
 }
-
-case class RuleNode(r: Rule, ts: Seq[Tree]) extends Tree
-
-case class AmbNode(ts: Set[Tree]) extends Tree
-
-case class TerminalNode(value: String) extends Tree
-
-case class EpsilonNode() extends Tree
-

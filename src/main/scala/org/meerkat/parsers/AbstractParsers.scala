@@ -31,6 +31,8 @@ import org.meerkat.sppf.SPPFLookup
 import org.meerkat.util.Input
 import scala.reflect.ClassTag
 import org.meerkat.sppf.Slot
+import org.meerkat.tree.NonterminalSymbol
+import org.meerkat.tree.TerminalSymbol
 
 trait MonadPlus[+T, M[+F] <: MonadPlus[F,M]] {
   def map[U](f: T => U)(implicit m: Memoizable[T]): M[U]
@@ -57,7 +59,7 @@ trait AbstractParsers {
   
   type AbstractSymbol[+T,+V] = AbstractParser[T] { def name: String; def action: Option[Any => V] }
   
-  type AbstractNonterminal[+T,+V] = AbstractSymbol[T,V] { def symbol: org.meerkat.tree.Nonterminal }
+  type AbstractNonterminal[+T,+V] = AbstractSymbol[T,V] { def symbol: org.meerkat.tree.NonterminalSymbol }
   
   type Head = AbstractNonterminal[Any,Any]
   
@@ -120,7 +122,7 @@ trait AbstractParsers {
     type Regular <: AbstractNonterminal[A,ValA]  
     type Group <: AbstractNonterminal[A,ValA]
     
-    def regular(symbol: org.meerkat.tree.Nonterminal, p: AbstractParser[A]): Regular
+    def regular(symbol: org.meerkat.tree.NonterminalSymbol, p: AbstractParser[A]): Regular
     def group(p: AbstractParser[A]): Group
   }
   
@@ -319,7 +321,7 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
     lazy val q: Nonterminal = builder layout (name, memoize(p(q))); q
   }
   
-  def regular[A,ValA](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildEBNF[A,ValA], obj: ClassTag[Result[A]]): builder.Regular = { 
+  def regular[A,ValA](symbol: org.meerkat.tree.NonterminalSymbol, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildEBNF[A,ValA], obj: ClassTag[Result[A]]): builder.Regular = { 
     import builder._
     lazy val q: Regular = builder.regular(symbol, memoize(p(q))); q
   }
@@ -339,9 +341,9 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = if (pred(input,i)) p(input,i,sppfLookup) else CPSResult.failure[B]
       def name = prefix + " " + p.name; override def toString = name
       def symbol = p.symbol match {
-                     case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
-                     case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
-                     case _ => throw new RuntimeException("Shouldn't have happened!")
+                     case nt: NonterminalSymbol => NonterminalSymbol(name)
+                     case TerminalSymbol(_)     => TerminalSymbol(name)
+                     case _                     => throw new RuntimeException("Shouldn't have happened!")
                    } 
       def action: Option[Any => Val] = None
       override def reset = p.reset
@@ -353,9 +355,9 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup) filter { pred(input,_) }
       def name = p.name + " " + postfix; override def toString = name 
       def symbol = p.symbol match {
-                     case nt:org.meerkat.tree.Nonterminal => org.meerkat.tree.Nonterminal(name)
-                     case org.meerkat.tree.Terminal(_) => org.meerkat.tree.Terminal(name)
-                     case _ => throw new RuntimeException("Shouldn't have happened!")
+                     case nt: NonterminalSymbol => NonterminalSymbol(name)
+                     case TerminalSymbol(_)     => TerminalSymbol(name)
+                     case _                     => throw new RuntimeException("Shouldn't have happened!")
                    } 
       def action: Option[Any => Val] = None
       override def reset = p.reset

@@ -34,6 +34,7 @@ import org.meerkat.sppf.Slot
 import scala.util.matching.Regex
 import scala.collection.mutable._
 import scala.collection.JavaConversions._
+import org.meerkat.tree.TerminalSymbol
 
 object Parsers { import AbstractCPSParsers._
   
@@ -108,7 +109,7 @@ object Parsers { import AbstractCPSParsers._
     type Regular = AbstractNonterminal[Val]
     type Group = AbstractNonterminal[Val]
     
-    def regular(sym: org.meerkat.tree.Nonterminal, p: AbstractParser[NonPackedNode]): Regular 
+    def regular(sym: org.meerkat.tree.NonterminalSymbol, p: AbstractParser[NonPackedNode]): Regular 
       = new AbstractNonterminal[Val] {
           def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input, i, sppfLookup)
           def name = symbol.toString; def symbol = sym
@@ -140,14 +141,14 @@ object Parsers { import AbstractCPSParsers._
   trait Sequence extends AbstractParser[NonPackedNode] with Slot { def size: Int; def symbol: org.meerkat.tree.Sequence }
   trait Alternation extends AbstractParser[NonPackedNode] { def symbol: org.meerkat.tree.Alt }
   
-  trait AbstractNonterminal[+V] extends Symbol[V] { def symbol: org.meerkat.tree.Nonterminal; type Abstract[+X] = AbstractNonterminal[X] }
+  trait AbstractNonterminal[+V] extends Symbol[V] { def symbol: org.meerkat.tree.NonterminalSymbol; type Abstract[+X] = AbstractNonterminal[X] }
   type Nonterminal = AbstractNonterminal[NoValue]
   
-  trait Terminal extends Symbol[NoValue] { def symbol: org.meerkat.tree.Terminal }
+  trait Terminal extends Symbol[NoValue] { def symbol: org.meerkat.tree.TerminalSymbol }
   
   val ε = new Terminal {
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = CPSResult.success(sppfLookup.getEpsilonNode(i))
-    def symbol = org.meerkat.tree.Terminal(name)
+    def symbol = TerminalSymbol(name)
     def name = "epsilon"; override def toString = name
   }
   
@@ -262,7 +263,7 @@ object Parsers { import AbstractCPSParsers._
     def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
       = if (input.startsWith(s, i)) CPSResult.success(sppfLookup.getTerminalNode(s, i, i + s.length())) 
         else CPSResult.failure
-    def symbol = org.meerkat.tree.Terminal(s); def name = s; override def toString = name
+    def symbol = TerminalSymbol(s); def name = s; override def toString = name
   }
   
   implicit def toTerminal(r: Regex) = new Terminal {
@@ -271,7 +272,7 @@ object Parsers { import AbstractCPSParsers._
       if(end != -1) CPSResult.success(sppfLookup.getTerminalNode(r.toString, i, end))
       else CPSResult.failure 
     }
-    def name = r.toString; def symbol = org.meerkat.tree.Terminal(name)
+    def name = r.toString; def symbol = TerminalSymbol(name)
   }
   
   implicit def toTerminal(r: org.meerkat.util.RegularExpression) = new Terminal {
@@ -280,7 +281,7 @@ object Parsers { import AbstractCPSParsers._
       if(end != -1) CPSResult.success(sppfLookup.getTerminalNode(r.toString, i, end))
       else CPSResult.failure 
     }
-    def name = r.toString; def symbol = org.meerkat.tree.Terminal(name)
+    def name = r.toString; def symbol = TerminalSymbol(name)
   }
   
   def ntAlt[Val](name: String, p: => AlternationBuilder[Val]) = nonterminalAlt(name, p)  

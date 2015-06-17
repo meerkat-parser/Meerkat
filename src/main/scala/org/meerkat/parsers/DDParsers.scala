@@ -122,7 +122,7 @@ object DDParsers { import AbstractCPSParsers._
     type Symbol = DDParsers.AbstractNonterminal[A,ValA]
     def symbol(p: AbstractSymbol[(NonPackedNode,A),ValA]) = new DDParsers.AbstractNonterminal[A,ValA] { 
       def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = p(input,i,sppfLookup)
-      def name = p.name; def symbol = p.symbol.asInstanceOf[org.meerkat.tree.Nonterminal]
+      def name = p.name; def symbol = p.symbol.asInstanceOf[org.meerkat.tree.NonterminalSymbol]
       override def reset = p.reset
     }
   }
@@ -206,7 +206,7 @@ object DDParsers { import AbstractCPSParsers._
   
   trait AbstractNonterminal[+T,+V] extends AbstractParser[(NonPackedNode,T)] { import AbstractParser._
     def name: String
-    def symbol: org.meerkat.tree.Nonterminal
+    def symbol: org.meerkat.tree.NonterminalSymbol
     def action: Option[Any => V] = None
         
     def ~ [U,F](p: AbstractNonterminal[U,F])(implicit tuple: V|~|F, layout: Layout) = this ~~ layout.get ~~ p

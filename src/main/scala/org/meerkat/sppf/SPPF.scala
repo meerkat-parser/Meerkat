@@ -31,14 +31,10 @@ import scala.collection.mutable._
 import org.meerkat.util.PrimeMultiplicatonHash
 import scala.collection.JavaConversions._
 import java.util.ArrayList
-import org.meerkat.tree.Rule
-import org.meerkat.tree.Rule
-import org.meerkat.tree.Nonterminal
-import org.meerkat.tree.Terminal
-import org.meerkat.tree.RuleType
+import org.meerkat.tree._
 
 trait Slot {
-  def ruleType: RuleType
+  def ruleType: Rule
 }
 
 trait SPPFNode {
@@ -119,7 +115,7 @@ case class PackedNode(slot: Slot, parent: NonPackedNode) extends SPPFNode {
     
   def pivot = leftChild.rightExtent
     
-  def ruleType: RuleType = slot.ruleType
+  def ruleType: Rule = slot.ruleType
     
   def children: Buffer[T] = ListBuffer(leftChild, rightChild) filter (_ != null)
   
