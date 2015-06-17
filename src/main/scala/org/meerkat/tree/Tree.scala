@@ -45,26 +45,30 @@ object Tree {
   def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
-case class Appl(r: RuleType, ts: Seq[Tree]) extends Tree
+case class Appl(r: Rule, ts: Seq[Tree]) extends Tree
 
 case class Amb(ts: Set[Tree]) extends Tree
 
 case class Epsilon() extends Tree
 
-trait RuleType {
+trait Rule {
   def head: Nonterminal
   def body: Symbol
   
   var action: Option[Any => Any] = None 
   
   override def toString = head + " ::= " + body
-} 
+}
 
-case class Rule(head: Nonterminal, body: Symbol) extends RuleType
+object Rule {
+  def apply(head: Nonterminal, body: Symbol) = DefaultRule(head, body)
+}
 
-case class PartialRule(head: Nonterminal, body: Symbol, i: Int) extends RuleType
+case class DefaultRule(head: Nonterminal, body: Symbol) extends Rule
 
-case class RegularRule(head: Nonterminal) extends RuleType {
+case class PartialRule(head: Nonterminal, body: Symbol, i: Int) extends Rule
+
+case class RegularRule(head: Nonterminal) extends Rule {
   def body = Sequence()
   
   override def toString = head.name
