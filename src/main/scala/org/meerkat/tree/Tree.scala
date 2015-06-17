@@ -28,7 +28,6 @@
 package org.meerkat.tree
 
 import org.meerkat.sppf.SPPFNode
-import org.meerkat.sppf.TerminalNode
 import org.meerkat.sppf.NonterminalNode
 
 trait Tree {
@@ -40,93 +39,16 @@ object Tree {
   private var id = 0
   private def inc = { id += 1; id }
   
-  val epsilon = Epsilon()
+  val epsilon = EpsilonNode()
   
   def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
-case class Appl(r: Rule, ts: Seq[Tree]) extends Tree
+case class RuleNode(r: Rule, ts: Seq[Tree]) extends Tree
 
-case class Amb(ts: Set[Tree]) extends Tree
+case class AmbNode(ts: Set[Tree]) extends Tree
 
-case class Epsilon() extends Tree
+case class TerminalNode(value: String) extends Tree
 
-trait Rule {
-  def head: Nonterminal
-  def body: Symbol
-  
-  var action: Option[Any => Any] = None 
-  
-  override def toString = head + " ::= " + body
-}
+case class EpsilonNode() extends Tree
 
-object Rule {
-  def apply(head: Nonterminal, body: Symbol) = DefaultRule(head, body)
-}
-
-case class DefaultRule(head: Nonterminal, body: Symbol) extends Rule
-
-case class PartialRule(head: Nonterminal, body: Symbol, i: Int) extends Rule
-
-case class RegularRule(head: Nonterminal) extends Rule {
-  def body = Sequence()
-  
-  override def toString = head.name
-}
-
-object PartialRule {
-  def apply(head: Nonterminal, body: Symbol): PartialRule = PartialRule(head, body, 0)
-}
-
-trait Symbol {
-  def name: String
-  
-  override def toString = name
-}
-
-case class Layout(name: String) extends Nonterminal {
-  override def isRegular = false
-}
-
-case class Terminal(name: String) extends Symbol with Tree {
-  override def toString = "\"" + name + "\""
-}
-
-trait Nonterminal extends Symbol {
-  def name: String
-  
-  def isRegular: Boolean = true
-}
-
-object Nonterminal {
-  def apply(s: String) = SimpleNonterminal(s)
-  def unapply(s: Nonterminal): Option[String] = Some(s.name)
-}
-
-case class SimpleNonterminal(name: String) extends Nonterminal {
-  override def isRegular = false
-}
-
-case class Star(s: Symbol) extends Nonterminal {
-  override def name = s.name + "*"
-}
-
-case class Plus(s: Symbol) extends Nonterminal {
-  override def name = s.name + "+"
-}
-
-case class Sequence(ss: Symbol*) extends Nonterminal {
-  override def name = ss mkString " "
-}
-
-case class Group(s: Symbol) extends Nonterminal {
-  override def name = "(" + s + ")"
-}
-
-case class Opt(s: Symbol) extends Nonterminal {
-  override def name = s.name + "?"
-}
-
-case class Alt(s1: Symbol, s2: Symbol) extends Nonterminal {
-  override def name = s1.name + "|" + s2.name
-}
