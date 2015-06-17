@@ -45,6 +45,8 @@ import org.meerkat.parsers.OperatorParsers.OperatorNonterminal
 import org.bitbucket.inkytonik.dsinfo.DSInfo.makeCallWithName
 import org.meerkat.parsers.AbstractCPSParsers.AbstractSymbol
 import scala.reflect.macros.blackbox.Context
+import org.meerkat.parsers.NoValue
+import org.meerkat.parsers.Layout
 
 object Syntax { 
     import scala.language.experimental.macros
@@ -54,6 +56,11 @@ object Syntax {
     def syn[T](p: Parsers.SequenceBuilder[T]) = macro makeNonterminalSeqWithName[T]
     def syn[T](p: AbstractSymbol[NonPackedNode,T]) = macro makeNonterminalSymWithName[T]
     
+    // TODO: rename
+    def lay(p: Parsers.AlternationBuilder[NoValue]) = macro makeLayoutAltWithName
+    def lay(p: Parsers.SequenceBuilder[NoValue]) = macro makeLayoutSeqWithName
+    def lay(p: AbstractSymbol[NonPackedNode,NoValue]) = macro makeLayoutSymWithName
+    
     def syn[T,V](p: DDParsers.AlternationBuilder[T,V]) = macro makeDataNonterminalAltWithName[T,V]
     def syn[T,V](p: DDParsers.SequenceBuilder[T,V]) = macro makeDataNonterminalSeqWithName[T,V]
     def syn[T,V](p: AbstractSymbol[(NonPackedNode,T),V]) = macro makeDataNonterminalSymWithName[T,V]
@@ -61,6 +68,10 @@ object Syntax {
     def makeNonterminalAltWithName[T](c: Context)(p: c.Expr[AlternationBuilder[T]]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntAlt")
     def makeNonterminalSeqWithName[T](c: Context)(p: c.Expr[SequenceBuilder[T]]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSeq")
     def makeNonterminalSymWithName[T](c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode,T]]): c.Expr[Nonterminal & T] = makeCallWithName (c, "Parsers.ntSym")
+    
+    def makeLayoutAltWithName(c: Context)(p: c.Expr[AlternationBuilder[NoValue]]): c.Expr[Layout] = makeCallWithName (c, "Parsers.ltAlt")
+    def makeLayoutSeqWithName(c: Context)(p: c.Expr[SequenceBuilder[NoValue]]): c.Expr[Layout] = makeCallWithName (c, "Parsers.ltSeq")
+    def makeLayoutSymWithName(c: Context)(p: c.Expr[AbstractSymbol[NonPackedNode,NoValue]]): c.Expr[Layout] = makeCallWithName (c, "Parsers.ltSym")
     
     def makeDataNonterminalAltWithName[T,V](c: Context)(p: c.Expr[DDParsers.AlternationBuilder[T,V]]): c.Expr[DataNonterminalWithAction[T,V]] = makeCallWithName (c, "DDParsers.ntAlt")
     def makeDataNonterminalSeqWithName[T,V](c: Context)(p: c.Expr[DDParsers.SequenceBuilder[T,V]]): c.Expr[DataNonterminalWithAction[T,V]] = makeCallWithName (c, "DDParsers.ntSeq")

@@ -287,9 +287,11 @@ object Parsers { import AbstractCPSParsers._
   def ntSeq[Val](name: String, p: => SequenceBuilder[Val]) = nonterminalSeq(name, p)
   def ntSym[Val](name: String, p: => AbstractSymbol[NonPackedNode,Val]) = nonterminalSym(name, p)
   
-  def ltAlt[Val <: NoValue](name: String, p: => AlternationBuilder[Val]) = layoutAlt(name, p)  
-  def ltSeq[Val <: NoValue](name: String, p: => SequenceBuilder[Val]) = layoutSeq(name, p)
-  def ltSym[Val <: NoValue](name: String, p: => AbstractSymbol[NonPackedNode,Val]) = layoutSym(name, p)
+  def ltAlt[Val <: NoValue](name: String, p: => AlternationBuilder[Val]): Layout = layout(layoutAlt(name, p))  
+  def ltSeq[Val <: NoValue](name: String, p: => SequenceBuilder[Val]): Layout = layout(layoutSeq(name, p))
+  def ltSym[Val <: NoValue](name: String, p: => AbstractSymbol[NonPackedNode,Val]): Layout = layout(layoutSym(name, p))
+  
+  private def layout(p: Parsers.Symbol[NoValue]): Layout = new Layout { def get = p }
   
   trait EBNFs[+V] { self: Symbol[V] =>   
     var opt: Option[AbstractNonterminal[_]] = None
