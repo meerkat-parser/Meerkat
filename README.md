@@ -18,7 +18,7 @@ At the moment, the Meerkat library is a prototype, and we are trying to fix the 
 issues and complete the documentation **in the coming weeks**. In the meantime, if you encounter
 any problem, please open an issue or contact us.
 
-- [Download and Installation](https://github.com/Anastassija/Meerkat/wiki/installation)
+- [Download and Installation](https://github.com/Anastassija/Meerkat/wiki/download-and-install)
 - [Getting started](https://github.com/Anastassija/Meerkat/wiki/getting-started)
 - [An Expression Grammar](https://github.com/Anastassija/Meerkat/wiki/an-expression-grammar)
 
