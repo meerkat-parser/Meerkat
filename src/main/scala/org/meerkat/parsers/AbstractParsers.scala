@@ -108,6 +108,12 @@ trait AbstractParsers {
     def symbol(p: AbstractSymbol[A,ValA]): Symbol
   }
   
+  trait CanBuildLayout[A,ValA <: NoValue] {
+    implicit val m: Memoizable[A]
+    type Nonterminal <: AbstractNonterminal[A,ValA]
+    def layout(name: String, p: AbstractParser[A]): Nonterminal
+  }
+  
   trait CanBuildEBNF[A,ValA] {
     implicit val m: Memoizable[A]
     
@@ -296,6 +302,21 @@ object AbstractCPSParsers extends AbstractParsers {  import AbstractParser._
   def nonterminalAlt[A,ValA](name: String, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildNonterminal[A,ValA], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
     import builder._
     lazy val q: Nonterminal = builder nonterminal (name, memoize(p(q))); q
+  }
+  
+  def layoutSym[A,ValA <: NoValue](name: String, p: => AbstractSymbol[A,ValA])(implicit builder: CanBuildLayout[A,ValA], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+    import builder._
+    lazy val q: Nonterminal = builder layout (name, memoize(alt(q,p))); q
+  }
+  
+  def layoutSeq[A,ValA <: NoValue](name: String, p: => AbstractSequenceBuilder[A,ValA])(implicit builder: CanBuildLayout[A,ValA], b: CanBuildAlternative[A], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+    import builder._
+    lazy val q: Nonterminal = builder layout (name, memoize(alt(q,p))); q
+  }
+  
+  def layoutAlt[A,ValA <: NoValue](name: String, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildLayout[A,ValA], obj: ClassTag[Result[A]]): builder.Nonterminal = { 
+    import builder._
+    lazy val q: Nonterminal = builder layout (name, memoize(p(q))); q
   }
   
   def regular[A,ValA](symbol: org.meerkat.tree.Nonterminal, p: => AbstractAlternationBuilder[A,ValA])(implicit builder: CanBuildEBNF[A,ValA], obj: ClassTag[Result[A]]): builder.Regular = { 
