@@ -46,6 +46,10 @@ object Tree {
 
 case class RuleNode(r: Rule, ts: Seq[Tree]) extends Tree
 
+//object RuleNode {
+//  def unapply(r: RuleNode): Option[(Rule, Seq[Tree])] = ??? 
+//}
+
 case class AmbNode(ts: Set[Tree]) extends Tree
 
 case class TerminalNode(value: String) extends Tree

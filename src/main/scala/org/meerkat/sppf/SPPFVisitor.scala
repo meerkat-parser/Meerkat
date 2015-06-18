@@ -124,15 +124,18 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
 
 object SemanticAction {
   
+  import org.meerkat.parsers.~
+  
   def convert(t: Any): Any = t match {
     case StarList(s, xs)       => convert(xs)
     case PlusList(s, xs)       => convert(xs)
     case OptList(s, xs)        => convert(xs)
-    case List()                => ()
-    case l: List[Any]          => l.map { convert(_) }.filter { _ != ()}
+    case Seq()                => ()
+    case l: Seq[Any]          => l.map { convert(_) }.filter { _ != ()}
     case (x, y: EBNFList)      => convert(x, convert(y))
     case (x: EBNFList, y)      => convert(convert(x), y)
     case ((), ())              => ()
+    case (x, y)                => new ~(convert(x), convert(y))
     case _                     => t 
   }
   
