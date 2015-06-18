@@ -41,6 +41,8 @@ import org.meerkat.parsers.AbstractCPSParsers
 import org.meerkat.parsers.OperatorParsers
 import org.meerkat.parsers.Trampoline
 import org.meerkat.parsers.Parsers
+import org.meerkat.sppf.NonPackedNode
+import org.meerkat.sppf.NonPackedNode
 
 package object parsers {
   
@@ -147,8 +149,8 @@ package object parsers {
     }
   }
   
-  def parse[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, ParseSuccess] = {
-
+  private def getSPPF[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, (NonPackedNode, ParseTimeStatistics, SPPFStatistics)] = {
+        
     parser.reset
     
     val sppfLookup = new DefaultSPPFLookup(input)
@@ -174,8 +176,16 @@ package object parsers {
                                        sppfLookup.countAmbiguousNodes)
                                        
     sppfLookup.getStartNode(parser, 0, input.length) match {
-      case None    => Left(ParseError(0, " "))
-      case Some(root) => {
+      case None       => Left(ParseError(0, " "))
+      case Some(root) => Right((root, parseTimeStatistics, sppftatistics))
+    }
+  }
+  
+  def parse[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, ParseSuccess] = {
+
+    getSPPF(parser, input) match {
+      case Left(error)                            => Left(error)
+      case Right((root, parseTimeStat, sppfStat)) => {
           val startUserTime   = getUserTime
           val startSystemTime = getCpuTime
           val startNanoTime   = System.nanoTime
@@ -191,9 +201,20 @@ package object parsers {
                                                               (endSystemTime - startSystemTime) / 1000000)
           val treeStatistics = TreeStatistics(0, 0, 0)
           
-          Right(ParseSuccess(t, parseTimeStatistics, treeBuildingStatistics, sppftatistics, treeStatistics))
+          Right(ParseSuccess(t, parseTimeStat, treeBuildingStatistics, sppfStat, treeStatistics))
       }
     }
   }
+  
+  def execute[T, U](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, U] = {
+    getSPPF(parser, input) match {
+      case Left(error)                            => Left(error)
+      case Right((root, parseTimeStat, sppfStat)) => {
+        val x = SemanticAction.execute(root)(input).asInstanceOf[U]
+        Right(x)
+      }
+    }
+  }
+
   
 }
