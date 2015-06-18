@@ -33,6 +33,8 @@ import org.meerkat.tree._
 import scala.collection.breakOut
 import org.meerkat.util.Input
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 trait SPPFVisitor {
   type T
@@ -168,13 +170,18 @@ object TreeBuilder {
     case x               => List(convert(x))
   }
   
+  def flatten(s: Symbol): Seq[Symbol] = s match {
+    case Sequence(l @ _*) => l flatMap (flatten(_))
+    case _                => ArrayBuffer(s)
+  }
+  
   def amb(input: Input)(s: Set[Any], l: Int, r: Int): Tree = AmbNode(s.asInstanceOf[Set[Tree]])
   
   def t(input: Input)(l: Int, r: Int): Tree = org.meerkat.tree.TerminalNode(input.substring(l, r))
   
   def int(input: Input)(t: Rule, v: Any) = v
   
-  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = RuleNode(t, flatten(v).asInstanceOf[Seq[Tree]])
+  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = RuleNode(Rule(t.head, flatten(t.body)), flatten(v).asInstanceOf[Seq[Tree]])
   
   def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
     val executer = if (memoized) new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
