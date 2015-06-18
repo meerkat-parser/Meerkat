@@ -36,7 +36,7 @@ object Example3 {
   val C = syn { "c" ^ toStr }
     
   val LIST: Nonterminal & String
-    = syn ( LIST ~ C & { case (s1,s2) => s1.concat("~").concat(s2) } 
+    = syn ( LIST ~ C & { case s1~s2 => s1.concat("~").concat(s2) } 
           | C )
             
   def main(args: Array[String]): Unit = parse("ccc",LIST)

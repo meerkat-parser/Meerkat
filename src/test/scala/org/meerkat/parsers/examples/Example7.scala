@@ -39,9 +39,9 @@ object Example7 {
   val E: OperatorNonterminal & Int
   
     = syn (  "("  ~ E ~ ")"
-          |> right { E ~ "*" ~ E } & { case (x,y) => x*y } 
+          |> right { E ~ "*" ~ E } & { case x~y => x*y } 
           |> E ~ "+"
-          |> left { E ~ "+" ~ E }  & { case (x,y) => x+y }
+          |> left { E ~ "+" ~ E }  & { case x~y => x+y }
           |> "-" ~ E               & {x => -x }
           | Num                    ^ toInt )
           

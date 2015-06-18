@@ -61,7 +61,7 @@ package object parsers {
   
   trait EBNF[-Val] {
     type OptOrSeq; type Seq; type Group
-    val add: ((OptOrSeq,Val)) => OptOrSeq
+    val add: (OptOrSeq~Val) => OptOrSeq
     val unit: Val => OptOrSeq
     val empty: String => OptOrSeq
     val group: Val => Group
@@ -71,7 +71,7 @@ package object parsers {
     implicit def f1[A <: NoValue,B <: NoValue] = new |~|[NoValue,NoValue] { type R = NoValue }
     implicit def f2[A <: NoValue,B: ![NoValue]#f] = new |~|[NoValue,B] { type R = B }
     implicit def f3[A: ![NoValue]#f,B <: NoValue] = new |~|[A,NoValue] { type R = A }
-    implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = (A,B) }
+    implicit def f4[A: ![NoValue]#f,B: ![NoValue]#f] = new |~|[A,B] { type R = A~B }
   }
   
   object <:< {
@@ -87,7 +87,7 @@ package object parsers {
   object EBNF {
     implicit val ebnf1 = new EBNF[NoValue] { 
       type OptOrSeq = NoValue; type Group = NoValue
-      val add: ((OptOrSeq,NoValue)) => OptOrSeq = _ => null
+      val add: (OptOrSeq~NoValue) => OptOrSeq = _ => null
       val unit: NoValue => OptOrSeq = _ => null
       val empty: String => OptOrSeq = _ => null
       val group: NoValue => Group = _ => null
@@ -95,7 +95,7 @@ package object parsers {
   
     implicit def ebnf2[Val: ![NoValue]#f] = new EBNF[Val] { 
       type OptOrSeq = List[Val]; type Group = Val
-      val add: ((OptOrSeq,Val)) => OptOrSeq = { case (s,x) => s.:+(x) }
+      val add: (OptOrSeq~Val) => OptOrSeq = { case s~x => s.:+(x) }
       val unit: Val => OptOrSeq = x => List(x)
       val empty: String => OptOrSeq = _ => List()
       val group: Val => Group = x => x

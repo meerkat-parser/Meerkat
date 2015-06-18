@@ -41,14 +41,14 @@ object Example10 {
   val Num = syn { "[0-9]".r }
     
   val E: OperatorNonterminal & Int 
-    = syn ( Op ~ "(" ~ E.+(",") ~ ")"   & { case (op,x) => x.reduceLeft((y,z) => op(y,z)) }
-          | left { E ~ "*" ~ E }        & { case (x,y) => x*y }
+    = syn ( Op ~ "(" ~ E.+(",") ~ ")"   & { case op~x => x.reduceLeft((y,z) => op(y,z)) }
+          | left { E ~ "*" ~ E }        & { case x~y => x*y }
           |> "-" ~ E                    & { x => -x }
-          |> left { E ~ "+" ~ E }       & { case (x,y) => x+y }
+          |> left { E ~ "+" ~ E }       & { case x~y => x+y }
           | Num                         ^ toInt )
     
   val es : OperatorNonterminal & List[Int] = E.+(",")
-  val seq: OperatorParsers.OperatorSequenceBuilder[(BinaryOp,List[Int])] = Op ~ "(" ~ E.+(",") ~ ")"
+  val seq: OperatorParsers.OperatorSequenceBuilder[BinaryOp~List[Int]] = Op ~ "(" ~ E.+(",") ~ ")"
             
   def main(args: Array[String]): Unit = { 
     val parser: Nonterminal & Int = start(E($))
