@@ -39,12 +39,12 @@ object Example12 {
   val Int = syn { "[0-9]".r }
   
   val E: OperatorNonterminal & Exp = 
-    syn (  right { E ~ "^" ~ E } & { case (x, y) => Pow(x, y) }
+    syn (  right { E ~ "^" ~ E } & { case x~y => Pow(x, y) }
         |> "-" ~ E               & { Neg(_) }
-        |> left ( E ~ "*" ~ E    & { case (x, y) => Mul(x, y) } 
-        |         E ~ "/" ~ E    & { case (x, y) => Div(x, y) }) 
-        |> left ( E ~ "+" ~ E    & { case (x, y) => Add(x, y) } 
-        |         E ~ "-" ~ E    & { case (x, y) => Sub(x, y) })
+        |> left ( E ~ "*" ~ E    & { case x~y => Mul(x, y) } 
+        |         E ~ "/" ~ E    & { case x~y => Div(x, y) }) 
+        |> left ( E ~ "+" ~ E    & { case x~y => Add(x, y) } 
+        |         E ~ "-" ~ E    & { case x~y => Sub(x, y) })
         | "(" ~ E ~ ")"
         | Int                    ^ { s => Num(toInt(s)) } 
         )

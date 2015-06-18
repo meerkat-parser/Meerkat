@@ -36,8 +36,8 @@ object Example4 {
   implicit val LAYOUT = layout { "_".r }
   
   val E: Nonterminal & Int 
-      = syn ( E ~ "+" ~ E & { case (x,y) => x + y }
-            | E ~ "*" ~ E & { case (x,y) => x * y }
+      = syn ( E ~ "+" ~ E & { case x~y => x + y }
+            | E ~ "*" ~ E & { case x~y => x * y }
             | Num         ^ toInt )
   
   val Num = syn { "[0-9]".r }

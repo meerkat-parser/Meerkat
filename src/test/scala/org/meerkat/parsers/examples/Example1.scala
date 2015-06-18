@@ -36,9 +36,9 @@ object Example1 {
   val A = syn { "a" ^ toStr }
   val B = syn { "b" ^ toStr }
   
-  val AB: SequenceBuilder[(String,String)] = A ~ B
+  val AB: SequenceBuilder[String~String] = A ~ B
     
-  val S = syn ( A ~ B  & { case (x,y) => s"$x++$y" } 
+  val S = syn ( A ~ B  & { case x~y => s"$x++$y" } 
               | "c"    ^ { toStr } )
               
   def main(args: Array[String]): Unit = {

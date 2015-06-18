@@ -41,7 +41,7 @@ object Example2 { import Example1._
   val Star1   : Nonterminal & List[String] = syn { S.*       & { _.:+("!") }}
   val Plus1   : Nonterminal & List[String] = syn { S.+       & { _.:+("!") }}
   val Opt1    : Nonterminal & List[String] = syn { S.?       & { _.:+("!") }}
-  val Group1  : Nonterminal & String       = syn { (A ~ B).! & { case (x,y) => x.concat("~").concat(y) }}
+  val Group1  : Nonterminal & String       = syn { (A ~ B).! & { case x~y => x.concat("~").concat(y) }}
   
   val C = syn { "c" }
   val D = syn { "d" }
