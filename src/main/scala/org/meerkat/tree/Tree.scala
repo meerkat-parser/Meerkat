@@ -27,9 +27,6 @@
 
 package org.meerkat.tree
 
-import org.meerkat.sppf.SPPFNode
-import org.meerkat.sppf.NonterminalNode
-
 trait Tree {
   import Tree._  
   val id = inc
@@ -44,15 +41,22 @@ object Tree {
   def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
-case class RuleNode(r: Rule, ts: Seq[Tree]) extends Tree
+class RuleNode(val r: Rule, val ts: Seq[Tree]) extends Tree
 
-//object RuleNode {
-//  def unapply(r: RuleNode): Option[(Rule, Seq[Tree])] = ??? 
+//object RuleNodeL {
+//  def unapply(r: RuleNode)
 //}
+
+object RuleNode {
+  def apply(r: Rule, ts: Seq[Tree])= new RuleNode(r, ts)
+  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = ??? //Some((n.r, n.ts filter {  })) 
+}
 
 case class AmbNode(ts: Set[Tree]) extends Tree
 
 case class TerminalNode(value: String) extends Tree
+
+case class LayoutNode(value: Tree) extends Tree
 
 case class EpsilonNode() extends Tree
 
