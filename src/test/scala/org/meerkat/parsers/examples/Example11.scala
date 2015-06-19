@@ -49,7 +49,7 @@ class Example11 extends FunSuite {
   
   test("test") {
     val result = parse(S, "1+2*3,1*2+3")
-    assert(result.isRight)    
+    assert(result.isSuccess)
   }
   
 }

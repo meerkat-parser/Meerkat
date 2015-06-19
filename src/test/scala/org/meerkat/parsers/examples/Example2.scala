@@ -71,48 +71,48 @@ class Example2 extends FunSuite {
   
   test("test1") {
     val result = exec(StarSep1, "ab,ab,ab")
-    assert(result.isRight)
-    assert(result.right.get == List("a++b", "a++b", "a++b", "!"))   
+    assert(result.isSuccess)
+    assert(result.asSuccess == List("a++b", "a++b", "a++b", "!"))
   }
  
   test("test2") {
 	  val result = parse(Star1, "ababab")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
   test("test3") {
     val result = parse(Star2, "cdcdcd")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
   test("test4") {
     val result = parse(Opt1, "ab")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
   test("test5") {
      val result = parse(Opt2, "cd")
-     assert(result.isRight)
+     assert(result.isSuccess)
   }
   
   test("test6") {
     val result = parse(Char2, "cd cd cd cd")
-    assert(result.isRight)
+    assert(result.isSuccess)
   } 
   
   test("test7") {
     val result = parse(Group1, "a b")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
   test("test8") {
    val result = parse(Group2, "c d")
-   assert(result.isRight)
+   assert(result.isSuccess)
   }
   
   test("test9") {
     val result = parse(Q, "cd")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
 }

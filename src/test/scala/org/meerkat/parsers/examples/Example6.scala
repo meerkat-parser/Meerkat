@@ -46,7 +46,7 @@ class Example6 extends FunSuite {
       
   test("test") {
     val result = parse(E, "6+6")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
 }

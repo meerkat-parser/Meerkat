@@ -53,7 +53,7 @@ class Example7 extends FunSuite {
     
   test("test") {
     val result = parse(E, "3 + -3 + 3 * 3+ * 3 + 3") // 3+(-(3+(((3*3)+)*3)+3)) == -30 !!!
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
 }

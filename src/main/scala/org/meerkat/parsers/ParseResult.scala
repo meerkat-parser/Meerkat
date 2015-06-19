@@ -31,7 +31,7 @@ import org.meerkat.tree.Tree
 
 case class ParseSuccess(root: Tree, 
                         parseTimeStatistics: ParseTimeStatistics,
-                        treeBuidingStatistics: TreeBuildingStatistics,
+                        treeBuildingStatistics: TreeBuildingStatistics,
                         sppfStatistics: SPPFStatistics,
                         treeStatistics: TreeStatistics)
 		  				  

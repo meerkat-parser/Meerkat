@@ -52,8 +52,8 @@ class Example1 extends FunSuite {
 
     val result = exec(S, "a b")
         
-    assert(result.isRight)
-    assert(result.right.get == "a++b")
+    assert(result.isSuccess)
+    assert(result.asSuccess == "a++b")
   }
   
 }

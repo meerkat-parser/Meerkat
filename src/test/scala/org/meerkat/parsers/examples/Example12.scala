@@ -55,7 +55,7 @@ class Example12 extends FunSuite {
      
   test("test") {
 	  val result = exec(E($), "1+2*3-5")
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
 }

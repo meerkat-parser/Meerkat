@@ -57,7 +57,7 @@ class Example10 extends FunSuite {
   test("test") { 
     val parser: Nonterminal & Int = start(E($))
     val result = parse(parser, " * ( 1 + - 1 + 1 , 1 * - 1 * 1 ) ") // = 0 (+) or -1 (*)
-    assert(result.isRight)
+    assert(result.isSuccess)
   }
   
 }

@@ -45,5 +45,6 @@ class Example3 extends FunSuite {
             
   test("test") {
     val result = parse(LIST, "ccc")
+    assert(result.isSuccess)
   }
 }
