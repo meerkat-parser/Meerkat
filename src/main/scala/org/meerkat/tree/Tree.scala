@@ -49,7 +49,7 @@ class RuleNode(val r: Rule, val ts: Seq[Tree]) extends Tree
 
 object RuleNode {
   def apply(r: Rule, ts: Seq[Tree])= new RuleNode(r, ts)
-  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = ??? //Some((n.r, n.ts filter {  })) 
+  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = Some((n.r, n.ts)) // TODO: ???
 }
 
 case class AmbNode(ts: Set[Tree]) extends Tree

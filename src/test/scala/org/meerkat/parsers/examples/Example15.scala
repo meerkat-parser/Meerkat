@@ -25,46 +25,28 @@
  *
  */
 
-package org.meerkat.tree
+package org.meerkat.parsers.examples
 
-import org.meerkat.util.Input
-import scala.collection.mutable.HashMap
-import org.meerkat.util.visualization.Shape._
-import org.meerkat.util.visualization.Style._
-import org.meerkat.util.visualization.Color._
+import org.meerkat.Syntax._
+import org.meerkat.parsers._
+import Parsers._
 import org.meerkat.util.visualization._
 
-trait TreeVisitor {
-  type T
-  def visit(t: Tree)(implicit input: Input): T  
-}
-
-class TreeToDot extends TreeVisitor {
-    type T = Unit
-    
-    val sb = new StringBuilder
-    
-    def get: String = sb.toString
-    
-    def visit(t: Tree)(implicit input: Input): T = t match {
-      case n @ EpsilonNode()   => sb ++= getShape(n.id, "&epsilon;", Rectangle, Rounded)
-    
-      case n @ TerminalNode(s) => sb ++= getShape(n.id, "\"" + s + "\"", Rectangle, Rounded)
-      
-      case n @ LayoutNode(s)   => sb ++= getShape(n.id, "\"" + s + "\"", Diamond, Default)
-    
-      case n @ RuleNode(r, s)  => {
-        r match {
-          case r: DefaultRule => sb ++= getShape(n.id, if (r.head.isRegular) s"${r.head}" else s"$r", Rectangle, Rounded)
-          case r: PartialRule => sb ++= getShape(n.id, s"$r", Rectangle)
-          case r: RegularRule => sb ++= getShape(n.id, s"$r", Rectangle)
-        }
-        s.foreach { t => addEdge(n.id, t.id, sb); visit(t) }      
-      }
-    
-      case n @ AmbNode(s)      => {
-        sb ++= getShape(n.id, "Amb", Diamond, color = Red)
-        s.foreach { t => addEdge(n.id, t.id, sb); visit(t) }
-      } 
-    }
+object Example15 {
+  
+  implicit val LAYOUT: Layout = "_".r
+  
+  val E: Nonterminal & Int 
+      = syn ( E ~ "+" ~ E & { case x~y => x + y }
+            | E ~ "*" ~ E & { case x~y => x * y }
+            | Num         ^ toInt )
+  
+  val Num = syn { "[0-9]".r }
+  
+  def main(args: Array[String]): Unit = {
+    val result = parse(E, "5_*_3")
+    if (result.isSuccess) 
+      visualize(result.asSuccess.root, "5_*_3")
+  }
+  
 }

@@ -110,6 +110,9 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
      
      case t: TerminalNode     => if (t.leftExtent == t.rightExtent) () 
                                  else tn(t.leftExtent, t.rightExtent)
+                                 
+     case t: LayoutTerminalNode  => if (t.leftExtent == t.rightExtent) () 
+                                    else tn(t.leftExtent, t.rightExtent)                            
     
      case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) 
                                  else nonterminal(n.first, n.leftExtent, n.rightExtent)

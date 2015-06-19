@@ -284,6 +284,24 @@ object Parsers { import AbstractCPSParsers._
     def name = r.toString; def symbol = TerminalSymbol(name)
   }
   
+  implicit def toLayout(s: String): Layout 
+    = layout(new Terminal { 
+               def apply(input: Input, i: Int, sppfLookup: SPPFLookup) 
+                 = if (input.startsWith(s, i)) CPSResult.success(sppfLookup.getLayoutTerminalNode(s, i, i + s.length())) 
+                   else CPSResult.failure
+               def symbol = org.meerkat.tree.TerminalSymbol(s); def name = s; override def toString = name
+      })
+      
+  implicit def toLayout(r: Regex): Layout 
+    = layout(new Terminal {
+               def apply(input: Input, i: Int, sppfLookup: SPPFLookup) = { 
+                 val end = input.matchRegex(r, i)
+                 if(end != -1) CPSResult.success(sppfLookup.getLayoutTerminalNode(r.toString, i, end))
+                 else CPSResult.failure 
+               }
+               def name = r.toString; def symbol = TerminalSymbol(name)
+             })
+  
   def ntAlt[Val](name: String, p: => AlternationBuilder[Val]) = nonterminalAlt(name, p)  
   def ntSeq[Val](name: String, p: => SequenceBuilder[Val]) = nonterminalSeq(name, p)
   def ntSym[Val](name: String, p: => AbstractSymbol[NonPackedNode,Val]) = nonterminalSym(name, p)
