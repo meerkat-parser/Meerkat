@@ -30,8 +30,12 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
+import org.junit.runner.RunWith
 
-object Example3 {
+@RunWith(classOf[JUnitRunner])
+class Example3 extends FunSuite {
   
   val C = syn { "c" ^ toStr }
     
@@ -39,6 +43,7 @@ object Example3 {
     = syn ( LIST ~ C & { case s1~s2 => s1.concat("~").concat(s2) } 
           | C )
             
-  def main(args: Array[String]): Unit = parse("ccc",LIST)
-  
+  test("test") {
+    val result = parse(LIST, "ccc")
+  }
 }

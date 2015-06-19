@@ -31,8 +31,12 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-object Example12 {
+@RunWith(classOf[JUnitRunner])
+class Example12 extends FunSuite {
   
   implicit val Layout = layout { """\s?""".r }
   
@@ -48,7 +52,10 @@ object Example12 {
         | "(" ~ E ~ ")"
         | Int                    ^ { s => Num(toInt(s)) } 
         )
-           
-  def main(args: Array[String]) = parse("1+2*3-5",E)
+     
+  test("test") {
+	  val result = exec(E($), "1+2*3-5")
+    assert(result.isRight)
+  }
   
 }

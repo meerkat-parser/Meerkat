@@ -30,8 +30,12 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
 
-object Example4 {
+@RunWith(classOf[JUnitRunner])
+class Example4 extends FunSuite {
   
   implicit val LAYOUT = layout { "_".r }
   
@@ -41,10 +45,10 @@ object Example4 {
             | Num         ^ toInt )
   
   val Num = syn { "[0-9]".r }
-    
-  def main(args: Array[String]): Unit = {
-    // parse("5    * 3", E)
-    parse("5_*_3", E)
+  
+  test("test") {
+    val result = parse(E, "5_*_3")
+    assert(result.isRight)
   }
   
 }

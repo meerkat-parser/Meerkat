@@ -31,8 +31,12 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import DDParsers._
 import Parsers._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-object Example13 {
+@RunWith(classOf[JUnitRunner])
+class Example13 extends FunSuite {
   
   implicit val L = layout { """\s?""".r }
   
@@ -42,6 +46,9 @@ object Example13 {
     = syn ( ( E ~ "+" ~ E ).map { case x~y => x.concat("<~>").concat(y) } 
           | Num.map { s => s } )
     
-  def main(args: Array[String]) = parse("1+2", E)
+  test("test") {
+    val result = parse(E, "1+2")
+    assert(result.isRight)
+  }
   
 }

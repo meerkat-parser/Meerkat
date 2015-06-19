@@ -30,8 +30,12 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
 
-object Example5 {
+@RunWith(classOf[JUnitRunner])
+class Example5 extends FunSuite {
   
   val E: Nonterminal = syn ( "(" ~ E ~ ")" 
                            | E ~ "*" ~ E 
@@ -40,7 +44,10 @@ object Example5 {
                            | E ~ "-" ~ E
                            |  "-" ~ E
                            |   "a" )
-    
-  def main(args: Array[String]): Unit = parse("a+a-a*a", E)
+  
+  test("test") {
+    val result = parse(E, "a+a-a*a")
+    assert(result.isRight)
+  }
   
 }

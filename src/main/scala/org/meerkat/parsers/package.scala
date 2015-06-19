@@ -121,37 +121,10 @@ package object parsers {
     Trampoline.run
   }
   
-  def parse[Val](sentence: String, parser: OperatorParsers.AbstractOperatorNonterminal[Val]): Unit 
-    = parse(sentence, parser((0,0)))
-  
-  def parse[T,V](sentence: String, parser: AbstractCPSParsers.AbstractSymbol[T,V]): Unit = {
-    val input = new Input(sentence)
-    val sppf = new DefaultSPPFLookup(input)
-    
-    run(input, sppf, parser)
-    
-    println(s"Trying to find: ${parser.name}(0,${sentence.length()})")
-    val startSymbol = sppf.getStartNode(parser, 0, sentence.length())
-    
-//    println("Resetting ...")
-//    parser.reset
-    
-    startSymbol match {
-      case None       => println("Parse error")
-      case Some(node) => println("Success: " + node)
-                         println(sppf.countAmbiguousNodes + ", " + sppf.countIntermediateNodes + ", " + sppf.countPackedNodes + ", " + sppf.countNonterminalNodes + ", " + sppf.countTerminalNodes)
-                         println("Visualizing...")
-                         visualize(node, input)
-                         visualize(TreeBuilder.build(node)(input), input)
-                         val x = SemanticAction.execute(node)(input)
-                         println(s"WOW: $x")
-                         println("Done!")
-    }
-  }
-  
-  private def getSPPF[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, (NonPackedNode, ParseTimeStatistics, SPPFStatistics)] = {
+  private def getSPPF[T,V](parser: AbstractCPSParsers.AbstractSymbol[T,V], input: Input): Either[ParseError, (NonPackedNode, ParseTimeStatistics, SPPFStatistics)] = {
         
     parser.reset
+    Layout.LAYOUT.get.reset
     
     val sppfLookup = new DefaultSPPFLookup(input)
     
@@ -181,7 +154,7 @@ package object parsers {
     }
   }
   
-  def parse[T](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, ParseSuccess] = {
+  def parse[T,V](parser: AbstractCPSParsers.AbstractSymbol[T,V], input: Input): Either[ParseError, ParseSuccess] = {
 
     getSPPF(parser, input) match {
       case Left(error)                            => Left(error)
@@ -206,11 +179,14 @@ package object parsers {
     }
   }
   
-  def execute[T, U](parser: Parsers.AbstractNonterminal[T], input: Input): Either[ParseError, U] = {
+  def parse[Val](parser: OperatorParsers.AbstractOperatorNonterminal[Val], sentence: String): Either[ParseError, ParseSuccess] 
+    = parse(parser(0,0), sentence)
+  
+  def exec[T,V](parser: AbstractCPSParsers.AbstractSymbol[T,V], input: Input): Either[ParseError, V] = {
     getSPPF(parser, input) match {
       case Left(error)                            => Left(error)
       case Right((root, parseTimeStat, sppfStat)) => {
-        val x = SemanticAction.execute(root)(input).asInstanceOf[U]
+        val x = SemanticAction.execute(root)(input).asInstanceOf[V]
         Right(x)
       }
     }

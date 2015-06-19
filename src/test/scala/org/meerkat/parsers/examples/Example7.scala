@@ -31,8 +31,12 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
 
-object Example7 {
+@RunWith(classOf[JUnitRunner])
+class Example7 extends FunSuite {
   
   implicit val LayOut = layout { """[\s]?""".r }
   
@@ -47,9 +51,9 @@ object Example7 {
           
   val Num = syn { "[0-9]".r }
     
-  def main(args: Array[String]): Unit = {
-    // parse("((0))", E)
-    parse("3 + -3 + 3 * 3+ * 3 + 3", E) // 3+(-(3+(((3*3)+)*3)+3)) == -30 !!!
+  test("test") {
+    val result = parse(E, "3 + -3 + 3 * 3+ * 3 + 3") // 3+(-(3+(((3*3)+)*3)+3)) == -30 !!!
+    assert(result.isRight)
   }
   
 }

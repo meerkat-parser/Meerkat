@@ -31,17 +31,25 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-object Example11 {
+@RunWith(classOf[JUnitRunner])
+class Example11 extends FunSuite {
   
   val Num = syn { "[0-9]".r }
   val E: OperatorNonterminal 
-    = syn (  left { E ~~ "*" ~~ E } 
-          |> left { E ~~ "+" ~~ E } 
-          | Num )
+  = syn (  left { E ~~ "*" ~~ E } 
+        |> left { E ~~ "+" ~~ E } 
+        | Num 
+        )
     
   val S = syn ( E.*(",") )
-    
-  def main(args: Array[String]): Unit = parse("1+2*3,1*2+3",S)
+  
+  test("test") {
+    val result = parse(S, "1+2*3,1*2+3")
+    assert(result.isRight)    
+  }
   
 }

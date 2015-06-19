@@ -30,19 +30,30 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-object Example1 {
+@RunWith(classOf[JUnitRunner])
+class Example1 extends FunSuite {
   
   val A = syn { "a" ^ toStr }
   val B = syn { "b" ^ toStr }
   
   val AB: SequenceBuilder[String~String] = A ~ B
     
-  val S = syn ( A ~ B  & { case x~y => s"$x++$y" } 
-              | "c"    ^ { toStr } )
-              
-  def main(args: Array[String]): Unit = {
-    parse("a b",S)
+  val S = 
+  syn ( A ~ B  & { case x~y => s"$x++$y" } 
+      | "c"    ^ { toStr } 
+      )
+      
+  
+  test("test") {
+
+    val result = exec(S, "a b")
+        
+    assert(result.isRight)
+    assert(result.right.get == "a++b")
   }
   
 }

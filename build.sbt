@@ -7,6 +7,8 @@ version := "0.1.0"
 
 scalaVersion := "2.11.6"
 
+parallelExecution in Test := false
+
 unmanagedSourceDirectories in Compile += baseDirectory.value / "src" / "macros"
 
 libraryDependencies ++= Seq(

@@ -31,8 +31,12 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import DDParsers._
 import Parsers._
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-object Example14 {
+@RunWith(classOf[JUnitRunner])
+class Example14 extends FunSuite {
   
   implicit val LAYOUT = layout { """\s?""".r }
   
@@ -49,6 +53,9 @@ object Example14 {
         case _ => syn { (1 to n-2).foldLeft(p ~ p)((q,_) => q ~ p) }
       }
     
-  def main(args: Array[String]): Unit = parse("~{ 9 } X X X X X X X X X",L8)
+  test("test") {
+    val result = parse(L8, "~{ 9 } X X X X X X X X X")
+    assert(result.isRight)
+  } 
   
 }

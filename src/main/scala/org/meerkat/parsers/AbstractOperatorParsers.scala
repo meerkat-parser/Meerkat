@@ -403,7 +403,7 @@ object AbstractOperatorParsers { import AbstractCPSParsers._
     }
     
     def filter[A,ValA](p: AbstractOperatorSequence[A,ValA], l: Int, group: Group): Prec => AbstractSequenceBuilder[A,ValA] = {
-      println(s"Sequence with level: $l, group: $group, assoc: ${p.assoc}")
+      // println(s"Sequence with level: $l, group: $group, assoc: ${p.assoc}")
       if (l == -1) return prec => p(prec, prec)
       
       // Main condition

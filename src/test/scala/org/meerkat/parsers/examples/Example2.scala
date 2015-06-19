@@ -30,13 +30,25 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
+import org.scalatest.FunSuite
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
 /**
  * EBNF (sequences, option), character-level
  */
-
-object Example2 { import Example1._
+@RunWith(classOf[JUnitRunner])
+class Example2 extends FunSuite { 
   
+  val A = syn { "a" ^ toStr }
+  val B = syn { "b" ^ toStr }
+
+  
+  val S = 
+  syn ( A ~ B  & { case x~y => s"$x++$y" } 
+      | "c"    ^ { toStr } 
+      )  
   val StarSep1: Nonterminal & List[String] = syn { S.*(",")  & { _.:+("!") }}                                
   val Star1   : Nonterminal & List[String] = syn { S.*       & { _.:+("!") }}
   val Plus1   : Nonterminal & List[String] = syn { S.+       & { _.:+("!") }}
@@ -57,21 +69,50 @@ object Example2 { import Example1._
   
   val Q = syn { C ~ D.? }
   
-  def test1 = parse("ab,ab,ab"   , StarSep1)
+  test("test1") {
+    val result = exec(StarSep1, "ab,ab,ab")
+    assert(result.isRight)
+    assert(result.right.get == List("a++b", "a++b", "a++b", "!"))   
+  }
+ 
+  test("test2") {
+	  val result = parse(Star1, "ababab")
+    assert(result.isRight)
+  }
   
-  def test2 = parse("ababab"     , Star1)
-  def test3 = parse("cdcdcd"     , Star2)
+  test("test3") {
+    val result = parse(Star2, "cdcdcd")
+    assert(result.isRight)
+  }
   
-  def test4 = parse("ab"         , Opt1)
-  def test5 = parse("cd"         , Opt2)
+  test("test4") {
+    val result = parse(Opt1, "ab")
+    assert(result.isRight)
+  }
   
-  def test6 = parse("cd cd cd cd", Char2)
+  test("test5") {
+     val result = parse(Opt2, "cd")
+     assert(result.isRight)
+  }
   
-  def test7 = parse("a b"        , Group1)
-  def test8 = parse("c d"        , Group2)
+  test("test6") {
+    val result = parse(Char2, "cd cd cd cd")
+    assert(result.isRight)
+  } 
   
-  def test9 = parse("cd", Q)
+  test("test7") {
+    val result = parse(Group1, "a b")
+    assert(result.isRight)
+  }
   
-  def main(args: Array[String]): Unit = test9
+  test("test8") {
+   val result = parse(Group2, "c d")
+   assert(result.isRight)
+  }
+  
+  test("test9") {
+    val result = parse(Q, "cd")
+    assert(result.isRight)
+  }
   
 }
