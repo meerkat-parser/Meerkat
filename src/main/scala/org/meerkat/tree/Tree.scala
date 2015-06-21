@@ -41,15 +41,20 @@ object Tree {
   def isEpsilon(t: Tree): Boolean = t == epsilon  
 }
 
-class RuleNode(val r: Rule, val ts: Seq[Tree]) extends Tree
+trait RuleNode extends Tree {
+  def r: Rule
+  def ts: Seq[Tree]
+}
 
-//object RuleNodeL {
-//  def unapply(r: RuleNode)
-//}
+case class RuleNodeImpl(val r: Rule, val ts: Seq[Tree]) extends RuleNode
+
+object RuleNodeL {
+  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = Some((n.r, n.ts))
+}
 
 object RuleNode {
-  def apply(r: Rule, ts: Seq[Tree])= new RuleNode(r, ts)
-  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = Some((n.r, n.ts)) // TODO: ???
+  def apply(r: Rule, ts: Seq[Tree])= new RuleNodeImpl(r, ts)
+  def unapply(n: RuleNode): Option[(Rule, Seq[Tree])] = Some((n.r, n.ts filter { case l: LayoutNode => false; case _ => true }))
 }
 
 case class AmbNode(ts: Set[Tree]) extends Tree

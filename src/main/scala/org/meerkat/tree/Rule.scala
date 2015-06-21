@@ -91,7 +91,7 @@ case class Sequence(ss: Symbol*) extends NonterminalSymbol {
 }
 
 object Sequence {
-  def unapply(s: Sequence): Option[Seq[Symbol]] = Some(s.ss filter { case Layout(_) => true; case _ => false } )
+  def unapply(s: Sequence): Option[Seq[Symbol]] = Some(s.ss filter { case Layout(_) => false; case _ => true } )
 }
 
 case class Group(s: Symbol) extends NonterminalSymbol {

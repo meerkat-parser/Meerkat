@@ -108,19 +108,19 @@ class SemanticActionExecutor(amb: (Set[Any], Int, Int) => Any,
   
   def visit(node: SPPFNode): Any = node match {
      
-     case t: TerminalNode     => if (t.leftExtent == t.rightExtent) () 
-                                 else tn(t.leftExtent, t.rightExtent)
+     case t: TerminalNode        => if (t.leftExtent == t.rightExtent) () 
+                                    else tn(t.leftExtent, t.rightExtent)
                                  
-     case t: LayoutTerminalNode  => if (t.leftExtent == t.rightExtent) () 
-                                    else tn(t.leftExtent, t.rightExtent)                            
-    
-     case n: NonterminalNode  => if (n isAmbiguous) ambiguity(n) 
-                                 else nonterminal(n.first, n.leftExtent, n.rightExtent)
+     case l: LayoutTerminalNode  => if (l.leftExtent == l.rightExtent) ()
+                                    else tn(l.leftExtent, l.rightExtent)
+                                 
+     case n: NonterminalNode     => if (n isAmbiguous) ambiguity(n) 
+                                    else nonterminal(n.first, n.leftExtent, n.rightExtent)
                                    
-     case i: IntermediateNode => if (i isAmbiguous) ambiguity(i) 
-                                 else intermediate(i.first, visit(i.first.leftChild), visit(i.first.rightChild))
+     case i: IntermediateNode    => if (i isAmbiguous) ambiguity(i) 
+                                    else intermediate(i.first, visit(i.first.leftChild), visit(i.first.rightChild))
      
-     case p: PackedNode       => throw new RuntimeException("Should not traverse a packed node!")
+     case p: PackedNode          => throw new RuntimeException("Should not traverse a packed node!")
   }
 
 }
@@ -185,9 +185,17 @@ object TreeBuilder {
   
   def t(input: Input)(l: Int, r: Int): Tree = org.meerkat.tree.TerminalNode(input.substring(l, r))
   
+  def l(input: Input)(l:Int, r: Int): Tree = LayoutNode(t(input)(l, r))
+  
   def int(input: Input)(t: Rule, v: Any) = v
   
-  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = RuleNode(Rule(t.head, flatten(t.body)), flatten(v).asInstanceOf[Seq[Tree]])
+  def nt(input: Input)(t: Rule, v: Any, l: Int, r: Int) = {
+    val node = RuleNode(Rule(t.head, flatten(t.body)), flatten(v).asInstanceOf[Seq[Tree]])
+    t.head match {
+      case Layout(_) => LayoutNode(node)
+      case _         => node
+    }
+  } 
   
   def build(node: NonPackedNode, memoized: Boolean = true)(implicit input: Input): Tree = {
     val executer = if (memoized) new SemanticActionExecutor(amb(input), t(input), int(input), nt(input)) with Memoization
