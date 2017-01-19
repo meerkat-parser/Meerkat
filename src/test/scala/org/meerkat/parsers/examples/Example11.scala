@@ -31,11 +31,8 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
 class Example11 extends FunSuite {
   
   val Num = syn { "[0-9]".r }

@@ -30,11 +30,8 @@ package org.meerkat.parsers.examples
 import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
 class Example5 extends FunSuite {
   
   val E: Nonterminal = syn ( "(" ~ E ~ ")" 

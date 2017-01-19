@@ -31,11 +31,8 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import DDParsers._
 import Parsers._
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
 class Example14 extends FunSuite {
   
   implicit val LAYOUT = layout { """\s?""".r }

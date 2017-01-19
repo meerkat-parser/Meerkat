@@ -31,15 +31,11 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import org.scalatest.FunSuite
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSuite
 
 /**
  * EBNF (sequences, option), character-level
  */
-@RunWith(classOf[JUnitRunner])
-class Example2 extends FunSuite { 
+class Example2 extends FunSuite {
   
   val A = syn { "a" ^ toStr }
   val B = syn { "b" ^ toStr }

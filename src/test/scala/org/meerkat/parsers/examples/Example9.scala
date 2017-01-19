@@ -31,15 +31,12 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 
 /**
  * Associativity groups + deep case (unary/binary operators)
  * (the case that is not fully disambiguated)
  */
-@RunWith(classOf[JUnitRunner])
 class Example9 extends FunSuite {
   
   implicit val LAYOUT = layout { "".r }

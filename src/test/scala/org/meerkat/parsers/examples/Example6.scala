@@ -31,11 +31,8 @@ import org.meerkat.Syntax._
 import org.meerkat.parsers._
 import Parsers._
 import OperatorParsers._
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
 class Example6 extends FunSuite {
   
   val e: OperatorNonterminal = syn { e ~ "+" ~ e | "a" }

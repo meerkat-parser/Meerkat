@@ -5,15 +5,15 @@ organization := "org.meerkat"
 
 version := "0.1.0"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.12.1"
 
 parallelExecution in Test := false
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / "src" / "macros"
 
 libraryDependencies ++= Seq(
-    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-	"junit" % "junit" % "4.11",
+	"org.scalactic" %% "scalactic" % "3.0.1",
+	"org.scalatest" %% "scalatest" % "3.0.1" % "test",
 	"com.google.guava" % "guava-testlib" % "18.0",
 	"commons-io" % "commons-io" % "2.4",
 	"org.bitbucket.inkytonik.dsinfo" %% "dsinfo" % "0.4.0"

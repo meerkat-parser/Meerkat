@@ -11,3 +11,4 @@ target
 .cache-tests
 graph.dot
 graph.pdf
+.idea
